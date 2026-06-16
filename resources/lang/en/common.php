@@ -1,0 +1,23 @@
+<?php
+return [
+    'save'           => 'Save',
+    'cancel'         => 'Cancel',
+    'delete'         => 'Delete',
+    'edit'           => 'Edit',
+    'create'         => 'Create',
+    'search'         => 'Search',
+    'reset'          => 'Reset',
+    'export'         => 'Export',
+    'submit'         => 'Submit',
+    'approve'        => 'Approve',
+    'reject'         => 'Reject',
+    'view'           => 'View',
+    'view_all'       => 'View All',
+    'view_file'      => 'View File',
+    'no_data'        => 'No data found',
+    'confirm_delete' => 'Confirm delete?',
+    'profile'        => 'Profile',
+    'logout'         => 'Logout',
+    'all_status'     => 'All Status',
+    'all_apps'       => 'All Apps',
+];

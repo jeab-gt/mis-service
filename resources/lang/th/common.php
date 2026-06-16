@@ -1,0 +1,23 @@
+<?php
+return [
+    'save'           => 'บันทึก',
+    'cancel'         => 'ยกเลิก',
+    'delete'         => 'ลบ',
+    'edit'           => 'แก้ไข',
+    'create'         => 'สร้างใหม่',
+    'search'         => 'ค้นหา',
+    'reset'          => 'รีเซ็ต',
+    'export'         => 'ส่งออก',
+    'submit'         => 'ส่งคำร้อง',
+    'approve'        => 'อนุมัติ',
+    'reject'         => 'ปฏิเสธ',
+    'view'           => 'ดู',
+    'view_all'       => 'ดูทั้งหมด',
+    'view_file'      => 'ดูไฟล์',
+    'no_data'        => 'ไม่มีข้อมูล',
+    'confirm_delete' => 'ยืนยันการลบ?',
+    'profile'        => 'โปรไฟล์',
+    'logout'         => 'ออกจากระบบ',
+    'all_status'     => 'ทุกสถานะ',
+    'all_apps'       => 'ทุก App',
+];
