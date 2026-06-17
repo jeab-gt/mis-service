@@ -29,29 +29,29 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="md:col-span-2">
                     <label class="form-label">ชื่อ App <span class="text-red-500">*</span></label>
-                    <input type="text" name="name" value="{{ old('name', $app->name ?? '') }}"
+                    <input type="text" name="name" value="{{ old('name', $app?->name ?? '') }}"
                            class="form-input" required>
                 </div>
                 <div>
                     <label class="form-label">Slug <span class="text-red-500">*</span></label>
-                    <input type="text" name="slug" value="{{ old('slug', $app->slug ?? '') }}"
+                    <input type="text" name="slug" value="{{ old('slug', $app?->slug ?? '') }}"
                            class="form-input font-mono" required placeholder="my-app">
                     <p class="text-xs text-gray-400 mt-1">ใช้เป็น URL: /submissions/{slug}/create</p>
                 </div>
                 <div>
                     <label class="form-label">Category <span class="text-red-500">*</span></label>
-                    <input type="text" name="category" value="{{ old('category', $app->category ?? '') }}"
+                    <input type="text" name="category" value="{{ old('category', $app?->category ?? '') }}"
                            class="form-input" required placeholder="maintenance">
                 </div>
                 <div>
                     <label class="form-label">Icon (Tabler)</label>
-                    <input type="text" name="icon" value="{{ old('icon', $app->icon ?? 'ti-apps') }}"
+                    <input type="text" name="icon" value="{{ old('icon', $app?->icon ?? 'ti-apps') }}"
                            class="form-input font-mono" placeholder="ti-tool">
                 </div>
                 <div class="flex items-center space-x-2 mt-2">
                     <input type="hidden" name="is_active" value="0">
                     <input type="checkbox" name="is_active" id="is_active" value="1"
-                           {{ old('is_active', ($app->is_active ?? true) ? '1' : '0') == '1' ? 'checked' : '' }}
+                           {{ old('is_active', ($app?->is_active ?? true) ? '1' : '0') == '1' ? 'checked' : '' }}
                            class="rounded text-indigo-600">
                     <label for="is_active" class="text-sm">Active</label>
                 </div>
@@ -59,7 +59,7 @@
 
             <div>
                 <label class="form-label">คำอธิบาย</label>
-                <textarea name="description" rows="2" class="form-input">{{ old('description', $app->description ?? '') }}</textarea>
+                <textarea name="description" rows="2" class="form-input">{{ old('description', $app?->description ?? '') }}</textarea>
             </div>
 
             <!-- Form Templates -->
@@ -75,7 +75,7 @@
                                 <option value="">-- ไม่มี --</option>
                                 @foreach($formTemplates as $t)
                                 <option value="{{ $t->id }}"
-                                    {{ old('initial_form_template_id', $app->initial_form_template_id ?? '') == $t->id ? 'selected' : '' }}>
+                                    {{ old('initial_form_template_id', $app?->initial_form_template_id ?? '') == $t->id ? 'selected' : '' }}>
                                     {{ $t->name }} ({{ $t->category }})
                                 </option>
                                 @endforeach
@@ -94,7 +94,7 @@
                                 <option value="">-- ไม่มี --</option>
                                 @foreach($formTemplates as $t)
                                 <option value="{{ $t->id }}"
-                                    {{ old('revision_form_template_id', $app->revision_form_template_id ?? '') == $t->id ? 'selected' : '' }}>
+                                    {{ old('revision_form_template_id', $app?->revision_form_template_id ?? '') == $t->id ? 'selected' : '' }}>
                                     {{ $t->name }} ({{ $t->category }})
                                 </option>
                                 @endforeach
@@ -117,7 +117,7 @@
                             <option value="">-- ไม่มี --</option>
                             @foreach($flows as $f)
                             <option value="{{ $f->id }}"
-                                {{ old('flow_id', $app->flow_id ?? '') == $f->id ? 'selected' : '' }}>
+                                {{ old('flow_id', $app?->flow_id ?? '') == $f->id ? 'selected' : '' }}>
                                 {{ $f->name }}
                             </option>
                             @endforeach

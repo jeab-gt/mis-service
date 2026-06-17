@@ -24,7 +24,7 @@ class AppController extends Controller
     {
         $formTemplates = FormTemplate::where('is_active', true)->orderBy('name')->get();
         $flows         = Flow::where('is_active', true)->orderBy('name')->get();
-        return view('apps.edit', compact('formTemplates', 'flows'));
+        return view('apps.edit', ['formTemplates' => $formTemplates, 'flows' => $flows, 'app' => null]);
     }
 
     public function store(Request $request)
