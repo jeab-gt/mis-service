@@ -50,19 +50,20 @@ class SubmissionService
 
     // ─── Approve / Reject / Return ───────────────────────────────────
 
-    public function approve(AppSubmission $submission, User $actor, string $action, ?string $comment = null): void
+    public function approve(AppSubmission $submission, User $actor, string $action, ?string $comment = null, ?array $stepFormData = null): void
     {
         $flow          = $submission->app->flow;
         $currentNodeId = $submission->current_node_id;
         $currentNode   = $flow?->getNodeById($currentNodeId);
 
         ApprovalAction::create([
-            'submission_id' => $submission->id,
-            'node_id'       => $currentNodeId,
-            'actor_id'      => $actor->id,
-            'action'        => $action,
-            'comment'       => $comment,
-            'acted_at'      => now(),
+            'submission_id'  => $submission->id,
+            'node_id'        => $currentNodeId,
+            'actor_id'       => $actor->id,
+            'action'         => $action,
+            'comment'        => $comment,
+            'step_form_data' => $stepFormData ?: null,
+            'acted_at'       => now(),
         ]);
 
         activity()->performedOn($submission)->causedBy($actor)->log($action);

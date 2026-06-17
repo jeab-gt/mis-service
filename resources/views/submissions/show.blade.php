@@ -182,6 +182,19 @@
                             @if($nodeAction->comment)
                             <p class="mt-0.5 italic">"{{ $nodeAction->comment }}"</p>
                             @endif
+                            @if($nodeAction->step_form_data)
+                            <div class="mt-1 space-y-0.5">
+                                @foreach($node->stepFormTemplate?->schema['fields'] ?? [] as $sf)
+                                @php
+                                    $sfLabel = app()->getLocale() === 'th' ? ($sf['label_th'] ?? '') : ($sf['label_en'] ?? '');
+                                    $sfVal   = $nodeAction->step_form_data[$sf['id']] ?? null;
+                                @endphp
+                                @if($sfVal)
+                                <p><span class="text-gray-400">{{ $sfLabel }}:</span> {{ $sfVal }}</p>
+                                @endif
+                                @endforeach
+                            </div>
+                            @endif
                         </div>
                         @elseif($isCurrentNode)
                         <p class="mt-1 text-xs text-yellow-600">{{ app()->getLocale() === 'th' ? 'รออนุมัติ' : 'Pending' }}</p>

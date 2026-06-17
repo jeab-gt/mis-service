@@ -108,7 +108,7 @@ class SubmissionController extends Controller
             'step_form_data' => 'nullable|array',
         ]);
 
-        $this->service->approve($submission, auth()->user(), $data['action'], $data['comment'] ?? null);
+        $this->service->approve($submission, auth()->user(), $data['action'], $data['comment'] ?? null, $data['step_form_data'] ?? null);
 
         return redirect()->route('submissions.show', $submission)->with('success', 'บันทึกการดำเนินการสำเร็จ');
     }
