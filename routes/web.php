@@ -85,10 +85,28 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'setlocale', 'role:s
         Route::get('/{app}/edit', [\App\Http\Controllers\Admin\AppController::class, 'edit'])->name('edit');
         Route::put('/{app}', [\App\Http\Controllers\Admin\AppController::class, 'update'])->name('update');
         Route::delete('/{app}', [\App\Http\Controllers\Admin\AppController::class, 'destroy'])->name('destroy');
-        Route::get('/{app}/designer', [\App\Http\Controllers\Admin\AppController::class, 'designer'])->name('designer');
-        Route::get('/{app}/flow', [\App\Http\Controllers\Admin\AppController::class, 'flow'])->name('flow');
-        Route::post('/{app}/save-flow', [\App\Http\Controllers\Admin\AppController::class, 'saveFlow'])->name('save-flow');
         Route::get('/{app}/preview', [\App\Http\Controllers\Admin\AppController::class, 'preview'])->name('preview');
+    });
+
+    // Form Templates (Form Library)
+    Route::prefix('form-templates')->name('form-templates.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\FormTemplateController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\Admin\FormTemplateController::class, 'store'])->name('store');
+        Route::get('/{formTemplate}/designer', [\App\Http\Controllers\Admin\FormTemplateController::class, 'designer'])->name('designer');
+        Route::post('/{formTemplate}/save', [\App\Http\Controllers\Admin\FormTemplateController::class, 'save'])->name('save');
+        Route::put('/{formTemplate}', [\App\Http\Controllers\Admin\FormTemplateController::class, 'update'])->name('update');
+        Route::post('/{formTemplate}/duplicate', [\App\Http\Controllers\Admin\FormTemplateController::class, 'duplicate'])->name('duplicate');
+        Route::delete('/{formTemplate}', [\App\Http\Controllers\Admin\FormTemplateController::class, 'destroy'])->name('destroy');
+    });
+
+    // Flows (Flow Library)
+    Route::prefix('flows')->name('flows.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\FlowController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\Admin\FlowController::class, 'store'])->name('store');
+        Route::get('/{flow}/designer', [\App\Http\Controllers\Admin\FlowController::class, 'designer'])->name('designer');
+        Route::post('/{flow}/save', [\App\Http\Controllers\Admin\FlowController::class, 'save'])->name('save');
+        Route::post('/{flow}/duplicate', [\App\Http\Controllers\Admin\FlowController::class, 'duplicate'])->name('duplicate');
+        Route::delete('/{flow}', [\App\Http\Controllers\Admin\FlowController::class, 'destroy'])->name('destroy');
     });
 
     Route::get('/settings', [\App\Http\Controllers\Admin\SettingController::class, 'index'])->name('settings.index');

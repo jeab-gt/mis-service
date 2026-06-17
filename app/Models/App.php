@@ -13,19 +13,18 @@ class App extends Model
         'slug',
         'category',
         'description',
-        'form_schema',
-        'flow_schema',
         'theme_config',
         'icon',
         'is_active',
         'created_by',
+        'initial_form_template_id',
+        'revision_form_template_id',
+        'flow_id',
     ];
 
     protected $casts = [
-        'form_schema' => 'array',
-        'flow_schema' => 'array',
         'theme_config' => 'array',
-        'is_active' => 'boolean',
+        'is_active'    => 'boolean',
     ];
 
     public function creator(): BelongsTo
@@ -38,9 +37,19 @@ class App extends Model
         return $this->hasMany(AppSubmission::class, 'app_id');
     }
 
-    public function approvalSteps(): HasMany
+    public function initialFormTemplate(): BelongsTo
     {
-        return $this->hasMany(ApprovalStep::class, 'app_id')->orderBy('step_order');
+        return $this->belongsTo(FormTemplate::class, 'initial_form_template_id');
+    }
+
+    public function revisionFormTemplate(): BelongsTo
+    {
+        return $this->belongsTo(FormTemplate::class, 'revision_form_template_id');
+    }
+
+    public function flow(): BelongsTo
+    {
+        return $this->belongsTo(Flow::class, 'flow_id');
     }
 
     public function scopeActive($query)

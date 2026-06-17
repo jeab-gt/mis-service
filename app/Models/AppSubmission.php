@@ -18,20 +18,19 @@ class AppSubmission extends Model
         'submitter_id',
         'factory_id',
         'form_data',
-        'current_step',
+        'current_node_id',
         'status',
         'submitted_at',
         'closed_at',
     ];
 
     protected $casts = [
-        'form_data'   => 'array',
-        'submitted_at' => 'datetime',
-        'closed_at'    => 'datetime',
-        'current_step' => 'string',
+        'form_data'      => 'array',
+        'submitted_at'   => 'datetime',
+        'closed_at'      => 'datetime',
+        'current_node_id' => 'string',
     ];
 
-    // ─── Relationships ───────────────────────────────────────────────
     public function app(): BelongsTo
     {
         return $this->belongsTo(App::class, 'app_id');
@@ -67,7 +66,16 @@ class AppSubmission extends Model
         return $this->hasOne(RequestAssignment::class, 'submission_id')->latest('assigned_at');
     }
 
-    // ─── Scopes ──────────────────────────────────────────────────────
+    public function currentFlowNode(): ?FlowNode
+    {
+        if (!$this->current_node_id || !$this->app?->flow_id) {
+            return null;
+        }
+        return FlowNode::where('flow_id', $this->app->flow_id)
+            ->where('node_id', $this->current_node_id)
+            ->first();
+    }
+
     public function scopeForUser($query, User $user)
     {
         if ($user->hasRole('super_admin') || ($user->is_parent_factory && $user->hasAnyRole(['it_manager', 'it_staff']))) {
@@ -86,11 +94,11 @@ class AppSubmission extends Model
         return $query->where('status', $status);
     }
 
-    // ─── Accessors ───────────────────────────────────────────────────
     public function getTitleAttribute(): string
     {
         if ($this->form_data && $this->relationLoaded('app') && $this->app) {
-            foreach ($this->app->form_schema['fields'] ?? [] as $field) {
+            $fields = $this->app->initialFormTemplate?->schema['fields'] ?? [];
+            foreach ($fields as $field) {
                 if ($field['type'] === 'text' && !empty($this->form_data[$field['id']])) {
                     return (string) $this->form_data[$field['id']];
                 }

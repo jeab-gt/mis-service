@@ -5,7 +5,7 @@
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
         <h1 class="text-xl font-bold mb-6">{{ $app->name }} — Preview</h1>
         <div class="grid grid-cols-2 gap-4">
-            @foreach($app->form_schema['fields'] ?? [] as $field)
+            @foreach($app->initialFormTemplate?->schema['fields'] ?? [] as $field)
             @php
                 $labelKey = app()->getLocale() === 'th' ? 'label_th' : 'label_en';
                 $label = $field[$labelKey] ?? $field['label_th'] ?? '';

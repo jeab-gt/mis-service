@@ -39,14 +39,17 @@ class SubmissionController extends Controller
 
     public function create(App $app)
     {
+        $app->load('initialFormTemplate');
         return view('submissions.create', compact('app'));
     }
 
     public function store(Request $request, App $app)
     {
-        $formSchema = $app->form_schema['fields'] ?? [];
-        $rules = [];
-        foreach ($formSchema as $field) {
+        $app->load('initialFormTemplate');
+        $fields = $app->initialFormTemplate?->schema['fields'] ?? [];
+        $rules  = [];
+
+        foreach ($fields as $field) {
             if (!empty($field['required'])) {
                 $rules["form_{$field['id']}"] = 'required';
             }
@@ -54,7 +57,7 @@ class SubmissionController extends Controller
         $request->validate($rules);
 
         $formData = [];
-        foreach ($formSchema as $field) {
+        foreach ($fields as $field) {
             $key = "form_{$field['id']}";
             if ($request->hasFile($key)) {
                 $path = $request->file($key)->store('submissions', 'public');
@@ -80,20 +83,32 @@ class SubmissionController extends Controller
     public function show(AppSubmission $submission)
     {
         $this->authorizeView($submission);
-        $submission->load(['app.approvalSteps.approverRole', 'approvalActions.actor', 'approvalActions.step', 'assignments.assignee', 'dailyLogs.user', 'submitter']);
+        $submission->load([
+            'app.initialFormTemplate',
+            'app.revisionFormTemplate',
+            'app.flow.nodes.stepFormTemplate',
+            'app.flow.edges',
+            'approvalActions.actor',
+            'assignments.assignee',
+            'dailyLogs.user',
+            'submitter',
+        ]);
 
-        $staff = User::role(['it_staff', 'it_manager'])->active()->get();
-        return view('submissions.show', compact('submission', 'staff'));
+        $currentNode = $submission->app->flow?->getNodeById($submission->current_node_id);
+        $staff       = User::role(['it_staff', 'it_manager'])->active()->get();
+
+        return view('submissions.show', compact('submission', 'staff', 'currentNode'));
     }
 
     public function approve(Request $request, AppSubmission $submission)
     {
         $data = $request->validate([
-            'action'  => 'required|in:approve,reject,return_revision',
-            'comment' => 'nullable|string|max:1000',
+            'action'       => 'required|in:approve,reject,return_revision',
+            'comment'      => 'nullable|string|max:1000',
+            'step_form_data' => 'nullable|array',
         ]);
 
-        $this->service->approve($submission, auth()->user(), $data['action'], $data['comment']);
+        $this->service->approve($submission, auth()->user(), $data['action'], $data['comment'] ?? null);
 
         return redirect()->route('submissions.show', $submission)->with('success', 'บันทึกการดำเนินการสำเร็จ');
     }
@@ -150,9 +165,11 @@ class SubmissionController extends Controller
             abort(403);
         }
 
-        $formSchema = $submission->app->form_schema['fields'] ?? [];
-        $rules = [];
-        foreach ($formSchema as $field) {
+        $submission->load('app.revisionFormTemplate');
+        $fields = $submission->app->revisionFormTemplate?->schema['fields'] ?? [];
+        $rules  = [];
+
+        foreach ($fields as $field) {
             if (!empty($field['required'])) {
                 $rules["form_{$field['id']}"] = 'required';
             }
@@ -160,7 +177,7 @@ class SubmissionController extends Controller
         $request->validate($rules);
 
         $formData = [];
-        foreach ($formSchema as $field) {
+        foreach ($fields as $field) {
             $key = "form_{$field['id']}";
             $formData[$field['id']] = $request->get($key);
         }

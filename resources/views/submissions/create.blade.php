@@ -23,7 +23,7 @@
         <form method="POST" action="{{ route('submissions.store', $app) }}" enctype="multipart/form-data" class="p-6">
             @csrf
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                @foreach($app->form_schema['fields'] ?? [] as $field)
+                @foreach($app->initialFormTemplate?->schema['fields'] ?? [] as $field)
                 @php
                     $labelKey   = app()->getLocale() === 'th' ? 'label_th' : 'label_en';
                     $label      = $field[$labelKey] ?? $field['label_th'] ?? '';
