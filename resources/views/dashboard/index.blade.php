@@ -86,16 +86,24 @@
             </div>
             <div class="ml-3 flex-1 min-w-0">
                 <p class="text-sm font-medium truncate">{{ $assignment->submission->app->name ?? '-' }} #{{ $assignment->submission_id }}</p>
-                <p class="text-xs text-gray-400">{{ $assignment->due_date ? 'Due: ' . $assignment->due_date->format('d/m/Y') : 'No due date' }}</p>
+                @if($assignment->due_date)
+                    @php $isOverdue = $assignment->due_date->isPast() @endphp
+                    <p class="text-xs {{ $isOverdue ? 'text-red-500 font-medium' : 'text-gray-400' }}">
+                        @if($isOverdue)<i class="ti ti-alert-triangle text-xs mr-0.5"></i>@endif
+                        Due: {{ $assignment->due_date->format('d/m/Y') }}
+                    </p>
+                @else
+                    <p class="text-xs text-gray-400">{{ app()->getLocale() === 'th' ? 'ไม่มีกำหนด' : 'No due date' }}</p>
+                @endif
             </div>
             <div class="ml-3 flex items-center space-x-2">
                 <div class="w-24">
-                    @php $pct = $assignment->submission->progress @endphp
+                    @php $pct = $assignment->submission->dailyLogs->first()?->progress_pct ?? 0 @endphp
                     <div class="flex justify-between text-xs mb-1">
-                        <span>{{ $pct }}%</span>
+                        <span class="{{ $pct >= 100 ? 'text-green-600' : 'text-gray-500' }}">{{ $pct }}%</span>
                     </div>
                     <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-                        <div class="bg-indigo-500 h-1.5 rounded-full" style="width:{{ $pct }}%"></div>
+                        <div class="{{ $pct >= 100 ? 'bg-green-500' : ($pct >= 70 ? 'bg-indigo-500' : ($pct >= 30 ? 'bg-amber-400' : 'bg-red-400')) }} h-1.5 rounded-full" style="width:{{ $pct }}%"></div>
                     </div>
                 </div>
                 <a href="{{ route('submissions.show', $assignment->submission_id) }}" class="text-indigo-500 hover:text-indigo-700">

@@ -7,6 +7,8 @@
 
 @section('content')
 <div class="space-y-4">
+    @include('reports._tabs')
+
     <div class="flex flex-wrap items-center justify-between gap-3">
         <h1 class="text-xl font-bold">
             Daily Report — <span class="text-indigo-600">{{ $date }}</span>
@@ -36,7 +38,7 @@
     </form>
 
     <!-- KPI cards -->
-    <div class="grid grid-cols-3 gap-4">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 text-center">
             <p class="text-3xl font-bold text-blue-600">{{ $newCount }}</p>
             <p class="text-sm text-gray-500 mt-1">{{ app()->getLocale() === 'th' ? 'คำร้องใหม่' : 'New Requests' }}</p>
@@ -48,6 +50,10 @@
         <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 text-center">
             <p class="text-3xl font-bold text-amber-600">{{ $pendingList->count() }}</p>
             <p class="text-sm text-gray-500 mt-1">{{ app()->getLocale() === 'th' ? 'รอดำเนินการ' : 'Pending' }}</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 text-center">
+            <p class="text-3xl font-bold text-red-500">{{ $overdueCount }}</p>
+            <p class="text-sm text-gray-500 mt-1">{{ app()->getLocale() === 'th' ? 'เกินกำหนด' : 'Overdue' }}</p>
         </div>
     </div>
 

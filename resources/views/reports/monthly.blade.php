@@ -8,6 +8,8 @@
 @section('content')
 @php $monthName = date('F', mktime(0,0,0,$month)); @endphp
 <div class="space-y-4">
+    @include('reports._tabs')
+
     <div class="flex flex-wrap items-center justify-between gap-3">
         <h1 class="text-xl font-bold">
             Monthly Report — <span class="text-indigo-600">{{ $monthName }} {{ $year }}</span>

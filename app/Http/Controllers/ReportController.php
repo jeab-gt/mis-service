@@ -41,8 +41,11 @@ class ReportController extends Controller
         $newCount       = $submissions->count();
         $completedCount = $submissions->whereIn('status', ['approved', 'closed'])->count();
         $pendingList    = $submissions->whereNotIn('status', ['approved', 'rejected', 'closed'])->values();
+        $overdueCount   = $pendingList->filter(fn($s) =>
+            $s->latestAssignment?->due_date && $s->latestAssignment->due_date->isPast()
+        )->count();
 
-        return view('reports.daily', compact('submissions', 'date', 'newCount', 'completedCount', 'pendingList'));
+        return view('reports.daily', compact('submissions', 'date', 'newCount', 'completedCount', 'pendingList', 'overdueCount'));
     }
 
     public function weekly(Request $request)
@@ -69,11 +72,47 @@ class ReportController extends Controller
             $cur->addDay();
         }
 
-        // Avg resolution time
+        // Avg resolution time (overall)
         $avgHrs = $submissions->filter(fn($s) => $s->submitted_at && $s->closed_at)
             ->average(fn($s) => $s->submitted_at->diffInHours($s->closed_at));
 
-        return view('reports.weekly', compact('submissions', 'start', 'end', 'days', 'avgHrs'));
+        // Avg resolution time per day (for line chart) — based on when closed
+        $resolvedQ = AppSubmission::whereNotNull('submitted_at')->whereNotNull('closed_at');
+        $this->factoryScope($request, $resolvedQ);
+        $resolvedThisWeek = $resolvedQ->whereBetween('closed_at', [$start, $end->copy()->endOfDay()])->get();
+
+        $avgPerDay = collect();
+        $curDay = $start->copy();
+        while ($curDay->lte($end)) {
+            $d = $curDay->toDateString();
+            $dayItems = $resolvedThisWeek->filter(fn($s) => $s->closed_at->toDateString() === $d);
+            $avgPerDay->push([
+                'date'    => $curDay->format('D d/m'),
+                'avg_hrs' => $dayItems->isNotEmpty()
+                    ? round($dayItems->avg(fn($s) => $s->submitted_at->diffInHours($s->closed_at)), 1)
+                    : null,
+            ]);
+            $curDay->addDay();
+        }
+
+        // Assignee summary table
+        $assigneeStats = RequestAssignment::with(['assignee', 'submission.dailyLogs'])
+            ->whereHas('submission', function ($q) use ($request, $start, $end) {
+                $this->factoryScope($request, $q);
+                $q->whereBetween('created_at', [$start, $end->copy()->endOfDay()]);
+            })
+            ->get()
+            ->groupBy('assignee_id')
+            ->map(fn($group) => [
+                'assignee'     => $group->first()->assignee,
+                'assigned'     => $group->count(),
+                'completed'    => $group->filter(fn($a) => in_array($a->submission->status, ['approved', 'closed']))->count(),
+                'avg_progress' => (int) round($group->avg(fn($a) => $a->submission->dailyLogs->first()?->progress_pct ?? 0)),
+            ])
+            ->sortByDesc('completed')
+            ->values();
+
+        return view('reports.weekly', compact('submissions', 'start', 'end', 'days', 'avgHrs', 'avgPerDay', 'assigneeStats'));
     }
 
     public function monthly(Request $request)
