@@ -120,183 +120,200 @@
         </a>
     </div>
     @else
-    <div class="grid grid-cols-12 gap-4 auto-rows-auto">
-        @foreach($dashboard->widgets as $widget)
-        @php
-            $icons = [
-                'line_chart' => 'ti-chart-line',
-                'bar_chart'  => 'ti-chart-bar',
-                'gauge'      => 'ti-gauge',
-                'heatmap'    => 'ti-grid-4x4',
-                'kpi_card'   => 'ti-brand-speedtest',
-                'data_table' => 'ti-table',
+    @php
+        // Convert old grid units → pixels (same logic as edit.blade.php JS)
+        $COL_W = 1160 / 12;  // ~96.7px
+        $ROW_H = 70;
+        $icons  = [
+            'line_chart' => 'ti-chart-line',
+            'bar_chart'  => 'ti-chart-bar',
+            'gauge'      => 'ti-gauge',
+            'heatmap'    => 'ti-grid-4x4',
+            'kpi_card'   => 'ti-brand-speedtest',
+            'data_table' => 'ti-table',
+        ];
+        $pixelWidgets = $dashboard->widgets->map(function ($w) use ($COL_W, $ROW_H) {
+            $isGrid = ($w->width <= 12) && ($w->pos_x <= 11);
+            if ($isGrid) {
+                return [
+                    'model' => $w,
+                    'x'  => (int) round($w->pos_x * $COL_W),
+                    'y'  => (int) round($w->pos_y * $ROW_H),
+                    'pw' => (int) round($w->width  * $COL_W),
+                    'ph' => (int) max(150, round($w->height * $ROW_H)),
+                ];
+            }
+            return [
+                'model' => $w,
+                'x'  => (int) $w->pos_x,
+                'y'  => (int) $w->pos_y,
+                'pw' => (int) $w->width,
+                'ph' => (int) $w->height,
             ];
-        @endphp
-        <div class="col-span-12 sm:col-span-{{ min($widget->width, 12) }}"
-             x-data="widgetComponent({{ $widget->id }}, '{{ $widget->widget_type }}')">
+        });
+        $canvasH = $pixelWidgets->max(fn($p) => $p['y'] + $p['ph'] + 20);
+        $canvasH = max($canvasH, 400);
+        $canvasW = $pixelWidgets->max(fn($p) => $p['x'] + $p['pw'] + 20);
+        $canvasW = max($canvasW, 800);
+    @endphp
 
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 h-full"
-                 style="min-height: {{ $widget->height * 60 }}px;">
+    {{-- Single absolute canvas — dynamic size matches edit mode coordinate space --}}
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-3"
+         style="overflow:auto;">
+        <div style="position:relative; width:{{ $canvasW }}px; height:{{ $canvasH }}px;">
+            @foreach($pixelWidgets as $pw)
+            @php $widget = $pw['model']; @endphp
+            <div x-data="widgetComponent({{ $widget->id }}, '{{ $widget->widget_type }}')"
+                 class="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden"
+                 style="position:absolute; left:{{ $pw['x'] }}px; top:{{ $pw['y'] }}px; width:{{ $pw['pw'] }}px; height:{{ $pw['ph'] }}px;">
 
-                <h3 class="font-semibold text-sm mb-3 flex items-center space-x-2">
-                    <i class="ti {{ $icons[$widget->widget_type] ?? 'ti-chart-bar' }} text-indigo-500"></i>
-                    <span>{{ $widget->title }}</span>
-                    <span x-show="loading" class="ml-auto">
-                        <i class="ti ti-loader-2 animate-spin text-gray-400 text-base"></i>
-                    </span>
-                </h3>
+                <div class="flex flex-col h-full p-3">
+                    <h3 class="font-semibold text-sm mb-2 flex items-center gap-2 flex-shrink-0">
+                        <i class="ti {{ $icons[$widget->widget_type] ?? 'ti-chart-bar' }} text-indigo-500"></i>
+                        <span class="truncate flex-1">{{ $widget->title }}</span>
+                        <span x-show="loading" class="flex-shrink-0">
+                            <i class="ti ti-loader-2 animate-spin text-gray-400 text-base"></i>
+                        </span>
+                    </h3>
 
-                {{-- Error --}}
-                <div x-show="error && !loading" class="text-red-500 text-sm text-center py-8" x-text="'เกิดข้อผิดพลาด: ' + error"></div>
+                    <div class="flex-1 min-h-0 relative">
+                        {{-- Error --}}
+                        <div x-show="error && !loading" class="text-red-500 text-xs text-center py-4" x-text="'เกิดข้อผิดพลาด: ' + error"></div>
+                        {{-- Empty state --}}
+                        <div x-show="!loading && !error && isEmpty" class="text-center py-4 text-gray-400">
+                            <i class="ti ti-database-off text-2xl block mb-1"></i>
+                            <p class="text-xs">ไม่มีข้อมูล</p>
+                        </div>
 
-                {{-- Empty state --}}
-                <div x-show="!loading && !error && isEmpty" class="text-center py-8 text-gray-400">
-                    <i class="ti ti-database-off text-3xl block mb-2"></i>
-                    <p class="text-sm">ไม่มีข้อมูลในช่วงนี้</p>
-                </div>
+                        {{-- Line / Bar Chart --}}
+                        @if(in_array($widget->widget_type, ['line_chart', 'bar_chart']))
+                        <div class="absolute inset-0" :style="(data && !loading && !isEmpty) ? '' : 'opacity:0; pointer-events:none;'">
+                            <canvas id="chart-{{ $widget->id }}" style="width:100%; height:100%;"></canvas>
+                        </div>
+                        @endif
 
-                {{-- Line / Bar Chart --}}
-                @if(in_array($widget->widget_type, ['line_chart', 'bar_chart']))
-                <div style="position:relative; height:{{ max($widget->height * 50, 200) }}px;"
-                     :style="(data && !loading && !isEmpty) ? '' : 'opacity:0; pointer-events:none;'">
-                    <canvas id="chart-{{ $widget->id }}" style="max-height:100%;"></canvas>
-                </div>
-                @endif
+                        {{-- KPI Card --}}
+                        @if($widget->widget_type === 'kpi_card')
+                        <div x-show="data && !loading && !isEmpty" class="text-center py-3">
+                            <div class="text-3xl font-bold text-indigo-600 dark:text-indigo-400"
+                                 x-text="data?.latest_value != null ? parseFloat(data.latest_value).toFixed(2) : '—'"></div>
+                            <div class="flex items-center justify-center gap-3 mt-2 text-xs text-gray-500">
+                                <span>Avg: <b x-text="data?.avg != null ? parseFloat(data.avg).toFixed(2) : '—'"></b></span>
+                                <span>Min: <b x-text="data?.min != null ? parseFloat(data.min).toFixed(2) : '—'"></b></span>
+                                <span>Max: <b x-text="data?.max != null ? parseFloat(data.max).toFixed(2) : '—'"></b></span>
+                            </div>
+                        </div>
+                        @endif
 
-                {{-- KPI Card --}}
-                @if($widget->widget_type === 'kpi_card')
-                <div x-show="data && !loading && !isEmpty" class="text-center py-4">
-                    <div class="text-4xl font-bold text-indigo-600 dark:text-indigo-400"
-                         x-text="data?.latest_value != null ? parseFloat(data.latest_value).toFixed(2) : '—'"></div>
-                    <div class="flex items-center justify-center space-x-4 mt-3 text-sm text-gray-500">
-                        <span>Avg: <b x-text="data?.avg != null ? parseFloat(data.avg).toFixed(2) : '—'"></b></span>
-                        <span>Min: <b x-text="data?.min != null ? parseFloat(data.min).toFixed(2) : '—'"></b></span>
-                        <span>Max: <b x-text="data?.max != null ? parseFloat(data.max).toFixed(2) : '—'"></b></span>
-                    </div>
-                    <div class="mt-2">
-                        <template x-if="data && data.total_alerts > 0">
-                            <span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">
-                                <i class="ti ti-alert-triangle mr-1"></i>
-                                <span x-text="data.total_alerts + ' alerts'"></span>
-                            </span>
-                        </template>
-                    </div>
-                </div>
-                @endif
+                        {{-- Gauge --}}
+                        @if($widget->widget_type === 'gauge')
+                        <div x-show="data && !loading && !isEmpty" class="flex flex-col items-center py-2">
+                            <svg viewBox="0 0 200 120" class="w-40">
+                                <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#e5e7eb" stroke-width="16" stroke-linecap="round"/>
+                                <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#6366f1" stroke-width="16" stroke-linecap="round" stroke-dasharray="0 251"/>
+                                <text x="100" y="105" text-anchor="middle" font-size="24" fill="currentColor"
+                                      x-text="data ? parseFloat(data.value).toFixed(1) : '—'"></text>
+                            </svg>
+                        </div>
+                        @endif
 
-                {{-- Gauge --}}
-                @if($widget->widget_type === 'gauge')
-                <div x-show="data && !loading && !isEmpty" class="flex flex-col items-center py-4">
-                    <svg viewBox="0 0 200 120" class="w-48">
-                        <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#e5e7eb" stroke-width="16" stroke-linecap="round"/>
-                        <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#6366f1" stroke-width="16" stroke-linecap="round"
-                              stroke-dasharray="0 251"/>
-                        <text x="100" y="105" text-anchor="middle" font-size="24" fill="currentColor"
-                              x-text="data ? parseFloat(data.value).toFixed(1) : '—'"></text>
-                    </svg>
-                    <div class="flex items-center justify-between w-48 text-xs text-gray-400 mt-1">
-                        <span x-text="data ? data.min : ''"></span>
-                        <span x-text="data ? data.max : ''"></span>
-                    </div>
-                </div>
-                @endif
-
-                {{-- Heatmap --}}
-                @if($widget->widget_type === 'heatmap')
-                <div x-show="data && !loading && !isEmpty" class="overflow-auto">
-                    <table class="w-full text-xs">
-                        <thead>
-                            <tr>
-                                <th class="py-1 pr-2 text-left text-gray-500 font-normal">Parameter</th>
-                                <template x-for="date in (data ? data.dates : [])" :key="date">
-                                    <th class="py-1 px-1 text-center text-gray-500 font-normal whitespace-nowrap" x-text="date.slice(5)"></th>
-                                </template>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <template x-for="(paramName, paramId) in (data ? data.parameters : {})" :key="paramId">
-                                <tr>
-                                    <td class="py-1 pr-2 font-medium whitespace-nowrap" x-text="paramName"></td>
-                                    <template x-for="date in (data ? data.dates : [])" :key="date">
-                                        <td class="py-1 px-1 text-center">
-                                            <div class="w-6 h-6 rounded mx-auto"
-                                                 :class="{
-                                                    'bg-red-400':   data.cells[date]?.[paramId]?.level === 'critical',
-                                                    'bg-yellow-300':data.cells[date]?.[paramId]?.level === 'warning',
-                                                    'bg-green-300': data.cells[date]?.[paramId]?.level === 'ok',
-                                                    'bg-gray-100 dark:bg-gray-600': !data.cells[date]?.[paramId],
-                                                 }"></div>
-                                        </td>
-                                    </template>
-                                </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </div>
-                @endif
-
-                {{-- Data Table --}}
-                @if($widget->widget_type === 'data_table')
-                <div x-show="data && !loading && !isEmpty" class="overflow-auto">
-                    <table class="w-full text-xs border-collapse">
-                        <thead class="bg-gray-50 dark:bg-gray-700 sticky top-0">
-                            <tr>
-                                <th class="px-2 py-1.5 text-left font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap">วันที่</th>
-                                <th class="px-2 py-1.5 text-left font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap">Slot</th>
-                                <template x-for="col in (data ? data.columns : [])" :key="col.id">
-                                    <th class="px-2 py-1.5 text-right font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                                        <span x-text="col.name"></span>
-                                        <template x-if="col.unit">
-                                            <span class="text-gray-400 font-normal ml-0.5" x-text="'(' + col.unit + ')'"></span>
+                        {{-- Heatmap --}}
+                        @if($widget->widget_type === 'heatmap')
+                        <div x-show="data && !loading && !isEmpty" class="overflow-auto h-full">
+                            <table class="w-full text-xs">
+                                <thead>
+                                    <tr>
+                                        <th class="py-1 pr-2 text-left text-gray-500 font-normal">Parameter</th>
+                                        <template x-for="date in (data ? data.dates : [])" :key="date">
+                                            <th class="py-1 px-1 text-center text-gray-500 font-normal whitespace-nowrap" x-text="date.slice(5)"></th>
                                         </template>
-                                    </th>
-                                </template>
-                                <th class="px-2 py-1.5 text-center font-medium text-gray-600 dark:text-gray-300">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                            <template x-for="row in (data ? data.records : [])" :key="row.id">
-                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                    <td class="px-2 py-1.5 font-medium whitespace-nowrap" x-text="row.record_date"></td>
-                                    <td class="px-2 py-1.5 text-gray-500 whitespace-nowrap" x-text="row.time_slot || '-'"></td>
-                                    <template x-for="col in (data ? data.columns : [])" :key="col.id">
-                                        <td class="px-2 py-1.5 text-right">
-                                            <template x-if="row.values && row.values[col.id] != null">
-                                                <span class="inline-block px-1.5 py-0.5 rounded font-mono"
-                                                      :class="{
-                                                          'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400':
-                                                              row.values[col.id].is_alert && row.values[col.id].alert_level === 'critical',
-                                                          'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400':
-                                                              row.values[col.id].is_alert && row.values[col.id].alert_level === 'warning',
-                                                          'text-gray-700 dark:text-gray-300': !row.values[col.id].is_alert,
-                                                      }"
-                                                      x-text="row.values[col.id].value ?? '—'"></span>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="(paramName, paramId) in (data ? data.parameters : {})" :key="paramId">
+                                        <tr>
+                                            <td class="py-1 pr-2 font-medium whitespace-nowrap" x-text="paramName"></td>
+                                            <template x-for="date in (data ? data.dates : [])" :key="date">
+                                                <td class="py-1 px-1 text-center">
+                                                    <div class="w-5 h-5 rounded mx-auto"
+                                                         :class="{
+                                                            'bg-red-400':    data.cells[date]?.[paramId]?.level === 'critical',
+                                                            'bg-yellow-300': data.cells[date]?.[paramId]?.level === 'warning',
+                                                            'bg-green-300':  data.cells[date]?.[paramId]?.level === 'ok',
+                                                            'bg-gray-100 dark:bg-gray-600': !data.cells[date]?.[paramId],
+                                                         }"></div>
+                                                </td>
                                             </template>
-                                            <template x-if="!row.values || row.values[col.id] == null">
-                                                <span class="text-gray-300">—</span>
-                                            </template>
-                                        </td>
+                                        </tr>
                                     </template>
-                                    <td class="px-2 py-1.5 text-center whitespace-nowrap">
-                                        <span class="px-1.5 py-0.5 rounded-full"
-                                              :class="{
-                                                'bg-blue-100 text-blue-600':   row.status === 'submitted',
-                                                'bg-green-100 text-green-600': row.status === 'approved',
-                                                'bg-red-100 text-red-600':     row.status === 'rejected',
-                                                'bg-gray-100 text-gray-500':   row.status === 'draft',
-                                              }"
-                                              x-text="row.status"></span>
-                                    </td>
-                                </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </div>
-                @endif
+                                </tbody>
+                            </table>
+                        </div>
+                        @endif
 
+                        {{-- Data Table --}}
+                        @if($widget->widget_type === 'data_table')
+                        <div x-show="data && !loading && !isEmpty" class="overflow-auto h-full">
+                            <table class="w-full text-xs border-collapse">
+                                <thead class="bg-gray-50 dark:bg-gray-700 sticky top-0">
+                                    <tr>
+                                        <th class="px-2 py-1.5 text-left font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap">วันที่</th>
+                                        <th class="px-2 py-1.5 text-left font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap">Slot</th>
+                                        <template x-for="col in (data ? data.columns : [])" :key="col.id">
+                                            <th class="px-2 py-1.5 text-right font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                                                <span x-text="col.name"></span>
+                                                <template x-if="col.unit">
+                                                    <span class="text-gray-400 font-normal ml-0.5" x-text="'(' + col.unit + ')'"></span>
+                                                </template>
+                                            </th>
+                                        </template>
+                                        <th class="px-2 py-1.5 text-center font-medium text-gray-600 dark:text-gray-300">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                                    <template x-for="row in (data ? data.records : [])" :key="row.id">
+                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                            <td class="px-2 py-1.5 font-medium whitespace-nowrap" x-text="row.record_date"></td>
+                                            <td class="px-2 py-1.5 text-gray-500 whitespace-nowrap" x-text="row.time_slot || '-'"></td>
+                                            <template x-for="col in (data ? data.columns : [])" :key="col.id">
+                                                <td class="px-2 py-1.5 text-right">
+                                                    <template x-if="row.values && row.values[col.id] != null">
+                                                        <span class="inline-block px-1.5 py-0.5 rounded font-mono"
+                                                              :class="{
+                                                                  'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400':
+                                                                      row.values[col.id].is_alert && row.values[col.id].alert_level === 'critical',
+                                                                  'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400':
+                                                                      row.values[col.id].is_alert && row.values[col.id].alert_level === 'warning',
+                                                                  'text-gray-700 dark:text-gray-300': !row.values[col.id].is_alert,
+                                                              }"
+                                                              x-text="row.values[col.id].value ?? '—'"></span>
+                                                    </template>
+                                                    <template x-if="!row.values || row.values[col.id] == null">
+                                                        <span class="text-gray-300">—</span>
+                                                    </template>
+                                                </td>
+                                            </template>
+                                            <td class="px-2 py-1.5 text-center whitespace-nowrap">
+                                                <span class="px-1.5 py-0.5 rounded-full text-xs"
+                                                      :class="{
+                                                        'bg-blue-100 text-blue-600':   row.status === 'submitted',
+                                                        'bg-green-100 text-green-600': row.status === 'approved',
+                                                        'bg-red-100 text-red-600':     row.status === 'rejected',
+                                                        'bg-gray-100 text-gray-500':   row.status === 'draft',
+                                                      }"
+                                                      x-text="row.status"></span>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                        @endif
+                    </div>
+                </div>
             </div>
+            @endforeach
         </div>
-        @endforeach
     </div>
     @endif
 </div>

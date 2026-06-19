@@ -81,7 +81,7 @@ class DashboardBuilderController extends Controller
             'widgets.*.config'     => 'nullable|array',
             'widgets.*.pos_x'      => 'integer|min:0',
             'widgets.*.pos_y'      => 'integer|min:0',
-            'widgets.*.width'      => 'integer|min:1|max:12',
+            'widgets.*.width'      => 'integer|min:1',
             'widgets.*.height'     => 'integer|min:1',
         ]);
 
