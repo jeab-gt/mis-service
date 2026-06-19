@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\ChecksheetDailySummary;
 use App\Models\ChecksheetRecord;
+use App\Models\ChecksheetRecordValue;
 use App\Models\DashboardWidget;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 
 class DashboardWidgetController extends Controller
 {
@@ -19,7 +21,13 @@ class DashboardWidgetController extends Controller
         $dateRange    = $config['date_range'] ?? 'last_30_days';
         $factoryId    = $config['factory_id'] ?? null;
 
-        [$dateFrom, $dateTo] = $this->resolveDateRange($dateRange);
+        // Query params override widget config's date range (dashboard-level filter)
+        if (request()->filled('date_from') && request()->filled('date_to')) {
+            $dateFrom = request('date_from');
+            $dateTo   = request('date_to');
+        } else {
+            [$dateFrom, $dateTo] = $this->resolveDateRange($dateRange);
+        }
 
         switch ($widget->widget_type) {
             case 'line_chart':
@@ -36,7 +44,7 @@ class DashboardWidgetController extends Controller
                 return $this->heatmapData($widget, $templateId, $parameterIds, $factoryId, $dateFrom, $dateTo);
 
             case 'data_table':
-                return $this->tableData($widget, $templateId, $factoryId, $dateFrom, $dateTo);
+                return $this->tableData($widget, $templateId, $parameterIds, $factoryId, $dateFrom, $dateTo);
 
             default:
                 return response()->json(['error' => 'Unknown widget type']);
@@ -55,26 +63,47 @@ class DashboardWidgetController extends Controller
         };
     }
 
+    private function resolveSpec($templateId, array $parameterIds): array
+    {
+        // Spec lines only make sense for a single parameter
+        $paramId = count($parameterIds) === 1 ? $parameterIds[0] : null;
+
+        if (!$paramId && $templateId) {
+            $params = \App\Models\ChecksheetParameter::where('template_id', $templateId)
+                ->where('is_active', true)->get();
+            if ($params->count() === 1) {
+                $paramId = $params->first()->id;
+            }
+        }
+
+        if (!$paramId) return ['min' => null, 'max' => null, 'target' => null];
+
+        $param = \App\Models\ChecksheetParameter::find($paramId);
+        return [
+            'min'    => $param?->spec_min    !== null ? (float) $param->spec_min    : null,
+            'max'    => $param?->spec_max    !== null ? (float) $param->spec_max    : null,
+            'target' => $param?->spec_target !== null ? (float) $param->spec_target : null,
+        ];
+    }
+
     private function chartData(DashboardWidget $widget, $templateId, $parameterIds, $factoryId, $dateFrom, $dateTo): JsonResponse
     {
         $query = ChecksheetDailySummary::whereBetween('summary_date', [$dateFrom, $dateTo]);
 
-        if ($templateId) {
-            $query->where('template_id', $templateId);
-        }
-        if (!empty($parameterIds)) {
-            $query->whereIn('parameter_id', $parameterIds);
-        }
-        if ($factoryId) {
-            $query->where('factory_id', $factoryId);
-        }
+        if ($templateId) $query->where('template_id', $templateId);
+        if (!empty($parameterIds)) $query->whereIn('parameter_id', $parameterIds);
+        if ($factoryId) $query->where('factory_id', $factoryId);
 
         $summaries = $query->with('parameter')->orderBy('summary_date')->get();
 
-        $labels = [];
-        $datasets = [];
+        // Fallback to raw record values when daily summary hasn't been generated yet
+        if ($summaries->isEmpty()) {
+            return $this->chartDataFromRaw($widget, $templateId, $parameterIds, $factoryId, $dateFrom, $dateTo);
+        }
 
-        $grouped = $summaries->groupBy('parameter_id');
+        $labels   = [];
+        $datasets = [];
+        $grouped  = $summaries->groupBy('parameter_id');
 
         foreach ($grouped as $paramId => $rows) {
             $paramName = $rows->first()->parameter?->name ?? "Param {$paramId}";
@@ -83,21 +112,75 @@ class DashboardWidgetController extends Controller
                 'y' => $r->avg_value,
             ])->values();
 
-            $dates = $rows->pluck('summary_date')->map(fn($d) => $d->toDateString())->unique()->values()->toArray();
+            $dates  = $rows->pluck('summary_date')->map(fn($d) => $d->toDateString())->unique()->values()->toArray();
             $labels = array_unique(array_merge($labels, $dates));
 
-            $datasets[] = [
-                'label' => $paramName,
-                'data'  => $data,
-            ];
+            $datasets[] = ['label' => $paramName, 'data' => $data];
         }
 
         sort($labels);
 
+        $config = $widget->config ?? [];
+
         return response()->json([
-            'type'     => $widget->widget_type,
-            'labels'   => $labels,
-            'datasets' => $datasets,
+            'type'            => $widget->widget_type,
+            'labels'          => $labels,
+            'datasets'        => $datasets,
+            'spec'            => $this->resolveSpec($templateId, $parameterIds),
+            'show_spec_lines' => (bool) ($config['show_spec_lines'] ?? false),
+        ]);
+    }
+
+    private function chartDataFromRaw(DashboardWidget $widget, $templateId, $parameterIds, $factoryId, $dateFrom, $dateTo): JsonResponse
+    {
+        $query = ChecksheetRecordValue::query()
+            ->join('checksheet_records as cr', 'checksheet_record_values.record_id', '=', 'cr.id')
+            ->join('checksheet_parameters as cp', 'checksheet_record_values.parameter_id', '=', 'cp.id')
+            ->select(
+                DB::raw('DATE(cr.record_date) as summary_date'),
+                'checksheet_record_values.parameter_id',
+                'cp.name as parameter_name',
+                DB::raw("AVG(CASE WHEN checksheet_record_values.value REGEXP '^-?[0-9]+(\\.[0-9]+)?$'
+                              THEN CAST(checksheet_record_values.value AS DECIMAL(12,4))
+                              ELSE NULL END) as avg_value")
+            )
+            ->whereIn('cr.status', ['submitted', 'approved'])
+            ->whereBetween('cr.record_date', [$dateFrom, $dateTo])
+            ->groupBy('cr.record_date', 'checksheet_record_values.parameter_id', 'cp.name')
+            ->orderBy('cr.record_date');
+
+        if ($templateId) $query->where('cr.template_id', $templateId);
+        if (!empty($parameterIds)) $query->whereIn('checksheet_record_values.parameter_id', $parameterIds);
+        if ($factoryId) $query->where('cr.factory_id', $factoryId);
+
+        $rows    = $query->get();
+        $labels  = [];
+        $datasets = [];
+        $grouped = $rows->groupBy('parameter_id');
+
+        foreach ($grouped as $paramId => $paramRows) {
+            $paramName = $paramRows->first()->parameter_name ?? "Param {$paramId}";
+            $data = $paramRows->filter(fn($r) => $r->avg_value !== null)->map(fn($r) => [
+                'x' => $r->summary_date,
+                'y' => round((float) $r->avg_value, 2),
+            ])->values();
+
+            $dates  = $paramRows->pluck('summary_date')->unique()->values()->toArray();
+            $labels = array_unique(array_merge($labels, $dates));
+
+            $datasets[] = ['label' => $paramName, 'data' => $data];
+        }
+
+        sort($labels);
+
+        $config = $widget->config ?? [];
+
+        return response()->json([
+            'type'            => $widget->widget_type,
+            'labels'          => $labels,
+            'datasets'        => $datasets,
+            'spec'            => $this->resolveSpec($templateId, $parameterIds),
+            'show_spec_lines' => (bool) ($config['show_spec_lines'] ?? false),
         ]);
     }
 
@@ -188,29 +271,55 @@ class DashboardWidgetController extends Controller
         ]);
     }
 
-    private function tableData(DashboardWidget $widget, $templateId, $factoryId, $dateFrom, $dateTo): JsonResponse
+    private function tableData(DashboardWidget $widget, $templateId, array $parameterIds, $factoryId, $dateFrom, $dateTo): JsonResponse
     {
+        // Ordered parameter columns (filter by selected IDs if specified)
+        $paramQuery = \App\Models\ChecksheetParameter::where('is_active', true)->orderBy('sort_order');
+        if ($templateId) $paramQuery->where('template_id', $templateId);
+        if (!empty($parameterIds)) $paramQuery->whereIn('id', $parameterIds);
+        $parameters = $paramQuery->get();
+
+        $columns = $parameters->map(fn($p) => [
+            'id'   => $p->id,
+            'name' => $p->name,
+            'unit' => $p->unit,
+            'type' => $p->type,
+        ])->values();
+
         $query = ChecksheetRecord::whereBetween('record_date', [$dateFrom, $dateTo])
-            ->with(['factory', 'timeSlot', 'submitter'])
-            ->withCount(['values as alert_count' => fn($q) => $q->where('is_alert', true)])
+            ->with(['factory', 'timeSlot', 'values'])
             ->orderByDesc('record_date')
+            ->orderByDesc('id')
             ->limit(20);
 
         if ($templateId) $query->where('template_id', $templateId);
         if ($factoryId) $query->where('factory_id', $factoryId);
 
-        $records = $query->get()->map(fn($r) => [
-            'id'          => $r->id,
-            'record_date' => $r->record_date->toDateString(),
-            'time_slot'   => $r->timeSlot?->label,
-            'factory'     => $r->factory?->name_th,
-            'status'      => $r->status,
-            'alert_count' => $r->alert_count,
-            'submitted_by' => $r->submitter?->name,
-        ]);
+        $paramIdSet = !empty($parameterIds) ? array_flip($parameterIds) : null;
+
+        $records = $query->get()->map(function ($r) use ($paramIdSet) {
+            $valuesMap = [];
+            foreach ($r->values as $v) {
+                if ($paramIdSet !== null && !isset($paramIdSet[$v->parameter_id])) continue;
+                $valuesMap[$v->parameter_id] = [
+                    'value'       => $v->value,
+                    'is_alert'    => $v->is_alert,
+                    'alert_level' => $v->alert_level,
+                ];
+            }
+            return [
+                'id'          => $r->id,
+                'record_date' => $r->record_date->toDateString(),
+                'time_slot'   => $r->timeSlot?->label,
+                'factory'     => $r->factory?->name_th,
+                'status'      => $r->status,
+                'values'      => $valuesMap,
+            ];
+        });
 
         return response()->json([
             'type'    => 'data_table',
+            'columns' => $columns,
             'records' => $records,
         ]);
     }

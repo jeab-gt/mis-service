@@ -163,6 +163,20 @@
                             </select>
                         </div>
 
+                        {{-- Spec lines toggle — only relevant for line/bar charts --}}
+                        <template x-if="['line_chart','bar_chart'].includes(widgets[selectedIndex].widget_type)">
+                            <div class="flex items-center justify-between py-1">
+                                <span class="text-xs text-gray-600 dark:text-gray-400">แสดงเส้น Spec (Min/Max/Target)</span>
+                                <button type="button"
+                                        @click="widgets[selectedIndex].config.show_spec_lines = !widgets[selectedIndex].config.show_spec_lines"
+                                        class="relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                                        :class="widgets[selectedIndex].config.show_spec_lines ? 'bg-indigo-600' : 'bg-gray-200 dark:bg-gray-600'">
+                                    <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                                          :class="widgets[selectedIndex].config.show_spec_lines ? 'translate-x-4' : 'translate-x-0'"></span>
+                                </button>
+                            </div>
+                        </template>
+
                         <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <label class="form-label text-xs">Width (1-12)</label>
@@ -203,9 +217,10 @@ function dashboardBuilder(initialWidgets, templates) {
         widgets: (initialWidgets || []).map(w => ({
             ...w,
             config: {
-                template_id:   w.config?.template_id  != null ? String(w.config.template_id) : '',
-                parameter_ids: w.config?.parameter_ids ?? [],
-                date_range:    w.config?.date_range    ?? 'last_30_days',
+                template_id:     w.config?.template_id  != null ? String(w.config.template_id) : '',
+                parameter_ids:   w.config?.parameter_ids   ?? [],
+                date_range:      w.config?.date_range      ?? 'last_30_days',
+                show_spec_lines: w.config?.show_spec_lines ?? false,
             },
         })),
         templates: templates || [],
@@ -226,7 +241,7 @@ function dashboardBuilder(initialWidgets, templates) {
                 widget_type: type,
                 title: defaultTitles[type] || type,
                 title_en: '',
-                config: { template_id: '', parameter_ids: [], date_range: 'last_30_days' },
+                config: { template_id: '', parameter_ids: [], date_range: 'last_30_days', show_spec_lines: false },
                 pos_x: 0,
                 pos_y: this.widgets.length,
                 width: 6,
