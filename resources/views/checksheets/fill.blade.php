@@ -40,12 +40,9 @@
                 @if($timeSlots->count() > 0)
                 <div>
                     <label class="form-label">Time Slot</label>
-                    <select name="time_slot_id" class="form-select">
-                        <option value="">— เลือก Time Slot —</option>
-                        @foreach($timeSlots as $slot)
-                        <option value="{{ $slot->id }}">{{ $slot->label }}</option>
-                        @endforeach
-                    </select>
+                    <div class="form-input bg-gray-50 dark:bg-gray-700/50 text-gray-500 text-sm">
+                        กรอกข้อมูลตามช่วงเวลาในตารางด้านล่าง
+                    </div>
                 </div>
                 @else
                 <div></div>
