@@ -81,7 +81,7 @@
                 {{-- Inner canvas: fixed 1160px logical space, scaled to fit --}}
                 <div id="widget-canvas"
                      class="relative rounded-xl"
-                     :style="`width:1160px; height:${canvasH}px;
+                     :style="`width:${referenceW}px; height:${canvasH}px;
                               transform:scale(${scale}); transform-origin:top left;
                               background-color:#f8fafc;
                               background-image:radial-gradient(circle, #cbd5e1 1px, transparent 1px);
@@ -317,10 +317,19 @@ function dashboardBuilder(initialWidgets, templates) {
             return Math.max(680, ...this.widgets.map(w => w.y + w.ph + 40));
         },
 
+        get referenceW() {
+            if (!this.widgets.length) return 800;
+            return Math.max(800, ...this.widgets.map(w => w.x + w.pw + 20));
+        },
+
         computeScale() {
             const outer = document.getElementById('canvas-outer');
             if (!outer) return;
-            this.scale = Math.min(1, outer.clientWidth / 1160);
+            const avail = outer.clientWidth;
+            const refW  = this.referenceW;
+            const s     = refW > avail ? avail / refW : 1;
+            console.log('[DashCanvas] availableWidth:', avail, '| referenceWidth:', refW, '| scale:', s.toFixed(3));
+            this.scale = s;
         },
 
         // ── Widget CRUD ──────────────────────────────────────────────────────
@@ -404,7 +413,7 @@ function dashboardBuilder(initialWidgets, templates) {
                             const w   = self.widgets[idx];
                             if (!w) return;
                             // Snap to 20px grid, clamp within canvas
-                            w.x = Math.max(0, Math.min(1160 - w.pw, Math.round(w.x / 20) * 20));
+                            w.x = Math.max(0, Math.min(self.referenceW - w.pw, Math.round(w.x / 20) * 20));
                             w.y = Math.max(0, Math.round(w.y / 20) * 20);
                             event.target.style.left = w.x + 'px';
                             event.target.style.top  = w.y + 'px';
@@ -420,7 +429,7 @@ function dashboardBuilder(initialWidgets, templates) {
                             const w   = self.widgets[idx];
                             if (!w) return;
                             // event.rect.width is screen pixels; divide by scale for logical size
-                            w.pw = Math.max(200, Math.min(1160 - w.x, event.rect.width  / self.scale));
+                            w.pw = Math.max(200, Math.min(self.referenceW - w.x, event.rect.width  / self.scale));
                             w.ph = Math.max(150, event.rect.height / self.scale);
                             event.target.style.width  = w.pw + 'px';
                             event.target.style.height = w.ph + 'px';
