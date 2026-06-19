@@ -157,10 +157,10 @@
         $canvasW = max($canvasW, 800);
     @endphp
 
-    {{-- Single absolute canvas — dynamic size matches edit mode coordinate space --}}
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-3"
-         style="overflow:auto;">
-        <div style="position:relative; width:{{ $canvasW }}px; height:{{ $canvasH }}px;">
+    {{-- Canvas — outer clips to scaled visual height, inner is fixed logical size --}}
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-3">
+        <div id="view-canvas-outer" style="overflow:hidden; width:100%; height:{{ $canvasH }}px;">
+        <div id="view-canvas-inner" style="position:relative; width:{{ $canvasW }}px; height:{{ $canvasH }}px; transform-origin:top left;">
             @foreach($pixelWidgets as $pw)
             @php $widget = $pw['model']; @endphp
             <div x-data="widgetComponent({{ $widget->id }}, '{{ $widget->widget_type }}')"
@@ -313,7 +313,8 @@
                 </div>
             </div>
             @endforeach
-        </div>
+        </div>{{-- /view-canvas-inner --}}
+        </div>{{-- /view-canvas-outer --}}
     </div>
     @endif
 </div>
@@ -321,6 +322,22 @@
 
 @push('scripts')
 <script>
+// Scale view canvas to fit container width (no horizontal scroll)
+(function () {
+    const CANVAS_W = {{ $canvasW ?? 1160 }};
+    const CANVAS_H = {{ $canvasH ?? 400 }};
+    function applyViewScale() {
+        const outer = document.getElementById('view-canvas-outer');
+        const inner = document.getElementById('view-canvas-inner');
+        if (!outer || !inner) return;
+        const scale = Math.min(1, outer.clientWidth / CANVAS_W);
+        inner.style.transform = 'scale(' + scale + ')';
+        outer.style.height    = Math.ceil(CANVAS_H * scale) + 'px';
+    }
+    document.addEventListener('DOMContentLoaded', applyViewScale);
+    window.addEventListener('resize', applyViewScale);
+})();
+
 // Initialise shared date store before Alpine boots components
 document.addEventListener('alpine:init', () => {
     const KEY   = 'dash-date-{{ $dashboard->slug }}';

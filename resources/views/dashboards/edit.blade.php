@@ -10,7 +10,7 @@
 
 @section('content')
 <div x-data="dashboardBuilder(@js($dashboard->widgets->toArray()), @js($templates->toArray()))"
-     x-init="$nextTick(() => initInteract())"
+     x-init="$nextTick(() => { computeScale(); initInteract(); window.addEventListener('resize', () => computeScale()); })"
      class="space-y-4">
 
     {{-- ① STICKY TOOLBAR --}}
@@ -74,13 +74,18 @@
                     <span class="text-xs text-gray-400">คลิก widget เพื่อแก้ไข config</span>
                 </div>
 
-                {{-- Canvas — fixed 1160px coordinate space, same as show.blade.php --}}
+                {{-- Outer wrapper: clips to scaled visual size, no scroll --}}
+                <div id="canvas-outer" style="overflow:hidden; width:100%;"
+                     :style="`height:${Math.ceil(canvasH * scale)}px;`">
+
+                {{-- Inner canvas: fixed 1160px logical space, scaled to fit --}}
                 <div id="widget-canvas"
                      class="relative rounded-xl"
-                     style="overflow:auto;"
-                     :style="`width:1160px; height:${canvasH}px; background-color:#f8fafc;
-                              background-image: radial-gradient(circle, #cbd5e1 1px, transparent 1px);
-                              background-size: 20px 20px;`">
+                     :style="`width:1160px; height:${canvasH}px;
+                              transform:scale(${scale}); transform-origin:top left;
+                              background-color:#f8fafc;
+                              background-image:radial-gradient(circle, #cbd5e1 1px, transparent 1px);
+                              background-size:20px 20px;`">
 
                     {{-- Alignment guides --}}
                     <div x-show="guides.x !== null" class="absolute top-0 bottom-0 pointer-events-none z-30"
@@ -146,7 +151,8 @@
                         <i class="ti ti-layout-dashboard text-5xl mb-3"></i>
                         <p class="text-sm">คลิก Widget Type ทางซ้ายเพื่อเพิ่ม Widget</p>
                     </div>
-                </div>
+                </div>{{-- /widget-canvas --}}
+                </div>{{-- /canvas-outer --}}
             </div>
         </div>
 
@@ -304,10 +310,17 @@ function dashboardBuilder(initialWidgets, templates) {
         saving:     false,
         saveStatus: '',
         guides: { x: null, y: null },
+        scale: 1,
 
         get canvasH() {
             if (!this.widgets.length) return 680;
             return Math.max(680, ...this.widgets.map(w => w.y + w.ph + 40));
+        },
+
+        computeScale() {
+            const outer = document.getElementById('canvas-outer');
+            if (!outer) return;
+            this.scale = Math.min(1, outer.clientWidth / 1160);
         },
 
         // ── Widget CRUD ──────────────────────────────────────────────────────
@@ -379,9 +392,9 @@ function dashboardBuilder(initialWidgets, templates) {
                             const idx = parseInt(event.target.dataset.idx);
                             const w   = self.widgets[idx];
                             if (!w) return;
-                            w.x += event.dx;
-                            w.y += event.dy;
-                            // Direct DOM for smooth animation (Alpine syncs on end)
+                            // event.dx/dy are screen pixels; divide by scale for logical coords
+                            w.x = Math.max(0, w.x + event.dx / self.scale);
+                            w.y = Math.max(0, w.y + event.dy / self.scale);
                             event.target.style.left = w.x + 'px';
                             event.target.style.top  = w.y + 'px';
                             self._updateGuides(idx, w.x, w.y, w.pw, w.ph);
@@ -390,20 +403,14 @@ function dashboardBuilder(initialWidgets, templates) {
                             const idx = parseInt(event.target.dataset.idx);
                             const w   = self.widgets[idx];
                             if (!w) return;
-                            // Snap to 20px grid
-                            w.x = Math.max(0, Math.round(w.x / 20) * 20);
+                            // Snap to 20px grid, clamp within canvas
+                            w.x = Math.max(0, Math.min(1160 - w.pw, Math.round(w.x / 20) * 20));
                             w.y = Math.max(0, Math.round(w.y / 20) * 20);
                             event.target.style.left = w.x + 'px';
                             event.target.style.top  = w.y + 'px';
                             self.guides = { x: null, y: null };
                         }
                     },
-                    modifiers: [
-                        interact.modifiers.restrictRect({
-                            restriction: '#widget-canvas',
-                            endOnly: false,
-                        }),
-                    ],
                 })
                 .resizable({
                     edges: { right: true, bottom: true, left: false, top: false },
@@ -412,8 +419,9 @@ function dashboardBuilder(initialWidgets, templates) {
                             const idx = parseInt(event.target.dataset.idx);
                             const w   = self.widgets[idx];
                             if (!w) return;
-                            w.pw = Math.max(200, event.rect.width);
-                            w.ph = Math.max(150, event.rect.height);
+                            // event.rect.width is screen pixels; divide by scale for logical size
+                            w.pw = Math.max(200, Math.min(1160 - w.x, event.rect.width  / self.scale));
+                            w.ph = Math.max(150, event.rect.height / self.scale);
                             event.target.style.width  = w.pw + 'px';
                             event.target.style.height = w.ph + 'px';
                         },
@@ -421,16 +429,12 @@ function dashboardBuilder(initialWidgets, templates) {
                             const idx = parseInt(event.target.dataset.idx);
                             const w   = self.widgets[idx];
                             if (!w) return;
-                            // Snap to 20px grid
-                            w.pw = Math.round(w.pw / 20) * 20;
-                            w.ph = Math.round(w.ph / 20) * 20;
+                            w.pw = Math.max(200, Math.round(w.pw / 20) * 20);
+                            w.ph = Math.max(150, Math.round(w.ph / 20) * 20);
                             event.target.style.width  = w.pw + 'px';
                             event.target.style.height = w.ph + 'px';
                         }
                     },
-                    modifiers: [
-                        interact.modifiers.restrictSize({ min: { width: 200, height: 150 } }),
-                    ],
                 });
         },
 
