@@ -7,6 +7,56 @@
 @endsection
 
 @section('content')
+<style>
+#drawflow {
+    width: 100%; height: 100%;
+    background-color: #f9fafb;
+    background-image: radial-gradient(circle, #d1d5db 1px, transparent 1px);
+    background-size: 24px 24px;
+}
+.dark #drawflow {
+    background-color: #111827;
+    background-image: radial-gradient(circle, #374151 1px, transparent 1px);
+}
+.drawflow-node {
+    padding: 0 !important;
+    border-radius: 10px !important;
+    border: 2px solid #e5e7eb !important;
+    min-width: 150px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+    background: #fff !important;
+}
+.drawflow-node.selected {
+    border-color: #6366f1 !important;
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.25), 0 2px 8px rgba(0,0,0,0.12) !important;
+}
+.drawflow_content_node { padding: 0 !important; }
+.drawflow-node .title-box { display: none !important; }
+.df-node-type {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.5px; color: #fff; padding: 4px 10px;
+    border-radius: 8px 8px 0 0;
+}
+.df-node-name { font-size: 13px; font-weight: 500; color: #111827; padding: 7px 10px; min-height: 30px; }
+.df-node-sla { font-size: 11px; color: #6b7280; padding: 0 10px 4px; }
+.df-node-ports {
+    display: flex; justify-content: space-between;
+    padding: 4px 10px 7px; border-top: 1px solid #f3f4f6;
+    font-size: 10px; font-weight: 600;
+}
+.df-port-a { color: #16a34a; }
+.df-port-r { color: #dc2626; }
+.drawflow-node .input, .drawflow-node .output {
+    background: #6366f1 !important;
+    border: 2px solid #fff !important;
+    width: 14px !important; height: 14px !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.25) !important;
+}
+.drawflow-node.approval .output.output_1 { background: #22c55e !important; }
+.drawflow-node.approval .output.output_2 { background: #ef4444 !important; }
+.connection .main-path { stroke: #6366f1 !important; stroke-width: 2.5px !important; }
+</style>
+
 <div x-data="flowDesigner(
     {!! htmlspecialchars(json_encode([
         'nodes' => $flow->nodes->map(fn($n) => [
@@ -31,7 +81,7 @@
         ])->values(),
     ]), ENT_QUOTES, 'UTF-8') !!},
     {!! htmlspecialchars(json_encode($roles->map(fn($r)=>['id'=>$r->id,'name'=>$r->name])->values()->toArray()), ENT_QUOTES, 'UTF-8') !!},
-    {!! htmlspecialchars(json_encode($stepForms->map(fn($t)=>['id'=>$t->id,'name'=>$t->name,'category'=>$t->category])->values()->toArray()), ENT_QUOTES, 'UTF-8') !!},
+    {!! htmlspecialchars(json_encode($stepForms->map(fn($t)=>['id'=>$t->id,'name'=>$t->name])->values()->toArray()), ENT_QUOTES, 'UTF-8') !!},
     '{{ route('admin.flows.save', $flow) }}'
 )" class="flex flex-col h-[calc(100vh-9rem)]">
 
@@ -42,15 +92,21 @@
             <span x-show="saveStatus" x-text="saveStatus"
                   :class="saveStatus === 'Saved!' ? 'text-green-600' : 'text-red-600'"
                   class="text-sm font-medium" x-cloak></span>
-            <button @click="clearCanvas" class="btn-secondary text-sm"><i class="ti ti-trash mr-1"></i>Clear</button>
-            <button @click="saveFlow"   class="btn-primary text-sm"><i class="ti ti-device-floppy mr-1"></i>Save</button>
+            <button @click="clearCanvas" class="btn-secondary text-sm">
+                <i class="ti ti-trash mr-1"></i>Clear
+            </button>
+            <button @click="saveFlow" class="btn-primary text-sm">
+                <i class="ti ti-device-floppy mr-1"></i>Save
+            </button>
         </div>
     </div>
 
     <div class="flex gap-3 flex-1 min-h-0">
+
         <!-- Left: Node Palette -->
         <div class="w-44 flex-shrink-0 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-3 flex flex-col space-y-2 overflow-y-auto">
-            <p class="text-xs font-semibold text-gray-500 uppercase mb-1">Node Types</p>
+            <p class="text-xs font-semibold text-gray-500 uppercase">Node Types</p>
+            <p class="text-xs text-gray-400 -mt-1 mb-1">ลากหรือคลิกเพื่อเพิ่ม</p>
             @foreach([
                 ['type'=>'start',           'label'=>'Start',               'color'=>'bg-gray-500',   'icon'=>'ti-player-play'],
                 ['type'=>'approval',        'label'=>'Approval Step',       'color'=>'bg-blue-500',   'icon'=>'ti-checkbox'],
@@ -58,7 +114,9 @@
                 ['type'=>'end_rejected',    'label'=>'End: Rejected',       'color'=>'bg-red-500',    'icon'=>'ti-circle-x'],
                 ['type'=>'return_revision', 'label'=>'Return for Revision', 'color'=>'bg-yellow-500', 'icon'=>'ti-corner-up-left'],
             ] as $nt)
-            <div @click="addNode('{{ $nt['type'] }}')"
+            <div draggable="true"
+                 @dragstart="dragType = '{{ $nt['type'] }}'"
+                 @click="addNode('{{ $nt['type'] }}')"
                  class="cursor-pointer select-none rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 p-2.5 text-center hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors">
                 <div class="w-8 h-8 {{ $nt['color'] }} text-white rounded-lg flex items-center justify-center mx-auto mb-1.5">
                     <i class="ti {{ $nt['icon'] }} text-sm"></i>
@@ -68,101 +126,61 @@
             @endforeach
         </div>
 
-        <!-- Center: Canvas (SVG-based visual) -->
-        <div class="flex-1 min-w-0 relative bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-            <svg x-ref="svg" class="absolute inset-0 w-full h-full pointer-events-none z-0">
-                <defs>
-                    <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                        <polygon points="0 0, 10 3.5, 0 7" fill="#6366f1"/>
-                    </marker>
-                </defs>
-                <template x-for="(edge, ei) in flow.edges" :key="ei">
-                    <g>
-                        <line :x1="getNodeCenter(edge.from_node_id).x" :y1="getNodeCenter(edge.from_node_id).y"
-                              :x2="getNodeCenter(edge.to_node_id).x"   :y2="getNodeCenter(edge.to_node_id).y"
-                              stroke="#6366f1" stroke-width="2" marker-end="url(#arrow)"/>
-                        <text
-                            :x="(getNodeCenter(edge.from_node_id).x + getNodeCenter(edge.to_node_id).x)/2"
-                            :y="(getNodeCenter(edge.from_node_id).y + getNodeCenter(edge.to_node_id).y)/2 - 6"
-                            fill="#6366f1" font-size="10" text-anchor="middle"
-                            x-text="edge.label ?? ''"></text>
-                    </g>
-                </template>
-            </svg>
-
-            <div class="absolute inset-0 p-4 overflow-auto" x-ref="canvas">
-                <template x-for="(node, ni) in flow.nodes" :key="node.node_id">
-                    <div class="absolute cursor-move select-none"
-                         :style="`left:${node.pos_x}px;top:${node.pos_y}px;`"
-                         @mousedown="startDrag($event, ni)">
-                        <div class="relative rounded-xl shadow-md border-2 p-3 w-36 text-center"
-                             :class="getNodeClass(node.type)"
-                             @click.stop="selectNode(ni)">
-                            <div class="text-xs font-bold uppercase mb-1" x-text="node.type.replace('_',' ')"></div>
-                            <div class="text-sm font-medium leading-tight" x-text="node.name_th || node.name_en || node.node_id"></div>
-                            <div x-show="node.sla_hours" class="text-xs text-gray-400 mt-1" x-text="'SLA: ' + node.sla_hours + 'h'" x-cloak></div>
-                            <!-- Delete -->
-                            <button @click.stop="removeNode(ni)"
-                                    class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity">
-                                <i class="ti ti-x" style="font-size:10px"></i>
-                            </button>
-                        </div>
-                        <!-- Connect buttons -->
-                        <div class="flex justify-center mt-1 space-x-1">
-                            <button @click.stop="startConnect(node.node_id, 'approve')"
-                                    class="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded hover:bg-green-200">→ approve</button>
-                            <button @click.stop="startConnect(node.node_id, 'reject')"
-                                    class="text-xs px-2 py-0.5 bg-red-100 text-red-700 rounded hover:bg-red-200">→ reject</button>
-                            <button @click.stop="startConnect(node.node_id, null)"
-                                    class="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded hover:bg-gray-200">→</button>
-                        </div>
-                    </div>
-                </template>
-            </div>
-
-            <!-- Connect mode banner -->
-            <div x-show="connectFrom" x-cloak
-                 class="absolute top-2 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs px-4 py-2 rounded-full shadow">
-                คลิก Node ปลายทาง… <button @click="connectFrom=null;connectLabel=null" class="ml-2 underline">ยกเลิก</button>
-            </div>
+        <!-- Center: Drawflow Canvas -->
+        <div class="flex-1 min-w-0 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden"
+             @dragover.prevent
+             @drop="dropOnCanvas($event)">
+            <div id="drawflow" class="w-full h-full"></div>
         </div>
 
         <!-- Right: Node Properties -->
         <div class="w-64 flex-shrink-0 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 overflow-y-auto"
-             x-show="selectedIdx !== null" x-cloak>
+             x-show="selectedNodeId !== null" x-cloak>
             <div class="flex items-center justify-between mb-3">
                 <h3 class="font-semibold text-sm">Node Properties</h3>
-                <button @click="selectedIdx=null" class="text-gray-400 hover:text-gray-600"><i class="ti ti-x text-sm"></i></button>
+                <button @click="selectedNodeId = null" class="text-gray-400 hover:text-gray-600">
+                    <i class="ti ti-x text-sm"></i>
+                </button>
             </div>
-            <template x-if="selectedIdx !== null && flow.nodes[selectedIdx]">
+            <template x-if="selectedNode">
                 <div class="space-y-3 text-sm">
                     <div>
                         <label class="form-label text-xs">Node ID</label>
-                        <input type="text" x-model="flow.nodes[selectedIdx].node_id" class="form-input text-sm" placeholder="unique_id">
+                        <input type="text" x-model="selectedNode.node_id"
+                               @change="syncSelectedNode()"
+                               class="form-input text-sm font-mono" placeholder="unique_id">
                     </div>
                     <div>
-                        <label class="form-label text-xs">Name TH</label>
-                        <input type="text" x-model="flow.nodes[selectedIdx].name_th" class="form-input text-sm">
+                        <label class="form-label text-xs">ชื่อ (TH)</label>
+                        <input type="text" x-model="selectedNode.name_th"
+                               @input="syncSelectedNode()"
+                               class="form-input text-sm">
                     </div>
                     <div>
-                        <label class="form-label text-xs">Name EN</label>
-                        <input type="text" x-model="flow.nodes[selectedIdx].name_en" class="form-input text-sm">
+                        <label class="form-label text-xs">Name (EN)</label>
+                        <input type="text" x-model="selectedNode.name_en"
+                               @input="syncSelectedNode()"
+                               class="form-input text-sm">
                     </div>
 
-                    <template x-if="flow.nodes[selectedIdx].type === 'approval'">
+                    <template x-if="selectedNode.type === 'approval'">
                         <div class="space-y-3">
                             <div>
                                 <label class="form-label text-xs">Approver Source</label>
-                                <select x-model="flow.nodes[selectedIdx].approver_source" class="form-select text-sm">
+                                <select x-model="selectedNode.approver_source"
+                                        @change="syncSelectedNode()"
+                                        class="form-select text-sm">
                                     <option value="role">Role</option>
                                     <option value="specific_user">Specific User</option>
                                     <option value="option_set">Option Set</option>
                                 </select>
                             </div>
-                            <template x-if="flow.nodes[selectedIdx].approver_source === 'role'">
+                            <template x-if="selectedNode.approver_source === 'role'">
                                 <div>
                                     <label class="form-label text-xs">Role</label>
-                                    <select x-model="flow.nodes[selectedIdx].approver_role_id" class="form-select text-sm">
+                                    <select x-model="selectedNode.approver_role_id"
+                                            @change="syncSelectedNode()"
+                                            class="form-select text-sm">
                                         <option value="">-- เลือก Role --</option>
                                         <template x-for="r in roles" :key="r.id">
                                             <option :value="r.id" x-text="r.name"></option>
@@ -170,15 +188,19 @@
                                     </select>
                                 </div>
                             </template>
-                            <template x-if="flow.nodes[selectedIdx].approver_source === 'option_set'">
+                            <template x-if="selectedNode.approver_source === 'option_set'">
                                 <div>
                                     <label class="form-label text-xs">Option Set Code</label>
-                                    <input type="text" x-model="flow.nodes[selectedIdx].approver_option_set_code" class="form-input text-sm">
+                                    <input type="text" x-model="selectedNode.approver_option_set_code"
+                                           @change="syncSelectedNode()"
+                                           class="form-input text-sm">
                                 </div>
                             </template>
                             <div>
                                 <label class="form-label text-xs">Scope</label>
-                                <select x-model="flow.nodes[selectedIdx].scope" class="form-select text-sm">
+                                <select x-model="selectedNode.scope"
+                                        @change="syncSelectedNode()"
+                                        class="form-select text-sm">
                                     <option value="own_factory">Own Factory</option>
                                     <option value="parent_factory">Parent Factory</option>
                                     <option value="any_factory">Any Factory</option>
@@ -186,43 +208,47 @@
                             </div>
                             <div>
                                 <label class="form-label text-xs">Action Type</label>
-                                <select x-model="flow.nodes[selectedIdx].action_type" class="form-select text-sm">
+                                <select x-model="selectedNode.action_type"
+                                        @change="syncSelectedNode()"
+                                        class="form-select text-sm">
                                     <option value="any_one">Any One</option>
                                     <option value="all_must">All Must</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="form-label text-xs">SLA (hours)</label>
-                                <input type="number" x-model.number="flow.nodes[selectedIdx].sla_hours" class="form-input text-sm" min="0">
+                                <input type="number" min="0"
+                                       x-model="selectedNode.sla_hours"
+                                       @change="syncSelectedNode()"
+                                       class="form-input text-sm">
                             </div>
                             <div>
                                 <label class="form-label text-xs">Step Form Template</label>
-                                <select x-model.number="flow.nodes[selectedIdx].step_form_template_id" class="form-select text-sm">
-                                    <option :value="null">-- ไม่มี --</option>
+                                <select x-model="selectedNode.step_form_template_id"
+                                        @change="syncSelectedNode()"
+                                        class="form-select text-sm">
+                                    <option value="">-- ไม่มี --</option>
                                     <template x-for="f in stepForms" :key="f.id">
                                         <option :value="f.id" x-text="f.name"></option>
                                     </template>
                                 </select>
-                                <p class="text-xs text-gray-400 mt-1" x-show="flow.nodes[selectedIdx].step_form_template_id">
+                                <p class="text-xs text-gray-400 mt-1" x-show="selectedNode.step_form_template_id">
                                     Approver กรอก form นี้ขณะ approve
                                 </p>
                             </div>
                         </div>
                     </template>
 
-                    <!-- Edges from this node -->
                     <div class="pt-2 border-t border-gray-100 dark:border-gray-700">
-                        <p class="text-xs font-semibold text-gray-500 mb-1">Edges from this node</p>
-                        <template x-for="(edge, ei) in edgesFrom(flow.nodes[selectedIdx].node_id)" :key="ei">
-                            <div class="flex items-center justify-between text-xs bg-gray-50 dark:bg-gray-750 rounded px-2 py-1 mb-1">
-                                <span x-text="(edge.label ?? '—') + ' → ' + edge.to_node_id"></span>
-                                <button @click="removeEdge(edge)" class="text-red-400 hover:text-red-600"><i class="ti ti-x"></i></button>
-                            </div>
-                        </template>
+                        <button @click="removeSelectedNode()"
+                                class="w-full text-xs px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors">
+                            <i class="ti ti-trash mr-1"></i>ลบ Node นี้
+                        </button>
                     </div>
                 </div>
             </template>
         </div>
+
     </div>
 </div>
 @endsection
@@ -231,117 +257,209 @@
 <script>
 function flowDesigner(initialFlow, roles, stepForms, saveUrl) {
     return {
-        flow: { nodes: initialFlow.nodes || [], edges: initialFlow.edges || [] },
+        editor: null,
         roles,
         stepForms,
-        selectedIdx: null,
-        connectFrom: null,
-        connectLabel: null,
+        selectedNodeId: null,
+        nodeData: {},
         saveStatus: '',
-        dragging: null,
-        dragOffset: { x: 0, y: 0 },
+        dragType: null,
 
-        nodeColors: {
-            start: 'bg-gray-200 border-gray-400 text-gray-700',
-            approval: 'bg-blue-50 border-blue-400 text-blue-700',
-            end_approved: 'bg-green-50 border-green-400 text-green-700',
-            end_rejected: 'bg-red-50 border-red-400 text-red-700',
-            return_revision: 'bg-yellow-50 border-yellow-400 text-yellow-700',
+        nodeConfig: {
+            start:           { inputs: 0, outputs: 1, color: '#6b7280', label: 'Start' },
+            approval:        { inputs: 1, outputs: 2, color: '#3b82f6', label: 'Approval' },
+            end_approved:    { inputs: 1, outputs: 0, color: '#22c55e', label: 'End: Approved' },
+            end_rejected:    { inputs: 1, outputs: 0, color: '#ef4444', label: 'End: Rejected' },
+            return_revision: { inputs: 1, outputs: 1, color: '#f59e0b', label: 'Return for Revision' },
         },
 
-        getNodeClass(type) {
-            return this.nodeColors[type] || 'bg-gray-100 border-gray-300 text-gray-700';
+        get selectedNode() {
+            if (this.selectedNodeId === null) return null;
+            return this.nodeData[this.selectedNodeId] ?? null;
+        },
+
+        init() {
+            window.__flowApp = this;        // expose for Playwright / debug
+            const container = document.getElementById('drawflow');
+            this.editor = new window.Drawflow(container);
+            this.editor.reroute = true;
+            this.editor.start();
+
+            this.editor.on('nodeSelected', (id) => {
+                this.selectedNodeId = id;
+            });
+            this.editor.on('nodeUnselected', () => {
+                this.selectedNodeId = null;
+            });
+            this.editor.on('nodeRemoved', (id) => {
+                delete this.nodeData[id];
+                if (this.selectedNodeId === id) this.selectedNodeId = null;
+            });
+
+            // Defer until after the browser has computed flex layout,
+            // so the precanvas has non-zero clientWidth for connection path calculation.
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                this.loadFlow(initialFlow);
+            }));
+        },
+
+        buildNodeHtml(type, data) {
+            const cfg  = this.nodeConfig[type] || { color: '#6b7280', label: type };
+            const name = data.name_th || data.name_en || '';
+            const nameHtml = name
+                ? `<div class="df-node-name">${this._esc(name)}</div>`
+                : `<div class="df-node-name" style="color:#9ca3af;font-style:italic;">ตั้งชื่อ...</div>`;
+            const slaHtml = data.sla_hours
+                ? `<div class="df-node-sla">SLA: ${data.sla_hours}h</div>`
+                : '';
+            const portsHtml = type === 'approval'
+                ? `<div class="df-node-ports"><span class="df-port-a">✓ approve</span><span class="df-port-r">✗ reject</span></div>`
+                : '';
+            return `<div class="df-node-inner"><div class="df-node-type" style="background:${cfg.color}">${cfg.label}</div>${nameHtml}${slaHtml}${portsHtml}</div>`;
+        },
+
+        _esc(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        },
+
+        addNodeToCanvas(type, pos_x, pos_y, data) {
+            const cfg     = this.nodeConfig[type] || { inputs: 1, outputs: 1 };
+            const node_id = data.node_id || (type + '_' + Date.now().toString(36));
+
+            const nodeObj = {
+                node_id,
+                type,
+                name_th:                  data.name_th  ?? '',
+                name_en:                  data.name_en  ?? '',
+                approver_source:          data.approver_source          ?? 'role',
+                approver_role_id:         data.approver_role_id         ?? null,
+                approver_option_set_code: data.approver_option_set_code ?? null,
+                scope:                    data.scope       ?? 'own_factory',
+                action_type:              data.action_type ?? 'any_one',
+                sla_hours:                data.sla_hours   ?? null,
+                step_form_template_id:    data.step_form_template_id ?? null,
+            };
+
+            const html = this.buildNodeHtml(type, nodeObj);
+            const dfId = this.editor.addNode(type, cfg.inputs, cfg.outputs, pos_x, pos_y, type, nodeObj, html);
+            this.nodeData[dfId] = nodeObj;
+            return dfId;
         },
 
         addNode(type) {
-            const id = type + '_' + Date.now().toString(36);
-            this.flow.nodes.push({
-                node_id: id, type,
-                name_th: '', name_en: '',
-                approver_source: 'role',
-                approver_role_id: null,
-                approver_option_set_code: null,
-                scope: 'own_factory',
-                action_type: 'any_one',
-                sla_hours: null,
-                step_form_template_id: null,
-                pos_x: 100 + Math.random()*200,
-                pos_y: 100 + Math.random()*200,
-            });
+            const pos_x = 160 + Math.random() * 380;
+            const pos_y = 80  + Math.random() * 180;
+            const dfId  = this.addNodeToCanvas(type, pos_x, pos_y, {});
+            this.selectedNodeId = dfId;
         },
 
-        selectNode(idx) {
-            if (this.connectFrom !== null) {
-                const toId = this.flow.nodes[idx].node_id;
-                if (toId !== this.connectFrom) {
-                    this.flow.edges.push({
-                        from_node_id: this.connectFrom,
-                        to_node_id: toId,
-                        label: this.connectLabel,
-                    });
-                }
-                this.connectFrom = null;
-                this.connectLabel = null;
-            } else {
-                this.selectedIdx = idx;
+        dropOnCanvas(event) {
+            const type = this.dragType || event.dataTransfer.getData('nodeType');
+            if (!type) return;
+            const rect  = document.getElementById('drawflow').getBoundingClientRect();
+            const zoom  = this.editor.zoom || 1;
+            const pos_x = (event.clientX - rect.left  - this.editor.canvas_x) / zoom;
+            const pos_y = (event.clientY - rect.top   - this.editor.canvas_y) / zoom;
+            this.addNodeToCanvas(type, pos_x, pos_y, {});
+            this.dragType = null;
+        },
+
+        syncSelectedNode() {
+            if (this.selectedNodeId === null) return;
+            const data   = this.nodeData[this.selectedNodeId];
+            if (!data) return;
+            const dfNode = this.editor.drawflow.drawflow.Home.data[this.selectedNodeId];
+            if (dfNode) {
+                dfNode.data = { ...data };
+                const contentEl = document.querySelector(`#node-${this.selectedNodeId} .drawflow_content_node`);
+                if (contentEl) contentEl.innerHTML = this.buildNodeHtml(data.type, data);
             }
         },
 
-        removeNode(idx) {
-            const id = this.flow.nodes[idx].node_id;
-            this.flow.nodes.splice(idx, 1);
-            this.flow.edges = this.flow.edges.filter(e => e.from_node_id !== id && e.to_node_id !== id);
-            this.selectedIdx = null;
+        removeSelectedNode() {
+            if (this.selectedNodeId === null) return;
+            this.editor.removeNodeId('node-' + this.selectedNodeId);
         },
 
-        startConnect(fromId, label) {
-            this.connectFrom  = fromId;
-            this.connectLabel = label;
-        },
-
-        removeEdge(edge) {
-            this.flow.edges = this.flow.edges.filter(e => e !== edge);
-        },
-
-        edgesFrom(nodeId) {
-            return this.flow.edges.filter(e => e.from_node_id === nodeId);
-        },
-
-        getNodeCenter(nodeId) {
-            const node = this.flow.nodes.find(n => n.node_id === nodeId);
-            if (!node) return { x: 0, y: 0 };
-            return { x: node.pos_x + 72, y: node.pos_y + 40 };
+        loadFlow(initialFlow) {
+            const nodeIdMap = {};
+            for (const node of (initialFlow.nodes || [])) {
+                const dfId = this.addNodeToCanvas(
+                    node.type,
+                    node.pos_x != null ? node.pos_x : 100,
+                    node.pos_y != null ? node.pos_y : 100,
+                    node
+                );
+                nodeIdMap[node.node_id] = dfId;
+            }
+            for (const edge of (initialFlow.edges || [])) {
+                const fromId = nodeIdMap[edge.from_node_id];
+                const toId   = nodeIdMap[edge.to_node_id];
+                if (fromId != null && toId != null) {
+                    const outPort = edge.label === 'reject' ? 'output_2' : 'output_1';
+                    try {
+                        this.editor.addConnection(fromId, toId, outPort, 'input_1');
+                    } catch (e) {
+                        console.warn('addConnection skipped:', edge, e);
+                    }
+                }
+            }
         },
 
         clearCanvas() {
-            if (confirm('ล้าง canvas ทั้งหมด?')) {
-                this.flow = { nodes: [], edges: [] };
-                this.selectedIdx = null;
-            }
-        },
-
-        startDrag(event, idx) {
-            event.preventDefault();
-            this.dragging = idx;
-            const node = this.flow.nodes[idx];
-            this.dragOffset.x = event.clientX - node.pos_x;
-            this.dragOffset.y = event.clientY - node.pos_y;
-            const onMove = (e) => {
-                if (this.dragging === null) return;
-                this.flow.nodes[this.dragging].pos_x = Math.max(0, e.clientX - this.dragOffset.x);
-                this.flow.nodes[this.dragging].pos_y = Math.max(0, e.clientY - this.dragOffset.y);
-            };
-            const onUp = () => {
-                this.dragging = null;
-                window.removeEventListener('mousemove', onMove);
-                window.removeEventListener('mouseup', onUp);
-            };
-            window.addEventListener('mousemove', onMove);
-            window.addEventListener('mouseup', onUp);
+            if (!confirm('ล้าง canvas ทั้งหมด?')) return;
+            this.editor.import({ drawflow: { Home: { data: {} } } });
+            this.nodeData       = {};
+            this.selectedNodeId = null;
         },
 
         async saveFlow() {
             this.saveStatus = 'Saving…';
+            const dfData = this.editor.drawflow.drawflow.Home.data;
+            const nodes        = [];
+            const edges        = [];
+            const dfIdToNodeId = {};
+
+            for (const [dfId, dfNode] of Object.entries(dfData)) {
+                const d = dfNode.data || {};
+                dfIdToNodeId[dfId] = d.node_id;
+                nodes.push({
+                    node_id:                  d.node_id,
+                    type:                     d.type,
+                    name_th:                  d.name_th  || null,
+                    name_en:                  d.name_en  || null,
+                    approver_source:          d.approver_source          || null,
+                    approver_role_id:         d.approver_role_id         || null,
+                    approver_option_set_code: d.approver_option_set_code || null,
+                    scope:                    d.scope       || 'own_factory',
+                    action_type:              d.action_type || 'any_one',
+                    sla_hours:                d.sla_hours   || null,
+                    step_form_template_id:    d.step_form_template_id || null,
+                    pos_x:                    dfNode.pos_x,
+                    pos_y:                    dfNode.pos_y,
+                });
+            }
+
+            for (const [dfId, dfNode] of Object.entries(dfData)) {
+                const fromNodeId = dfIdToNodeId[dfId];
+                const nodeType   = (dfNode.data || {}).type;
+                for (const [outputKey, outputData] of Object.entries(dfNode.outputs || {})) {
+                    const label = nodeType === 'approval'
+                        ? (outputKey === 'output_1' ? 'approve' : 'reject')
+                        : null;
+                    for (const conn of (outputData.connections || [])) {
+                        const toNodeId = dfIdToNodeId[conn.node];
+                        if (fromNodeId && toNodeId) {
+                            edges.push({ from_node_id: fromNodeId, to_node_id: toNodeId, label });
+                        }
+                    }
+                }
+            }
+
             try {
                 const res = await fetch(saveUrl, {
                     method: 'POST',
@@ -349,13 +467,19 @@ function flowDesigner(initialFlow, roles, stepForms, saveUrl) {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
                     },
-                    body: JSON.stringify(this.flow),
+                    body: JSON.stringify({ nodes, edges }),
                 });
-                this.saveStatus = res.ok ? 'Saved!' : 'Error!';
-            } catch {
+                if (res.ok) {
+                    this.saveStatus = 'Saved!';
+                } else {
+                    console.error('Save error:', await res.text());
+                    this.saveStatus = 'Error!';
+                }
+            } catch (e) {
+                console.error(e);
                 this.saveStatus = 'Error!';
             }
-            setTimeout(() => this.saveStatus = '', 3000);
+            setTimeout(() => { this.saveStatus = ''; }, 3000);
         },
     };
 }
