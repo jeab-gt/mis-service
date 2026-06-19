@@ -10,7 +10,7 @@
 
 @section('content')
 <div x-data="dashboardBuilder(@js($dashboard->widgets->toArray()), @js($templates->toArray()))"
-     x-init="$nextTick(() => { computeScale(); initInteract(); window.addEventListener('resize', () => computeScale()); })"
+     x-init="$nextTick(() => requestAnimationFrame(() => { computeScale(); initInteract(); window.addEventListener('resize', () => computeScale()); }))"
      class="space-y-4">
 
     {{-- ① STICKY TOOLBAR --}}
@@ -75,8 +75,8 @@
                 </div>
 
                 {{-- Outer wrapper: clips to scaled visual size, no scroll --}}
-                <div id="canvas-outer" style="overflow:hidden; width:100%;"
-                     :style="`height:${Math.ceil(canvasH * scale)}px;`">
+                <div id="canvas-outer"
+                     :style="`overflow:hidden; width:100%; height:${Math.ceil(canvasH * scale)}px;`">
 
                 {{-- Inner canvas: fixed 1160px logical space, scaled to fit --}}
                 <div id="widget-canvas"
