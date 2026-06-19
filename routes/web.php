@@ -114,6 +114,45 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'setlocale', 'role:s
 
     // AJAX: sections cascade dropdown by factory
     Route::get('/factory-sections/{factoryId}', [\App\Http\Controllers\Admin\UserController::class, 'sectionsForFactory'])->name('factory.sections');
+
+    // Checksheet Templates (admin)
+    Route::prefix('checksheets')->name('checksheets.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\ChecksheetTemplateController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Admin\ChecksheetTemplateController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Admin\ChecksheetTemplateController::class, 'store'])->name('store');
+        Route::get('/{template}/edit', [\App\Http\Controllers\Admin\ChecksheetTemplateController::class, 'edit'])->name('edit');
+        Route::get('/{template}/builder', [\App\Http\Controllers\Admin\ChecksheetTemplateController::class, 'builder'])->name('builder');
+        Route::post('/{template}/save', [\App\Http\Controllers\Admin\ChecksheetTemplateController::class, 'save'])->name('save');
+        Route::delete('/{template}', [\App\Http\Controllers\Admin\ChecksheetTemplateController::class, 'destroy'])->name('destroy');
+    });
+
+    // Data Management
+    Route::get('/settings/data-management', [\App\Http\Controllers\Admin\DataManagementController::class, 'index'])->name('data-management.index');
+    Route::post('/settings/data-management/archive', [\App\Http\Controllers\Admin\DataManagementController::class, 'archive'])->name('data-management.archive');
+    Route::delete('/settings/data-management/drop-archive', [\App\Http\Controllers\Admin\DataManagementController::class, 'dropArchive'])->name('data-management.drop');
 });
+
+// Checksheets (user-facing)
+Route::prefix('checksheets')->name('checksheets.')->middleware(['auth', 'setlocale'])->group(function () {
+    Route::get('/', [\App\Http\Controllers\ChecksheetEntryController::class, 'index'])->name('index');
+    Route::get('/{template}/records', [\App\Http\Controllers\ChecksheetEntryController::class, 'records'])->name('records');
+    Route::get('/{template}/fill', [\App\Http\Controllers\ChecksheetEntryController::class, 'fill'])->name('fill');
+    Route::post('/{template}/fill', [\App\Http\Controllers\ChecksheetEntryController::class, 'store'])->name('store');
+    Route::post('/records/{record}/submit', [\App\Http\Controllers\ChecksheetEntryController::class, 'submit'])->name('submit');
+});
+
+// Dashboards
+Route::prefix('dashboards')->name('dashboards.')->middleware(['auth', 'setlocale'])->group(function () {
+    Route::get('/', [\App\Http\Controllers\DashboardBuilderController::class, 'index'])->name('index');
+    Route::get('/create', [\App\Http\Controllers\DashboardBuilderController::class, 'create'])->name('create');
+    Route::post('/', [\App\Http\Controllers\DashboardBuilderController::class, 'store'])->name('store');
+    Route::get('/{dashboard}', [\App\Http\Controllers\DashboardBuilderController::class, 'show'])->name('show');
+    Route::get('/{dashboard}/edit', [\App\Http\Controllers\DashboardBuilderController::class, 'edit'])->name('edit');
+    Route::post('/{dashboard}/save-layout', [\App\Http\Controllers\DashboardBuilderController::class, 'saveLayout'])->name('save-layout');
+    Route::delete('/{dashboard}', [\App\Http\Controllers\DashboardBuilderController::class, 'destroy'])->name('destroy');
+});
+
+// Widget data API
+Route::middleware(['auth'])->get('/api/dashboard-widgets/{widget}/data', [\App\Http\Controllers\DashboardWidgetController::class, 'data'])->name('api.widget.data');
 
 require __DIR__ . '/auth.php';

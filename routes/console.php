@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('mis:check-overdue')->dailyAt('08:00');
+Schedule::command('mis:checksheet-summarize')->dailyAt('01:00');

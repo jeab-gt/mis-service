@@ -53,6 +53,27 @@
                 </a>
                 @endcan
 
+                {{-- Checksheets --}}
+                <div x-data="{ open: {{ request()->routeIs('checksheets.*') ? 'true' : 'false' }} }">
+                    <button @click="open = !open" class="sidebar-link w-full text-left">
+                        <i class="ti ti-clipboard-list text-xl flex-shrink-0"></i>
+                        <span class="ml-3 flex-1 whitespace-nowrap" x-show="sidebarOpen">Checksheet</span>
+                        <i class="ti ti-chevron-down text-xs transition-transform" :class="open ? 'rotate-180' : ''" x-show="sidebarOpen"></i>
+                    </button>
+                    <div x-show="open" class="pl-4 space-y-1 mt-1">
+                        <a href="{{ route('checksheets.index') }}" class="{{ request()->routeIs('checksheets.index') ? 'sidebar-active' : 'sidebar-link' }}">
+                            <i class="ti ti-list text-base flex-shrink-0"></i>
+                            <span class="ml-3 text-sm whitespace-nowrap" x-show="sidebarOpen">กรอกข้อมูล</span>
+                        </a>
+                    </div>
+                </div>
+
+                {{-- Dashboards --}}
+                <a href="{{ route('dashboards.index') }}" class="{{ request()->routeIs('dashboards.*') ? 'sidebar-active' : 'sidebar-link' }}">
+                    <i class="ti ti-layout-dashboard text-xl flex-shrink-0"></i>
+                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen">Dashboard</span>
+                </a>
+
                 @canany(['user.view', 'master.view', 'app.view', 'setting.view'])
                 <div class="pt-3 pb-1" x-show="sidebarOpen">
                     <p class="text-xs text-indigo-400 uppercase tracking-wider px-2">Admin</p>
@@ -82,6 +103,17 @@
                 <a href="{{ route('admin.apps.index') }}" class="{{ request()->routeIs('admin.apps.*') ? 'sidebar-active' : 'sidebar-link' }}">
                     <i class="ti ti-device-desktop-code text-xl flex-shrink-0"></i>
                     <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen">{{ __('menu.app_builder') }}</span>
+                </a>
+                @endcan
+
+                @can('app.view')
+                <a href="{{ route('admin.checksheets.index') }}" class="{{ request()->routeIs('admin.checksheets.*') ? 'sidebar-active' : 'sidebar-link' }}">
+                    <i class="ti ti-clipboard-check text-xl flex-shrink-0"></i>
+                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen">Checksheet Templates</span>
+                </a>
+                <a href="{{ route('admin.data-management.index') }}" class="{{ request()->routeIs('admin.data-management.*') ? 'sidebar-active' : 'sidebar-link' }}">
+                    <i class="ti ti-database text-xl flex-shrink-0"></i>
+                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen">Data Management</span>
                 </a>
                 @endcan
 
