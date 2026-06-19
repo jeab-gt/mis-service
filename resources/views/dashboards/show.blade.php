@@ -19,44 +19,93 @@
 
     {{-- Date Range Filter Bar --}}
     @if(!$dashboard->widgets->isEmpty())
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-3 flex flex-wrap items-center gap-2">
-        <span class="text-xs font-medium text-gray-500 dark:text-gray-400 shrink-0">ช่วงเวลา:</span>
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 px-4 py-2.5 flex flex-wrap items-center gap-3">
 
-        @php $presets = [
-            ['mode' => 'today',        'label' => 'วันนี้'],
-            ['mode' => 'last_7_days',  'label' => '7 วัน'],
-            ['mode' => 'last_30_days', 'label' => '30 วัน'],
-            ['mode' => 'this_month',   'label' => 'เดือนนี้'],
-            ['mode' => 'custom',       'label' => 'กำหนดเอง'],
-        ]; @endphp
+        {{-- Label --}}
+        <span class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider shrink-0">ช่วงเวลา</span>
 
-        @foreach($presets as $p)
-        <button type="button" @click="setPreset('{{ $p['mode'] }}')"
-                :class="mode === '{{ $p['mode'] }}'
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30'"
-                class="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors">
-            {{ $p['label'] }}
-        </button>
-        @endforeach
+        {{-- Button group + dropdown panel --}}
+        {{-- ⚠ NO overflow-hidden here — it would clip the absolute dropdown panel --}}
+        {{-- ⚠ Buttons written explicitly (not loop) — Tailwind JIT needs static class strings --}}
+        <div class="relative" @click.outside="showPanel = false">
 
-        <template x-if="mode === 'custom'">
-            <div class="flex items-center gap-2 flex-wrap">
-                <input type="date" x-model="customFrom"
-                       class="form-input text-xs py-1 px-2 rounded-lg border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700">
-                <span class="text-gray-400 text-xs">–</span>
-                <input type="date" x-model="customTo"
-                       class="form-input text-xs py-1 px-2 rounded-lg border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700">
-                <button type="button" @click="applyCustom()"
-                        class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg font-medium transition-colors">
-                    Apply
+            {{-- 5-button segmented strip (border + -ml-px pattern, no overflow-hidden) --}}
+            <div class="flex text-sm font-medium">
+                <button type="button" @click="setPreset('today')"
+                        :class="mode === 'today' ? 'relative z-10 bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-600'"
+                        class="px-4 py-1.5 border rounded-l-lg whitespace-nowrap transition-colors">
+                    วันนี้
+                </button>
+                <button type="button" @click="setPreset('last_7_days')"
+                        :class="mode === 'last_7_days' ? 'relative z-10 bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-600'"
+                        class="px-4 py-1.5 border -ml-px whitespace-nowrap transition-colors">
+                    7 วัน
+                </button>
+                <button type="button" @click="setPreset('last_30_days')"
+                        :class="mode === 'last_30_days' ? 'relative z-10 bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-600'"
+                        class="px-4 py-1.5 border -ml-px whitespace-nowrap transition-colors">
+                    30 วัน
+                </button>
+                <button type="button" @click="setPreset('this_month')"
+                        :class="mode === 'this_month' ? 'relative z-10 bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-600'"
+                        class="px-4 py-1.5 border -ml-px whitespace-nowrap transition-colors">
+                    เดือนนี้
+                </button>
+                <button type="button" @click="setPreset('custom')"
+                        :class="mode === 'custom' ? 'relative z-10 bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-600'"
+                        class="px-4 py-1.5 border -ml-px rounded-r-lg whitespace-nowrap transition-colors">
+                    กำหนดเอง ▾
                 </button>
             </div>
-        </template>
 
-        <div class="ml-auto flex items-center gap-1.5 text-xs text-gray-400 shrink-0">
-            <i class="ti ti-calendar text-sm"></i>
-            <span x-text="rangeLabel"></span>
+            {{-- Custom date dropdown panel — absolute, z-50, outside any overflow:hidden --}}
+            <div x-show="showPanel"
+                 x-transition:enter="transition ease-out duration-150"
+                 x-transition:enter-start="opacity-0 translate-y-1"
+                 x-transition:enter-end="opacity-100 translate-y-0"
+                 x-transition:leave="transition ease-in duration-100"
+                 x-transition:leave-start="opacity-100 translate-y-0"
+                 x-transition:leave-end="opacity-0 translate-y-1"
+                 class="absolute left-0 top-full mt-2 z-50 w-72 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-4"
+                 style="display:none;">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">เลือกช่วงวันที่</span>
+                    <button type="button" @click="showPanel = false"
+                            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+                        <i class="ti ti-x text-base"></i>
+                    </button>
+                </div>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">จาก</label>
+                        <input type="date" x-model="customFrom"
+                               class="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">ถึง</label>
+                        <input type="date" x-model="customTo"
+                               class="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
+                    </div>
+                </div>
+                <div class="flex items-center justify-end gap-2 mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+                    <button type="button" @click="showPanel = false"
+                            class="text-xs px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium">
+                        ยกเลิก
+                    </button>
+                    <button type="button" @click="applyCustom()"
+                            class="text-xs px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition-colors shadow-sm">
+                        Apply
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        {{-- Active range badge --}}
+        <div class="ml-auto shrink-0">
+            <span class="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 font-medium">
+                <i class="ti ti-calendar-event text-sm"></i>
+                <span x-text="rangeLabel"></span>
+            </span>
         </div>
     </div>
     @endif
@@ -280,6 +329,7 @@ function dashboardView(slug) {
     return {
         slug,
         mode:       null,
+        showPanel:  false,
         customFrom: '',
         customTo:   '',
 
@@ -293,7 +343,8 @@ function dashboardView(slug) {
 
         setPreset(mode) {
             this.mode = mode;
-            if (mode === 'custom') return;
+            if (mode === 'custom') { this.showPanel = !this.showPanel; return; }
+            this.showPanel = false;
             const today = new Date();
             let from, to = iso(today);
             switch (mode) {
@@ -308,6 +359,7 @@ function dashboardView(slug) {
 
         applyCustom() {
             if (!this.customFrom || !this.customTo) return;
+            this.showPanel = false;
             this._dispatch(this.customFrom, this.customTo);
         },
 
@@ -322,7 +374,9 @@ function dashboardView(slug) {
 
         get rangeLabel() {
             const s   = Alpine.store('dashDate');
-            const fmt = d => { const [y,m,dd] = d.split('-'); return `${dd}/${m}/${y}`; };
+            const fmt = d => new Date(d + 'T00:00:00').toLocaleDateString('th-TH', {
+                day: 'numeric', month: 'short', year: 'numeric',
+            });
             return `${fmt(s.dateFrom)} – ${fmt(s.dateTo)}`;
         },
     };
