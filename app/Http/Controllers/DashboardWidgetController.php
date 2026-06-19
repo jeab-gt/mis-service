@@ -273,6 +273,11 @@ class DashboardWidgetController extends Controller
 
     private function tableData(DashboardWidget $widget, $templateId, array $parameterIds, $factoryId, $dateFrom, $dateTo): JsonResponse
     {
+        $page    = max(1, (int) request('page', 1));
+        $perPage = min(50, max(5, (int) request('per_page', 10)));
+        $sortDir = in_array(request('sort_dir'), ['asc', 'desc']) ? request('sort_dir') : 'desc';
+        $sortBy  = in_array(request('sort_by'), ['record_date', 'status', 'id']) ? request('sort_by') : 'record_date';
+
         // Ordered parameter columns (filter by selected IDs if specified)
         $paramQuery = \App\Models\ChecksheetParameter::where('is_active', true)->orderBy('sort_order');
         if ($templateId) $paramQuery->where('template_id', $templateId);
@@ -287,17 +292,18 @@ class DashboardWidgetController extends Controller
         ])->values();
 
         $query = ChecksheetRecord::whereBetween('record_date', [$dateFrom, $dateTo])
-            ->with(['factory', 'timeSlot', 'values'])
-            ->orderByDesc('record_date')
-            ->orderByDesc('id')
-            ->limit(20);
+            ->with(['factory', 'timeSlot', 'values']);
 
         if ($templateId) $query->where('template_id', $templateId);
         if ($factoryId) $query->where('factory_id', $factoryId);
 
+        $query->orderBy($sortBy, $sortDir);
+        if ($sortBy !== 'id') $query->orderBy('id', $sortDir);
+
+        $paginated  = $query->paginate($perPage, ['*'], 'page', $page);
         $paramIdSet = !empty($parameterIds) ? array_flip($parameterIds) : null;
 
-        $records = $query->get()->map(function ($r) use ($paramIdSet) {
+        $records = $paginated->getCollection()->map(function ($r) use ($paramIdSet) {
             $valuesMap = [];
             foreach ($r->values as $v) {
                 if ($paramIdSet !== null && !isset($paramIdSet[$v->parameter_id])) continue;
@@ -318,9 +324,15 @@ class DashboardWidgetController extends Controller
         });
 
         return response()->json([
-            'type'    => 'data_table',
-            'columns' => $columns,
-            'records' => $records,
+            'type'         => 'data_table',
+            'columns'      => $columns,
+            'records'      => $records,
+            'current_page' => $paginated->currentPage(),
+            'last_page'    => $paginated->lastPage(),
+            'total'        => $paginated->total(),
+            'per_page'     => $paginated->perPage(),
+            'from'         => $paginated->firstItem() ?? 0,
+            'to'           => $paginated->lastItem()  ?? 0,
         ]);
     }
 }

@@ -253,60 +253,118 @@
 
                         {{-- Data Table --}}
                         @if($widget->widget_type === 'data_table')
-                        <div x-show="data && !loading && !isEmpty" class="overflow-auto h-full">
-                            <table class="w-full text-xs border-collapse">
-                                <thead class="bg-gray-50 dark:bg-gray-700 sticky top-0">
-                                    <tr>
-                                        <th class="px-2 py-1.5 text-left font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap">วันที่</th>
-                                        <th class="px-2 py-1.5 text-left font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap">Slot</th>
-                                        <template x-for="col in (data ? data.columns : [])" :key="col.id">
-                                            <th class="px-2 py-1.5 text-right font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                                                <span x-text="col.name"></span>
-                                                <template x-if="col.unit">
-                                                    <span class="text-gray-400 font-normal ml-0.5" x-text="'(' + col.unit + ')'"></span>
-                                                </template>
+                        <div x-show="data && !isEmpty" class="absolute inset-0 flex flex-col">
+                            {{-- Loading overlay: shows during page/sort change while old data stays visible --}}
+                            <div x-show="loading"
+                                 class="absolute inset-0 bg-white/70 dark:bg-gray-800/70 flex items-center justify-center z-20 rounded-lg">
+                                <i class="ti ti-loader-2 animate-spin text-indigo-400 text-lg"></i>
+                            </div>
+
+                            {{-- Scrollable table area --}}
+                            <div class="flex-1 overflow-auto min-h-0">
+                                <table class="w-full text-xs border-collapse">
+                                    <thead class="bg-gray-50 dark:bg-gray-700 sticky top-0 z-10">
+                                        <tr>
+                                            {{-- วันที่ — sortable --}}
+                                            <th @click="toggleSort('record_date')"
+                                                class="px-2 py-1.5 text-left font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 select-none">
+                                                <span class="inline-flex items-center gap-1">วันที่
+                                                    <i class="ti text-xs"
+                                                       :class="sortBy==='record_date'
+                                                           ? (sortDir==='asc' ? 'ti-arrow-up text-indigo-500' : 'ti-arrow-down text-indigo-500')
+                                                           : 'ti-arrows-sort text-gray-300 dark:text-gray-600'"></i>
+                                                </span>
                                             </th>
-                                        </template>
-                                        <th class="px-2 py-1.5 text-center font-medium text-gray-600 dark:text-gray-300">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                                    <template x-for="row in (data ? data.records : [])" :key="row.id">
-                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                            <td class="px-2 py-1.5 font-medium whitespace-nowrap" x-text="row.record_date"></td>
-                                            <td class="px-2 py-1.5 text-gray-500 whitespace-nowrap" x-text="row.time_slot || '-'"></td>
+                                            <th class="px-2 py-1.5 text-left font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap">Slot</th>
                                             <template x-for="col in (data ? data.columns : [])" :key="col.id">
-                                                <td class="px-2 py-1.5 text-right">
-                                                    <template x-if="row.values && row.values[col.id] != null">
-                                                        <span class="inline-block px-1.5 py-0.5 rounded font-mono"
-                                                              :class="{
-                                                                  'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400':
-                                                                      row.values[col.id].is_alert && row.values[col.id].alert_level === 'critical',
-                                                                  'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400':
-                                                                      row.values[col.id].is_alert && row.values[col.id].alert_level === 'warning',
-                                                                  'text-gray-700 dark:text-gray-300': !row.values[col.id].is_alert,
-                                                              }"
-                                                              x-text="row.values[col.id].value ?? '—'"></span>
+                                                <th class="px-2 py-1.5 text-right font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                                                    <span x-text="col.name"></span>
+                                                    <template x-if="col.unit">
+                                                        <span class="text-gray-400 font-normal ml-0.5" x-text="'(' + col.unit + ')'"></span>
                                                     </template>
-                                                    <template x-if="!row.values || row.values[col.id] == null">
-                                                        <span class="text-gray-300">—</span>
-                                                    </template>
-                                                </td>
+                                                </th>
                                             </template>
-                                            <td class="px-2 py-1.5 text-center whitespace-nowrap">
-                                                <span class="px-1.5 py-0.5 rounded-full text-xs"
-                                                      :class="{
-                                                        'bg-blue-100 text-blue-600':   row.status === 'submitted',
-                                                        'bg-green-100 text-green-600': row.status === 'approved',
-                                                        'bg-red-100 text-red-600':     row.status === 'rejected',
-                                                        'bg-gray-100 text-gray-500':   row.status === 'draft',
-                                                      }"
-                                                      x-text="row.status"></span>
-                                            </td>
+                                            {{-- Status — sortable --}}
+                                            <th @click="toggleSort('status')"
+                                                class="px-2 py-1.5 text-center font-medium text-gray-600 dark:text-gray-300 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 select-none">
+                                                <span class="inline-flex items-center justify-center gap-1">Status
+                                                    <i class="ti text-xs"
+                                                       :class="sortBy==='status'
+                                                           ? (sortDir==='asc' ? 'ti-arrow-up text-indigo-500' : 'ti-arrow-down text-indigo-500')
+                                                           : 'ti-arrows-sort text-gray-300 dark:text-gray-600'"></i>
+                                                </span>
+                                            </th>
                                         </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                                        <template x-for="row in (data ? data.records : [])" :key="row.id">
+                                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                                <td class="px-2 py-1.5 font-medium whitespace-nowrap" x-text="row.record_date"></td>
+                                                <td class="px-2 py-1.5 text-gray-500 whitespace-nowrap" x-text="row.time_slot || '-'"></td>
+                                                <template x-for="col in (data ? data.columns : [])" :key="col.id">
+                                                    <td class="px-2 py-1.5 text-right">
+                                                        <template x-if="row.values && row.values[col.id] != null">
+                                                            <span class="inline-block px-1.5 py-0.5 rounded font-mono"
+                                                                  :class="{
+                                                                      'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400':
+                                                                          row.values[col.id].is_alert && row.values[col.id].alert_level === 'critical',
+                                                                      'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400':
+                                                                          row.values[col.id].is_alert && row.values[col.id].alert_level === 'warning',
+                                                                      'text-gray-700 dark:text-gray-300': !row.values[col.id].is_alert,
+                                                                  }"
+                                                                  x-text="row.values[col.id].value ?? '—'"></span>
+                                                        </template>
+                                                        <template x-if="!row.values || row.values[col.id] == null">
+                                                            <span class="text-gray-300">—</span>
+                                                        </template>
+                                                    </td>
+                                                </template>
+                                                <td class="px-2 py-1.5 text-center whitespace-nowrap">
+                                                    <span class="px-1.5 py-0.5 rounded-full text-xs"
+                                                          :class="{
+                                                            'bg-blue-100 text-blue-600':   row.status === 'submitted',
+                                                            'bg-green-100 text-green-600': row.status === 'approved',
+                                                            'bg-red-100 text-red-600':     row.status === 'rejected',
+                                                            'bg-gray-100 text-gray-500':   row.status === 'draft',
+                                                          }"
+                                                          x-text="row.status"></span>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {{-- Pagination controls --}}
+                            <div x-show="totalPages > 1"
+                                 class="flex-shrink-0 flex items-center justify-between px-2 py-1.5 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+                                <span class="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">
+                                    <span x-text="tableFrom"></span>–<span x-text="tableTo"></span>
+                                    / <span x-text="totalRows"></span>
+                                </span>
+                                <div class="flex items-center gap-0.5">
+                                    <button @click="fetchTablePage(1)" :disabled="currentPage <= 1"
+                                            class="w-6 h-6 flex items-center justify-center rounded text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">«</button>
+                                    <button @click="fetchTablePage(currentPage - 1)" :disabled="currentPage <= 1"
+                                            class="w-6 h-6 flex items-center justify-center rounded text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">‹</button>
+                                    <template x-for="(p, i) in pageRange" :key="i">
+                                        <button @click="typeof p === 'number' && fetchTablePage(p)"
+                                                :disabled="p === '…'"
+                                                :class="p === currentPage
+                                                    ? 'bg-indigo-600 text-white'
+                                                    : p === '…'
+                                                        ? 'cursor-default text-gray-400 dark:text-gray-600'
+                                                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'"
+                                                class="min-w-[24px] h-6 px-1 flex items-center justify-center rounded text-xs transition-colors"
+                                                x-text="p">
+                                        </button>
                                     </template>
-                                </tbody>
-                            </table>
+                                    <button @click="fetchTablePage(currentPage + 1)" :disabled="currentPage >= totalPages"
+                                            class="w-6 h-6 flex items-center justify-center rounded text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">›</button>
+                                    <button @click="fetchTablePage(totalPages)" :disabled="currentPage >= totalPages"
+                                            class="w-6 h-6 flex items-center justify-center rounded text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">»</button>
+                                </div>
+                            </div>
                         </div>
                         @endif
                     </div>
@@ -419,9 +477,18 @@ function dashboardView(slug) {
 // ─── Per-widget Alpine component ─────────────────────────────────────────────
 function widgetComponent(widgetId, widgetType) {
     return {
-        data:    null,
-        loading: true,
-        error:   null,
+        data:        null,
+        loading:     true,
+        error:       null,
+        // Data table — pagination & sorting state
+        currentPage: 1,
+        totalPages:  1,
+        totalRows:   0,
+        perPage:     10,
+        sortBy:      'record_date',
+        sortDir:     'desc',
+        tableFrom:   0,
+        tableTo:     0,
 
         init() {
             const store = Alpine.store('dashDate');
@@ -437,23 +504,74 @@ function widgetComponent(widgetId, widgetType) {
             }
 
             window.addEventListener('dashboard-date-change', (e) => {
+                this.currentPage = 1;
                 this.fetchData(e.detail.dateFrom, e.detail.dateTo);
             });
         },
 
-        fetchData(dateFrom, dateTo) {
+        fetchData(dateFrom, dateTo, keepData = false) {
             this.loading = true;
-            this.data    = null;
-            const qs = (dateFrom && dateTo)
-                ? '?' + new URLSearchParams({ date_from: dateFrom, date_to: dateTo })
-                : '';
-            fetch('/api/dashboard-widgets/' + widgetId + '/data' + qs, {
+            if (!keepData) this.data = null;
+            const params = {};
+            if (dateFrom && dateTo) { params.date_from = dateFrom; params.date_to = dateTo; }
+            if (widgetType === 'data_table') {
+                params.page     = this.currentPage;
+                params.per_page = this.perPage;
+                params.sort_by  = this.sortBy;
+                params.sort_dir = this.sortDir;
+            }
+            fetch('/api/dashboard-widgets/' + widgetId + '/data?' + new URLSearchParams(params), {
                 headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' },
                 credentials: 'same-origin',
             })
             .then(r => r.json())
-            .then(d => { this.data = d; this.loading = false; })
+            .then(d => {
+                this.data    = d;
+                this.loading = false;
+                if (d.type === 'data_table') {
+                    this.currentPage = d.current_page ?? 1;
+                    this.totalPages  = d.last_page    ?? 1;
+                    this.totalRows   = d.total        ?? 0;
+                    this.tableFrom   = d.from         ?? 0;
+                    this.tableTo     = d.to           ?? 0;
+                }
+            })
             .catch(e => { this.error = e.message; this.loading = false; });
+        },
+
+        fetchTablePage(page) {
+            if (page < 1 || page > this.totalPages) return;
+            this.currentPage = page;
+            const s = Alpine.store('dashDate');
+            this.fetchData(s.dateFrom, s.dateTo, true);
+        },
+
+        toggleSort(column) {
+            if (this.sortBy === column) {
+                this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
+            } else {
+                this.sortBy  = column;
+                this.sortDir = 'asc';
+            }
+            this.currentPage = 1;
+            const s = Alpine.store('dashDate');
+            this.fetchData(s.dateFrom, s.dateTo, true);
+        },
+
+        get pageRange() {
+            const pages = [];
+            const total = this.totalPages;
+            const cur   = this.currentPage;
+            if (total <= 7) {
+                for (let i = 1; i <= total; i++) pages.push(i);
+            } else {
+                pages.push(1);
+                if (cur > 3) pages.push('…');
+                for (let i = Math.max(2, cur - 1); i <= Math.min(total - 1, cur + 1); i++) pages.push(i);
+                if (cur < total - 2) pages.push('…');
+                pages.push(total);
+            }
+            return pages;
         },
 
         get isEmpty() {
