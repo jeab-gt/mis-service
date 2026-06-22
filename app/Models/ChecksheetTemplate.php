@@ -15,12 +15,18 @@ class ChecksheetTemplate extends Model
         'frequency',
         'flow_id',
         'factory_scope',
+        'category_id',
+        'dashboard_id',
+        'allowed_roles',
+        'allowed_factories',
         'is_active',
         'created_by',
     ];
 
     protected $casts = [
-        'is_active' => 'boolean',
+        'is_active'         => 'boolean',
+        'allowed_roles'     => 'array',
+        'allowed_factories' => 'array',
     ];
 
     public function getRouteKeyName(): string
@@ -51,5 +57,15 @@ class ChecksheetTemplate extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(AppCategory::class, 'category_id');
+    }
+
+    public function dashboard(): BelongsTo
+    {
+        return $this->belongsTo(Dashboard::class, 'dashboard_id');
     }
 }

@@ -3,10 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AppCategory;
 use App\Models\ChecksheetTemplate;
+use App\Models\Dashboard;
 use App\Models\Flow;
+use App\Models\Master;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 
 class ChecksheetTemplateController extends Controller
 {
@@ -62,9 +66,13 @@ class ChecksheetTemplateController extends Controller
 
     public function edit(ChecksheetTemplate $template)
     {
-        $flows = Flow::where('is_active', true)->orderBy('name')->get();
+        $flows      = Flow::where('is_active', true)->orderBy('name')->get();
+        $categories = AppCategory::orderBy('sort_order')->orderBy('name_th')->get();
+        $dashboards = Dashboard::orderBy('name')->get();
+        $roles      = Role::orderBy('name')->get();
+        $factories  = Master::where('type', 'factory')->orderBy('name_th')->get();
 
-        return view('admin.checksheets.edit', compact('template', 'flows'));
+        return view('admin.checksheets.edit', compact('template', 'flows', 'categories', 'dashboards', 'roles', 'factories'));
     }
 
     public function builder(ChecksheetTemplate $template)
@@ -84,6 +92,12 @@ class ChecksheetTemplateController extends Controller
             'flow_id'       => 'nullable|exists:flows,id',
             'factory_scope' => 'sometimes|required|in:own_factory,all_factories',
             'is_active'     => 'boolean',
+            'category_id'        => 'nullable|exists:app_categories,id',
+            'dashboard_id'       => 'nullable|exists:dashboards,id',
+            'allowed_roles'      => 'nullable|array',
+            'allowed_roles.*'    => 'string',
+            'allowed_factories'  => 'nullable|array',
+            'allowed_factories.*'=> 'integer',
             'parameters'    => 'nullable|array',
             'parameters.*.id'          => 'nullable|integer',
             'parameters.*.name'        => 'required|string|max:255',
@@ -104,13 +118,20 @@ class ChecksheetTemplateController extends Controller
 
         // Update template settings if provided
         $templateUpdate = [];
-        foreach (['name', 'description', 'frequency', 'flow_id', 'factory_scope'] as $field) {
-            if (isset($data[$field])) {
+        foreach (['name', 'description', 'frequency', 'flow_id', 'factory_scope', 'category_id', 'dashboard_id'] as $field) {
+            if (array_key_exists($field, $data)) {
                 $templateUpdate[$field] = $data[$field];
             }
         }
         if ($request->has('is_active')) {
             $templateUpdate['is_active'] = $request->boolean('is_active');
+        }
+        if ($request->has('allowed_roles')) {
+            $templateUpdate['allowed_roles'] = empty($data['allowed_roles']) ? null : $data['allowed_roles'];
+        }
+        if ($request->has('allowed_factories')) {
+            $raw = $data['allowed_factories'] ?? [];
+            $templateUpdate['allowed_factories'] = empty($raw) ? null : array_map('intval', (array) $raw);
         }
         if (!empty($templateUpdate)) {
             $template->update($templateUpdate);

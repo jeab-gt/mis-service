@@ -75,6 +75,65 @@
                 <label for="is_active" class="form-label mb-0 cursor-pointer">เปิดใช้งาน (Active)</label>
             </div>
 
+            {{-- Portal Settings --}}
+            <div class="border-t border-gray-100 dark:border-gray-700 pt-5">
+                <h3 class="font-semibold text-sm mb-3 flex items-center space-x-2">
+                    <i class="ti ti-layout-grid text-purple-500"></i><span>Portal Settings</span>
+                </h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="form-label">หมวดหมู่ (Portal)</label>
+                        <select name="category_id" class="form-select">
+                            <option value="">— ไม่ระบุ —</option>
+                            @foreach($categories as $cat)
+                            <option value="{{ $cat->id }}"
+                                {{ old('category_id', $template->category_id) == $cat->id ? 'selected' : '' }}>
+                                {{ $cat->name_th }}{{ $cat->name_en ? ' — ' . $cat->name_en : '' }}
+                            </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Dashboard ที่ผูกไว้</label>
+                        <select name="dashboard_id" class="form-select">
+                            <option value="">— ไม่มี Dashboard —</option>
+                            @foreach($dashboards as $db)
+                            <option value="{{ $db->id }}"
+                                {{ old('dashboard_id', $template->dashboard_id) == $db->id ? 'selected' : '' }}>
+                                {{ $db->name }}
+                            </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Roles ที่มีสิทธิ์ (ว่าง = ทุก Role)</label>
+                        <div class="flex flex-wrap gap-3 mt-1">
+                            @foreach($roles as $role)
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="checkbox" name="allowed_roles[]" value="{{ $role->name }}"
+                                       {{ in_array($role->name, old('allowed_roles', $template->allowed_roles ?? [])) ? 'checked' : '' }}
+                                       class="rounded text-indigo-600">
+                                <span class="text-sm">{{ $role->name }}</span>
+                            </label>
+                            @endforeach
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label">Factories ที่มีสิทธิ์ (ว่าง = ทุก Factory)</label>
+                        <div class="flex flex-wrap gap-3 mt-1">
+                            @foreach($factories as $factory)
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="checkbox" name="allowed_factories[]" value="{{ $factory->id }}"
+                                       {{ in_array($factory->id, old('allowed_factories', $template->allowed_factories ?? [])) ? 'checked' : '' }}
+                                       class="rounded text-indigo-600">
+                                <span class="text-sm">{{ $factory->name_th }}</span>
+                            </label>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="flex space-x-3 pt-2 border-t border-gray-100 dark:border-gray-700">
                 <button type="submit" class="btn-primary flex items-center space-x-2">
                     <i class="ti ti-device-floppy"></i><span>บันทึก</span>

@@ -12,6 +12,11 @@ class App extends Model
         'name',
         'slug',
         'category',
+        'category_id',
+        'app_type',
+        'dashboard_id',
+        'allowed_roles',
+        'allowed_factories',
         'description',
         'theme_config',
         'icon',
@@ -23,8 +28,10 @@ class App extends Model
     ];
 
     protected $casts = [
-        'theme_config' => 'array',
-        'is_active'    => 'boolean',
+        'theme_config'      => 'array',
+        'allowed_roles'     => 'array',
+        'allowed_factories' => 'array',
+        'is_active'         => 'boolean',
     ];
 
     public function creator(): BelongsTo
@@ -50,6 +57,16 @@ class App extends Model
     public function flow(): BelongsTo
     {
         return $this->belongsTo(Flow::class, 'flow_id');
+    }
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(AppCategory::class, 'category_id');
+    }
+
+    public function dashboard(): BelongsTo
+    {
+        return $this->belongsTo(Dashboard::class, 'dashboard_id');
     }
 
     public function scopeActive($query)

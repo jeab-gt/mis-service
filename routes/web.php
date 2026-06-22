@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ApplicationsController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\NotificationController;
@@ -15,6 +16,7 @@ Route::get('/language/{locale}', [LocaleController::class, 'switch'])->name('loc
 
 Route::middleware(['auth', 'setlocale'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/applications', [ApplicationsController::class, 'index'])->name('applications.index');
 
     // Profile (Breeze)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -133,6 +135,14 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'setlocale', 'role:s
     Route::get('/settings/data-management', [\App\Http\Controllers\Admin\DataManagementController::class, 'index'])->name('data-management.index');
     Route::post('/settings/data-management/archive', [\App\Http\Controllers\Admin\DataManagementController::class, 'archive'])->name('data-management.archive');
     Route::delete('/settings/data-management/drop-archive', [\App\Http\Controllers\Admin\DataManagementController::class, 'dropArchive'])->name('data-management.drop');
+
+    // App Categories
+    Route::prefix('app-categories')->name('app-categories.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\AppCategoryController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\Admin\AppCategoryController::class, 'store'])->name('store');
+        Route::put('/{appCategory}', [\App\Http\Controllers\Admin\AppCategoryController::class, 'update'])->name('update');
+        Route::delete('/{appCategory}', [\App\Http\Controllers\Admin\AppCategoryController::class, 'destroy'])->name('destroy');
+    });
 });
 
 // Checksheets (user-facing)

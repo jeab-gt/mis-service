@@ -38,6 +38,13 @@
                     <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">{{ __('menu.dashboard') }}</span>
                 </a>
 
+                <a href="{{ route('applications.index') }}"
+                   title="Applications"
+                   class="{{ request()->routeIs('applications.*') ? 'sidebar-active' : 'sidebar-link' }}">
+                    <i class="ti ti-layout-grid text-xl flex-shrink-0"></i>
+                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">Applications</span>
+                </a>
+
                 @can('submission.view')
                 <div x-data="{ open: {{ request()->routeIs('submissions.*') || request()->routeIs('tasks.*') ? 'true' : 'false' }} }">
                     <button @click="open = !open"
@@ -141,6 +148,12 @@
                    class="{{ request()->routeIs('admin.apps.*') ? 'sidebar-active' : 'sidebar-link' }}">
                     <i class="ti ti-device-desktop-code text-xl flex-shrink-0"></i>
                     <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">{{ __('menu.app_builder') }}</span>
+                </a>
+                <a href="{{ route('admin.app-categories.index') }}"
+                   title="App Categories"
+                   class="{{ request()->routeIs('admin.app-categories.*') ? 'sidebar-active' : 'sidebar-link' }}">
+                    <i class="ti ti-category-2 text-xl flex-shrink-0"></i>
+                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">App Categories</span>
                 </a>
                 @endcan
 
