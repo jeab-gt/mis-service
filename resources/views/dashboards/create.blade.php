@@ -39,6 +39,19 @@
                 </label>
             </div>
 
+            <div class="border-t border-gray-100 dark:border-gray-700 pt-4">
+                <label class="form-label">Primary App (ถ้ามี)</label>
+                <select name="primary_app_id" class="form-select">
+                    <option value="">— ไม่ผูกกับ App ใด —</option>
+                    @foreach($apps as $a)
+                    <option value="{{ $a->id }}" {{ old('primary_app_id') == $a->id ? 'selected' : '' }}>
+                        {{ $a->name }}
+                    </option>
+                    @endforeach
+                </select>
+                <p class="text-xs text-gray-400 mt-1">ผูก Dashboard นี้กับ Form App — Checksheet ผูก Dashboard จากหน้าแก้ไข Checksheet Template</p>
+            </div>
+
             <div class="flex space-x-3 pt-2 border-t border-gray-100 dark:border-gray-700">
                 <button type="submit" class="btn-primary flex items-center space-x-2">
                     <i class="ti ti-arrow-right"></i><span>สร้างและแก้ไข Layout</span>

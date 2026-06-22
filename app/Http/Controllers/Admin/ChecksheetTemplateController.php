@@ -93,7 +93,7 @@ class ChecksheetTemplateController extends Controller
             'factory_scope' => 'sometimes|required|in:own_factory,all_factories',
             'is_active'     => 'boolean',
             'category_id'        => 'nullable|exists:app_categories,id',
-            'dashboard_id'       => 'nullable|exists:dashboards,id',
+            'primary_dashboard_id'       => 'nullable|exists:dashboards,id',
             'allowed_roles'      => 'nullable|array',
             'allowed_roles.*'    => 'string',
             'allowed_factories'  => 'nullable|array',
@@ -118,7 +118,7 @@ class ChecksheetTemplateController extends Controller
 
         // Update template settings if provided
         $templateUpdate = [];
-        foreach (['name', 'description', 'frequency', 'flow_id', 'factory_scope', 'category_id', 'dashboard_id'] as $field) {
+        foreach (['name', 'description', 'frequency', 'flow_id', 'factory_scope', 'category_id', 'primary_dashboard_id'] as $field) {
             if (array_key_exists($field, $data)) {
                 $templateUpdate[$field] = $data[$field];
             }

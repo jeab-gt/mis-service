@@ -14,6 +14,7 @@ class Dashboard extends Model
         'factory_scope',
         'layout',
         'is_public',
+        'primary_app_id',
         'created_by',
     ];
 
@@ -37,5 +38,10 @@ class Dashboard extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function primaryApp(): BelongsTo
+    {
+        return $this->belongsTo(App::class, 'primary_app_id');
     }
 }

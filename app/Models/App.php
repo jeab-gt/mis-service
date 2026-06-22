@@ -14,7 +14,7 @@ class App extends Model
         'category',
         'category_id',
         'app_type',
-        'dashboard_id',
+        'primary_dashboard_id',
         'allowed_roles',
         'allowed_factories',
         'description',
@@ -64,9 +64,9 @@ class App extends Model
         return $this->belongsTo(AppCategory::class, 'category_id');
     }
 
-    public function dashboard(): BelongsTo
+    public function primaryDashboard(): BelongsTo
     {
-        return $this->belongsTo(Dashboard::class, 'dashboard_id');
+        return $this->belongsTo(Dashboard::class, 'primary_dashboard_id');
     }
 
     public function scopeActive($query)

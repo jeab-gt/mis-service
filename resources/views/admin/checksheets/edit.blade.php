@@ -95,11 +95,11 @@
                     </div>
                     <div>
                         <label class="form-label">Dashboard ที่ผูกไว้</label>
-                        <select name="dashboard_id" class="form-select">
+                        <select name="primary_dashboard_id" class="form-select">
                             <option value="">— ไม่มี Dashboard —</option>
                             @foreach($dashboards as $db)
                             <option value="{{ $db->id }}"
-                                {{ old('dashboard_id', $template->dashboard_id) == $db->id ? 'selected' : '' }}>
+                                {{ old('dashboard_id', $template->primary_dashboard_id) == $db->id ? 'selected' : '' }}>
                                 {{ $db->name }}
                             </option>
                             @endforeach

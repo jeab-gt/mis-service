@@ -16,7 +16,7 @@ class ChecksheetTemplate extends Model
         'flow_id',
         'factory_scope',
         'category_id',
-        'dashboard_id',
+        'primary_dashboard_id',
         'allowed_roles',
         'allowed_factories',
         'is_active',
@@ -64,8 +64,8 @@ class ChecksheetTemplate extends Model
         return $this->belongsTo(AppCategory::class, 'category_id');
     }
 
-    public function dashboard(): BelongsTo
+    public function primaryDashboard(): BelongsTo
     {
-        return $this->belongsTo(Dashboard::class, 'dashboard_id');
+        return $this->belongsTo(Dashboard::class, 'primary_dashboard_id');
     }
 }
