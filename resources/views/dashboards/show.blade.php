@@ -10,31 +10,24 @@
 <div x-data="dashboardView('{{ $dashboard->slug }}')" class="space-y-4">
 
     {{-- Header --}}
-    <div class="flex items-center justify-between"
-         x-data="{
-             isFullscreen: false,
-             toggleFullscreen() {
-                 if (!document.fullscreenElement) {
-                     document.documentElement.requestFullscreen();
-                 } else {
-                     document.exitFullscreen();
-                 }
-             }
-         }"
-         @fullscreenchange.window="isFullscreen = !!document.fullscreenElement">
+    <div class="flex items-center justify-between">
         <h1 class="text-xl font-bold">{{ $dashboard->name }}</h1>
         <div class="flex items-center gap-2">
-            <button @click="toggleFullscreen()"
-                    class="btn-secondary flex items-center gap-1.5 text-sm"
-                    :title="isFullscreen ? 'ออกจากเต็มจอ' : 'เต็มจอ'">
-                <i :class="isFullscreen ? 'ti ti-arrows-minimize' : 'ti ti-arrows-maximize'"></i>
-                <span x-text="isFullscreen ? 'ออกจากเต็มจอ' : 'เต็มจอ'"></span>
-            </button>
             <a href="{{ route('dashboards.edit', $dashboard) }}" class="btn-secondary flex items-center gap-1.5 text-sm">
                 <i class="ti ti-settings"></i><span>Edit Layout</span>
             </a>
         </div>
     </div>
+
+    {{-- Fixed exit-fullscreen overlay — top-right corner, below widget modal (z-999) --}}
+    <button x-show="isFullscreen"
+            @click="toggleFullscreen()"
+            class="fixed top-2 right-2 z-[998] flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/50 hover:bg-black/70 text-white text-sm backdrop-blur-sm shadow-lg transition-colors"
+            title="ออกจากเต็มจอ (Esc)"
+            style="display:none;">
+        <i class="ti ti-arrows-minimize text-sm"></i>
+        <span>ออกจากเต็มจอ</span>
+    </button>
 
     {{-- Date Range Filter Bar --}}
     @if(!$dashboard->widgets->isEmpty())
@@ -581,7 +574,11 @@
         if (!outer || !inner) return;
         const avail = outer.clientWidth;
         if (avail <= 0) return;                       // not laid out yet
-        const scale = avail >= CANVAS_W ? 1 : avail / CANVAS_W;
+        // In fullscreen the canvas should fill the available width exactly (scale can exceed 1).
+        // In normal view cap at 1 so widgets are never shown larger than their design size.
+        const scale = document.fullscreenElement
+            ? avail / CANVAS_W
+            : Math.min(1, avail / CANVAS_W);
         inner.style.transform = 'scale(' + scale + ')';
         outer.style.height    = Math.ceil(CANVAS_H * scale) + 'px';
     }
