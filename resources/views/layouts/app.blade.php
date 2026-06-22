@@ -469,6 +469,8 @@ function appLayout() {
 
         onFullscreenChange() {
             this.isFullscreen = !!document.fullscreenElement;
+            // Sidebar CSS transition is 300ms — re-measure canvas after it settles
+            setTimeout(() => window.dispatchEvent(new Event('resize')), 350);
         },
 
         setTheme(key) {

@@ -10,7 +10,12 @@
 
 @section('content')
 <div x-data="dashboardBuilder(@js($dashboard->widgets->toArray()), @js($templates->toArray()))"
-     x-init="$nextTick(() => requestAnimationFrame(() => { computeScale(); initInteract(); window.addEventListener('resize', () => computeScale()); }))"
+     x-init="$nextTick(() => requestAnimationFrame(() => requestAnimationFrame(() => {
+         computeScale();
+         initInteract();
+         window.addEventListener('resize', () => computeScale());
+         $watch('widgets', () => $nextTick(() => computeScale()));
+     })))"
      class="space-y-4">
 
     {{-- ① STICKY TOOLBAR --}}
@@ -326,10 +331,9 @@ function dashboardBuilder(initialWidgets, templates) {
             const outer = document.getElementById('canvas-outer');
             if (!outer) return;
             const avail = outer.clientWidth;
-            const refW  = this.referenceW;
-            const s     = refW > avail ? avail / refW : 1;
-            console.log('[DashCanvas] availableWidth:', avail, '| referenceWidth:', refW, '| scale:', s.toFixed(3));
-            this.scale = s;
+            if (avail <= 0) return;
+            const refW = this.referenceW;
+            this.scale = refW > avail ? avail / refW : 1;
         },
 
         // ── Widget CRUD ──────────────────────────────────────────────────────

@@ -574,15 +574,24 @@
 (function () {
     const CANVAS_W = {{ $canvasW ?? 1160 }};
     const CANVAS_H = {{ $canvasH ?? 400 }};
+
     function applyViewScale() {
         const outer = document.getElementById('view-canvas-outer');
         const inner = document.getElementById('view-canvas-inner');
         if (!outer || !inner) return;
-        const scale = Math.min(1, outer.clientWidth / CANVAS_W);
+        const avail = outer.clientWidth;
+        if (avail <= 0) return;                       // not laid out yet
+        const scale = avail >= CANVAS_W ? 1 : avail / CANVAS_W;
         inner.style.transform = 'scale(' + scale + ')';
         outer.style.height    = Math.ceil(CANVAS_H * scale) + 'px';
     }
-    document.addEventListener('DOMContentLoaded', applyViewScale);
+
+    // Double RAF ensures sidebar is at its persisted localStorage width before we measure.
+    // (matches edit.blade.php's requestAnimationFrame pattern)
+    document.addEventListener('DOMContentLoaded', () =>
+        requestAnimationFrame(() => requestAnimationFrame(applyViewScale))
+    );
+    // app.blade.php dispatches 'resize' 350ms after fullscreen change (post-sidebar transition)
     window.addEventListener('resize', applyViewScale);
 })();
 
