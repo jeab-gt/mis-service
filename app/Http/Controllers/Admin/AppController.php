@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\App;
 use App\Models\AppCategory;
+use App\Models\ChecksheetTemplate;
 use App\Models\Dashboard;
 use App\Models\Flow;
 use App\Models\FormTemplate;
@@ -17,15 +18,24 @@ class AppController extends Controller
     public function index()
     {
         $apps = App::withCount('submissions')
-            ->with(['initialFormTemplate', 'flow'])
+            ->with(['initialFormTemplate', 'flow', 'category'])
             ->latest()
-            ->paginate(12);
+            ->get();
 
-        return view('apps.index', compact('apps'));
+        $checksheets = ChecksheetTemplate::withCount(['parameters', 'records'])
+            ->with(['category', 'creator'])
+            ->latest()
+            ->get();
+
+        return view('apps.index', compact('apps', 'checksheets'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
+        if ($request->get('type') === 'checksheet') {
+            return redirect()->route('admin.checksheets.create');
+        }
+
         $formTemplates = FormTemplate::where('is_active', true)->orderBy('name')->get();
         $flows         = Flow::where('is_active', true)->orderBy('name')->get();
         $categories    = AppCategory::orderBy('sort_order')->orderBy('name_th')->get();
@@ -43,7 +53,7 @@ class AppController extends Controller
             'slug'                      => 'required|string|max:100|unique:apps,slug|alpha_dash',
             'category'                  => 'required|string|max:50',
             'category_id'               => 'nullable|exists:app_categories,id',
-            'primary_dashboard_id'              => 'nullable|exists:dashboards,id',
+            'primary_dashboard_id'      => 'nullable|exists:dashboards,id',
             'description'               => 'nullable|string',
             'icon'                      => 'nullable|string|max:50',
             'is_active'                 => 'boolean',
@@ -85,7 +95,7 @@ class AppController extends Controller
             'slug'                      => 'required|string|max:100|unique:apps,slug,' . $app->id . '|alpha_dash',
             'category'                  => 'required|string|max:50',
             'category_id'               => 'nullable|exists:app_categories,id',
-            'primary_dashboard_id'              => 'nullable|exists:dashboards,id',
+            'primary_dashboard_id'      => 'nullable|exists:dashboards,id',
             'description'               => 'nullable|string',
             'icon'                      => 'nullable|string|max:50',
             'is_active'                 => 'boolean',

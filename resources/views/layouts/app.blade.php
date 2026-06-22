@@ -199,12 +199,6 @@
                             <i class="ti ti-category text-xl flex-shrink-0"></i>
                             <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">App Categories</span>
                         </a>
-                        <a href="{{ route('admin.checksheets.index') }}"
-                           title="Checksheet Templates"
-                           class="{{ request()->routeIs('admin.checksheets.*') ? 'sidebar-active' : 'sidebar-link' }}">
-                            <i class="ti ti-template text-xl flex-shrink-0"></i>
-                            <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">Checksheet Templates</span>
-                        </a>
                         <a href="{{ route('admin.data-management.index') }}"
                            title="Data Management"
                            class="{{ request()->routeIs('admin.data-management.*') ? 'sidebar-active' : 'sidebar-link' }}">
