@@ -21,6 +21,9 @@ Route::middleware(['auth', 'setlocale'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    // Theme preference
+    Route::post('/user/theme', [\App\Http\Controllers\ThemeController::class, 'update'])->name('user.theme');
+
     // Submissions
     Route::prefix('submissions')->name('submissions.')->group(function () {
         Route::get('/', [SubmissionController::class, 'index'])->name('index');

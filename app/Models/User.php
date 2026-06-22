@@ -25,6 +25,7 @@ class User extends Authenticatable
         'phone',
         'is_active',
         'is_parent_factory',
+        'theme_preference',
     ];
 
     protected $hidden = [

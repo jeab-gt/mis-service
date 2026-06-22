@@ -32,27 +32,27 @@
             {{-- 5-button segmented strip (border + -ml-px pattern, no overflow-hidden) --}}
             <div class="flex text-sm font-medium">
                 <button type="button" @click="setPreset('today')"
-                        :class="mode === 'today' ? 'relative z-10 bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-600'"
+                        :class="mode === 'today' ? 'btn-date-active relative z-10' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-600'"
                         class="px-4 py-1.5 border rounded-l-lg whitespace-nowrap transition-colors">
                     วันนี้
                 </button>
                 <button type="button" @click="setPreset('last_7_days')"
-                        :class="mode === 'last_7_days' ? 'relative z-10 bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-600'"
+                        :class="mode === 'last_7_days' ? 'btn-date-active relative z-10' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-600'"
                         class="px-4 py-1.5 border -ml-px whitespace-nowrap transition-colors">
                     7 วัน
                 </button>
                 <button type="button" @click="setPreset('last_30_days')"
-                        :class="mode === 'last_30_days' ? 'relative z-10 bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-600'"
+                        :class="mode === 'last_30_days' ? 'btn-date-active relative z-10' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-600'"
                         class="px-4 py-1.5 border -ml-px whitespace-nowrap transition-colors">
                     30 วัน
                 </button>
                 <button type="button" @click="setPreset('this_month')"
-                        :class="mode === 'this_month' ? 'relative z-10 bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-600'"
+                        :class="mode === 'this_month' ? 'btn-date-active relative z-10' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-600'"
                         class="px-4 py-1.5 border -ml-px whitespace-nowrap transition-colors">
                     เดือนนี้
                 </button>
                 <button type="button" @click="setPreset('custom')"
-                        :class="mode === 'custom' ? 'relative z-10 bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-600'"
+                        :class="mode === 'custom' ? 'btn-date-active relative z-10' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-600'"
                         class="px-4 py-1.5 border -ml-px rounded-r-lg whitespace-nowrap transition-colors">
                     กำหนดเอง ▾
                 </button>
@@ -93,7 +93,10 @@
                         ยกเลิก
                     </button>
                     <button type="button" @click="applyCustom()"
-                            class="text-xs px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition-colors shadow-sm">
+                            class="text-xs px-4 py-1.5 rounded-lg text-white font-medium transition-colors shadow-sm"
+                            style="background-color: var(--color-primary);"
+                            onmouseover="this.style.backgroundColor='var(--color-primary-dark)'"
+                            onmouseout="this.style.backgroundColor='var(--color-primary)'">
                         Apply
                     </button>
                 </div>
@@ -102,7 +105,7 @@
 
         {{-- Active range badge --}}
         <div class="ml-auto shrink-0">
-            <span class="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 font-medium">
+            <span class="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium badge-primary">
                 <i class="ti ti-calendar-event text-sm"></i>
                 <span x-text="rangeLabel"></span>
             </span>
@@ -163,17 +166,23 @@
         <div id="view-canvas-inner" style="position:relative; width:{{ $canvasW }}px; height:{{ $canvasH }}px; transform-origin:top left;">
             @foreach($pixelWidgets as $pw)
             @php $widget = $pw['model']; @endphp
-            <div x-data="widgetComponent({{ $widget->id }}, '{{ $widget->widget_type }}')"
+            <div x-data="widgetComponent({{ $widget->id }}, '{{ $widget->widget_type }}', {!! json_encode($widget->title) !!})"
                  class="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden"
                  style="position:absolute; left:{{ $pw['x'] }}px; top:{{ $pw['y'] }}px; width:{{ $pw['pw'] }}px; height:{{ $pw['ph'] }}px;">
 
                 <div class="flex flex-col h-full p-3">
                     <h3 class="font-semibold text-sm mb-2 flex items-center gap-2 flex-shrink-0">
-                        <i class="ti {{ $icons[$widget->widget_type] ?? 'ti-chart-bar' }} text-indigo-500"></i>
+                        <i class="ti {{ $icons[$widget->widget_type] ?? 'ti-chart-bar' }} text-primary flex-shrink-0"></i>
                         <span class="truncate flex-1">{{ $widget->title }}</span>
                         <span x-show="loading" class="flex-shrink-0">
                             <i class="ti ti-loader-2 animate-spin text-gray-400 text-base"></i>
                         </span>
+                        <button x-show="!loading && data && !isEmpty"
+                                @click="$dispatch('fullscreen-request', { id: widgetId, type: widgetType, title: widgetTitle, data: data })"
+                                class="flex-shrink-0 p-0.5 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                title="เปิดเต็มจอ">
+                            <i class="ti ti-arrows-maximize text-sm"></i>
+                        </button>
                     </h3>
 
                     <div class="flex-1 min-h-0 relative">
@@ -195,7 +204,7 @@
                         {{-- KPI Card --}}
                         @if($widget->widget_type === 'kpi_card')
                         <div x-show="data && !loading && !isEmpty" class="text-center py-3">
-                            <div class="text-3xl font-bold text-indigo-600 dark:text-indigo-400"
+                            <div class="text-3xl font-bold" style="color: var(--color-primary)"
                                  x-text="data?.latest_value != null ? parseFloat(data.latest_value).toFixed(2) : '—'"></div>
                             <div class="flex items-center justify-center gap-3 mt-2 text-xs text-gray-500">
                                 <span>Avg: <b x-text="data?.avg != null ? parseFloat(data.avg).toFixed(2) : '—'"></b></span>
@@ -210,7 +219,7 @@
                         <div x-show="data && !loading && !isEmpty" class="flex flex-col items-center py-2">
                             <svg viewBox="0 0 200 120" class="w-40">
                                 <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#e5e7eb" stroke-width="16" stroke-linecap="round"/>
-                                <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#6366f1" stroke-width="16" stroke-linecap="round" stroke-dasharray="0 251"/>
+                                <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke-width="16" stroke-linecap="round" stroke-dasharray="0 251" style="stroke: var(--color-primary)"/>
                                 <text x="100" y="105" text-anchor="middle" font-size="24" fill="currentColor"
                                       x-text="data ? parseFloat(data.value).toFixed(1) : '—'"></text>
                             </svg>
@@ -271,7 +280,7 @@
                                                 <span class="inline-flex items-center gap-1">วันที่
                                                     <i class="ti text-xs"
                                                        :class="sortBy==='record_date'
-                                                           ? (sortDir==='asc' ? 'ti-arrow-up text-indigo-500' : 'ti-arrow-down text-indigo-500')
+                                                           ? (sortDir==='asc' ? 'ti-arrow-up text-primary' : 'ti-arrow-down text-primary')
                                                            : 'ti-arrows-sort text-gray-300 dark:text-gray-600'"></i>
                                                 </span>
                                             </th>
@@ -290,7 +299,7 @@
                                                 <span class="inline-flex items-center justify-center gap-1">Status
                                                     <i class="ti text-xs"
                                                        :class="sortBy==='status'
-                                                           ? (sortDir==='asc' ? 'ti-arrow-up text-indigo-500' : 'ti-arrow-down text-indigo-500')
+                                                           ? (sortDir==='asc' ? 'ti-arrow-up text-primary' : 'ti-arrow-down text-primary')
                                                            : 'ti-arrows-sort text-gray-300 dark:text-gray-600'"></i>
                                                 </span>
                                             </th>
@@ -351,7 +360,7 @@
                                         <button @click="typeof p === 'number' && fetchTablePage(p)"
                                                 :disabled="p === '…'"
                                                 :class="p === currentPage
-                                                    ? 'bg-indigo-600 text-white'
+                                                    ? 'page-active'
                                                     : p === '…'
                                                         ? 'cursor-default text-gray-400 dark:text-gray-600'
                                                         : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'"
@@ -375,6 +384,168 @@
         </div>{{-- /view-canvas-outer --}}
     </div>
     @endif
+</div>
+
+{{-- ═══════════════════════════════════════════════════════════
+     Fullscreen Modal — lives OUTSIDE the scaled canvas so that
+     position:fixed is relative to the viewport, not any transform.
+     ═══════════════════════════════════════════════════════════ --}}
+<div x-data="fullscreenModal()"
+     @fullscreen-request.window="open($event.detail)"
+     @keydown.escape.window="if(isOpen) close()"
+     x-show="isOpen"
+     x-cloak
+     style="display:none;"
+     class="fixed inset-0 z-[999] bg-white dark:bg-gray-900 flex flex-col">
+
+    {{-- Header bar --}}
+    <div class="flex items-center h-14 px-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+        <i class="ti ti-arrows-maximize mr-3 text-primary text-lg flex-shrink-0"></i>
+        <h2 class="font-semibold text-lg flex-1 truncate" x-text="widgetTitle"></h2>
+        <button @click="close()"
+                class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ml-4"
+                title="ปิด (Esc)">
+            <i class="ti ti-x text-xl"></i>
+        </button>
+    </div>
+
+    {{-- Content --}}
+    <div class="flex-1 min-h-0 p-6 overflow-auto">
+
+        {{-- Line / Bar Chart --}}
+        <div x-show="widgetType === 'line_chart' || widgetType === 'bar_chart'"
+             class="w-full h-full" style="min-height:400px;">
+            <canvas id="chart-fullscreen" style="width:100%;height:100%;"></canvas>
+        </div>
+
+        {{-- KPI Card --}}
+        <div x-show="widgetType === 'kpi_card'"
+             class="flex items-center justify-center h-full" style="min-height:300px;">
+            <div class="text-center">
+                <div class="text-7xl font-bold mb-6" style="color:var(--color-primary)"
+                     x-text="data?.latest_value != null ? parseFloat(data.latest_value).toFixed(2) : '—'"></div>
+                <div class="flex items-center justify-center gap-12">
+                    <div class="text-center">
+                        <div class="text-xs uppercase tracking-wider text-gray-400 mb-1">Avg</div>
+                        <div class="text-2xl font-semibold text-gray-700 dark:text-gray-200"
+                             x-text="data?.avg != null ? parseFloat(data.avg).toFixed(2) : '—'"></div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-xs uppercase tracking-wider text-gray-400 mb-1">Min</div>
+                        <div class="text-2xl font-semibold text-gray-700 dark:text-gray-200"
+                             x-text="data?.min != null ? parseFloat(data.min).toFixed(2) : '—'"></div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-xs uppercase tracking-wider text-gray-400 mb-1">Max</div>
+                        <div class="text-2xl font-semibold text-gray-700 dark:text-gray-200"
+                             x-text="data?.max != null ? parseFloat(data.max).toFixed(2) : '—'"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Gauge --}}
+        <div x-show="widgetType === 'gauge'"
+             class="flex items-center justify-center h-full" style="min-height:300px;">
+            <svg viewBox="0 0 200 120" class="w-72">
+                <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#e5e7eb" stroke-width="16" stroke-linecap="round"/>
+                <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke-width="16" stroke-linecap="round"
+                      stroke-dasharray="0 251" style="stroke: var(--color-primary)"></path>
+                <text x="100" y="105" text-anchor="middle" font-size="24" fill="currentColor"
+                      x-text="data ? parseFloat(data.value).toFixed(1) : '—'"></text>
+            </svg>
+        </div>
+
+        {{-- Heatmap --}}
+        <div x-show="widgetType === 'heatmap'" class="overflow-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr>
+                        <th class="py-2 pr-4 text-left text-gray-500 font-normal">Parameter</th>
+                        <template x-for="date in (data ? data.dates : [])" :key="date">
+                            <th class="py-2 px-2 text-center text-gray-500 font-normal whitespace-nowrap" x-text="date.slice(5)"></th>
+                        </template>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="(paramName, paramId) in (data ? data.parameters : {})" :key="paramId">
+                        <tr>
+                            <td class="py-2 pr-4 font-medium whitespace-nowrap" x-text="paramName"></td>
+                            <template x-for="date in (data ? data.dates : [])" :key="date">
+                                <td class="py-2 px-2 text-center">
+                                    <div class="w-7 h-7 rounded mx-auto"
+                                         :class="{
+                                             'bg-red-400':    data.cells[date]?.[paramId]?.level === 'critical',
+                                             'bg-yellow-300': data.cells[date]?.[paramId]?.level === 'warning',
+                                             'bg-green-300':  data.cells[date]?.[paramId]?.level === 'ok',
+                                             'bg-gray-100 dark:bg-gray-600': !data.cells[date]?.[paramId],
+                                         }"></div>
+                                </td>
+                            </template>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+
+        {{-- Data Table --}}
+        <div x-show="widgetType === 'data_table'" class="overflow-auto h-full">
+            <table class="w-full text-sm border-collapse">
+                <thead class="bg-gray-50 dark:bg-gray-700 sticky top-0 z-10">
+                    <tr>
+                        <th class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap">วันที่</th>
+                        <th class="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap">Slot</th>
+                        <template x-for="col in (data ? data.columns : [])" :key="col.id">
+                            <th class="px-3 py-2 text-right font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                                <span x-text="col.name"></span>
+                                <template x-if="col.unit">
+                                    <span class="text-gray-400 font-normal ml-1" x-text="'(' + col.unit + ')'"></span>
+                                </template>
+                            </th>
+                        </template>
+                        <th class="px-3 py-2 text-center font-medium text-gray-600 dark:text-gray-300">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                    <template x-for="row in (data ? data.records : [])" :key="row.id">
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                            <td class="px-3 py-2 font-medium whitespace-nowrap" x-text="row.record_date"></td>
+                            <td class="px-3 py-2 text-gray-500 whitespace-nowrap" x-text="row.time_slot || '-'"></td>
+                            <template x-for="col in (data ? data.columns : [])" :key="col.id">
+                                <td class="px-3 py-2 text-right">
+                                    <template x-if="row.values && row.values[col.id] != null">
+                                        <span class="inline-block px-2 py-0.5 rounded font-mono"
+                                              :class="{
+                                                  'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400':
+                                                      row.values[col.id].is_alert && row.values[col.id].alert_level === 'critical',
+                                                  'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400':
+                                                      row.values[col.id].is_alert && row.values[col.id].alert_level === 'warning',
+                                                  'text-gray-700 dark:text-gray-300': !row.values[col.id].is_alert,
+                                              }"
+                                              x-text="row.values[col.id].value ?? '—'"></span>
+                                    </template>
+                                    <template x-if="!row.values || row.values[col.id] == null">
+                                        <span class="text-gray-300">—</span>
+                                    </template>
+                                </td>
+                            </template>
+                            <td class="px-3 py-2 text-center whitespace-nowrap">
+                                <span class="px-2 py-0.5 rounded-full text-xs"
+                                      :class="{
+                                          'bg-blue-100 text-blue-600':   row.status === 'submitted',
+                                          'bg-green-100 text-green-600': row.status === 'approved',
+                                          'bg-red-100 text-red-600':     row.status === 'rejected',
+                                          'bg-gray-100 text-gray-500':   row.status === 'draft',
+                                      }"
+                                      x-text="row.status"></span>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
 </div>
 @endsection
 
@@ -474,9 +645,87 @@ function dashboardView(slug) {
     };
 }
 
-// ─── Per-widget Alpine component ─────────────────────────────────────────────
-function widgetComponent(widgetId, widgetType) {
+// ─── Fullscreen modal ─────────────────────────────────────────────────────────
+function fullscreenModal() {
     return {
+        isOpen:      false,
+        widgetId:    null,
+        widgetType:  null,
+        widgetTitle: null,
+        data:        null,
+        _chart:      null,
+
+        open(detail) {
+            this.widgetId    = detail.id;
+            this.widgetType  = detail.type;
+            this.widgetTitle = detail.title;
+            this.data        = detail.data;
+            this.isOpen      = true;
+            document.body.style.overflow = 'hidden';
+            if (['line_chart', 'bar_chart'].includes(this.widgetType)) {
+                this.$nextTick(() => this._renderChart());
+            }
+        },
+
+        close() {
+            this.isOpen = false;
+            document.body.style.overflow = '';
+            if (this._chart) { this._chart.destroy(); this._chart = null; }
+        },
+
+        _renderChart() {
+            if (typeof Chart === 'undefined') return;
+            const canvas = document.getElementById('chart-fullscreen');
+            if (!canvas || !this.data) return;
+            if (this._chart) { this._chart.destroy(); this._chart = null; }
+            const d      = this.data;
+            const colors = ['#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4'];
+            const datasets = d.datasets.map((ds, i) => ({
+                label:           ds.label,
+                data:            d.labels.map(lbl => { const pt = ds.data.find(p => p.x === lbl); return pt ? pt.y : null; }),
+                borderColor:     colors[i % colors.length],
+                backgroundColor: colors[i % colors.length] + '33',
+                tension:         0.3,
+                spanGaps:        true,
+                pointRadius:     3,
+            }));
+            if (d.show_spec_lines && d.spec && d.datasets.length === 1) {
+                const base = { type: 'line', pointRadius: 0, borderWidth: 1.5, fill: false, spanGaps: true };
+                const flat = v => Array(d.labels.length).fill(v);
+                if (d.spec.max    != null) datasets.push({ ...base, label: 'Max Spec', data: flat(d.spec.max),    borderColor: 'rgba(239,68,68,0.75)',  borderDash: [6,4] });
+                if (d.spec.min    != null) datasets.push({ ...base, label: 'Min Spec', data: flat(d.spec.min),    borderColor: 'rgba(245,158,11,0.75)', borderDash: [6,4] });
+                if (d.spec.target != null) datasets.push({ ...base, label: 'Target',   data: flat(d.spec.target), borderColor: 'rgba(34,197,94,0.85)',  borderDash: [3,3] });
+            }
+            this._chart = new Chart(canvas, {
+                type: this.widgetType === 'line_chart' ? 'line' : 'bar',
+                data: { labels: d.labels, datasets },
+                options: {
+                    responsive:          true,
+                    maintainAspectRatio: false,
+                    animation:           { duration: 300 },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                filter: item => !['Max Spec','Min Spec','Target'].includes(item.text)
+                                                || (d.show_spec_lines && d.datasets.length === 1),
+                            },
+                        },
+                    },
+                    scales: { y: { beginAtZero: false } },
+                },
+            });
+        },
+    };
+}
+
+// ─── Per-widget Alpine component ─────────────────────────────────────────────
+function widgetComponent(widgetId, widgetType, widgetTitle) {
+    return {
+        widgetId,
+        widgetType,
+        widgetTitle,
         data:        null,
         loading:     true,
         error:       null,

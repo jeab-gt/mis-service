@@ -1,5 +1,10 @@
 <!DOCTYPE html>
-<html lang="{{ app()->getLocale() }}" x-data="appLayout()" :class="{ 'dark': darkMode }" x-cloak>
+<html lang="{{ app()->getLocale() }}"
+      x-data="appLayout()"
+      :class="{ 'dark': darkMode }"
+      data-theme="{{ auth()->user()->theme_preference ?? 'default' }}"
+      :data-theme="theme"
+      x-cloak>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,9 +19,9 @@
     <!-- Sidebar -->
     <aside class="flex-shrink-0 transition-all duration-300 overflow-hidden"
            :class="sidebarOpen ? 'w-64' : 'w-16'">
-        <div class="flex flex-col h-full bg-indigo-900 dark:bg-gray-800 text-white">
-            <div class="flex items-center h-16 px-4 border-b border-indigo-800 dark:border-gray-700 flex-shrink-0">
-                <i class="ti ti-activity-heartbeat text-2xl text-indigo-300 flex-shrink-0"></i>
+        <div class="flex flex-col h-full sidebar-bg-theme dark:bg-gray-800 text-white">
+            <div class="flex items-center h-16 px-4 border-b border-white/10 dark:border-gray-700 flex-shrink-0">
+                <i class="ti ti-activity-heartbeat text-2xl text-white/60 flex-shrink-0"></i>
                 <span class="ml-3 font-bold text-lg whitespace-nowrap" x-show="sidebarOpen" x-transition>IT MIS</span>
             </div>
 
@@ -76,7 +81,7 @@
 
                 @canany(['user.view', 'master.view', 'app.view', 'setting.view'])
                 <div class="pt-3 pb-1" x-show="sidebarOpen">
-                    <p class="text-xs text-indigo-400 uppercase tracking-wider px-2">Admin</p>
+                    <p class="text-xs text-white/40 uppercase tracking-wider px-2">Admin</p>
                 </div>
                 @endcanany
 
@@ -245,8 +250,38 @@
                     </button>
                     <div x-show="open" @click.away="open = false" x-transition
                          class="absolute right-0 mt-1 bg-white dark:bg-gray-700 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 z-50 py-1 min-w-[6rem]">
-                        <a href="{{ route('locale.switch', 'th') }}" class="block px-4 py-1.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-600 {{ app()->getLocale() === 'th' ? 'text-indigo-600 font-semibold' : '' }}">ไทย</a>
-                        <a href="{{ route('locale.switch', 'en') }}" class="block px-4 py-1.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-600 {{ app()->getLocale() === 'en' ? 'text-indigo-600 font-semibold' : '' }}">English</a>
+                        <a href="{{ route('locale.switch', 'th') }}" class="block px-4 py-1.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-600 {{ app()->getLocale() === 'th' ? 'text-primary font-semibold' : '' }}">ไทย</a>
+                        <a href="{{ route('locale.switch', 'en') }}" class="block px-4 py-1.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-600 {{ app()->getLocale() === 'en' ? 'text-primary font-semibold' : '' }}">English</a>
+                    </div>
+                </div>
+
+                <!-- Theme switcher -->
+                <div class="relative" x-data="{ open: false }">
+                    <button @click="open = !open"
+                            class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            title="เปลี่ยน Theme">
+                        <i class="ti ti-palette text-xl"></i>
+                    </button>
+                    <div x-show="open" @click.away="open = false"
+                         x-transition:enter="transition ease-out duration-100"
+                         x-transition:enter-start="opacity-0 scale-95"
+                         x-transition:enter-end="opacity-100 scale-100"
+                         x-transition:leave="transition ease-in duration-75"
+                         x-transition:leave-start="opacity-100 scale-100"
+                         x-transition:leave-end="opacity-0 scale-95"
+                         class="absolute right-0 mt-2 p-3 bg-white dark:bg-gray-700 rounded-xl shadow-xl border border-gray-200 dark:border-gray-600 z-50 origin-top-right"
+                         style="display:none;">
+                        <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2.5 whitespace-nowrap">เลือก Theme</p>
+                        <div class="grid grid-cols-3 gap-2">
+                            <template x-for="t in themes" :key="t.key">
+                                <button @click="setTheme(t.key); open = false"
+                                        :title="t.name"
+                                        class="w-8 h-8 rounded-full transition-all duration-150 hover:scale-110 border-2 border-white dark:border-gray-700 shadow-sm"
+                                        :class="theme === t.key ? 'ring-2 ring-offset-2 ring-gray-400 dark:ring-offset-gray-700' : ''"
+                                        :style="{ backgroundColor: t.color }">
+                                </button>
+                            </template>
+                        </div>
                     </div>
                 </div>
 
@@ -342,11 +377,37 @@
 function appLayout() {
     return {
         sidebarOpen: localStorage.getItem('sidebarOpen') !== 'false',
-        darkMode: localStorage.getItem('darkMode') === 'true',
+        darkMode:    localStorage.getItem('darkMode') === 'true',
+        theme:       '{{ auth()->user()->theme_preference ?? "default" }}',
+        themes: [
+            { key: 'default', name: 'Default (Indigo)', color: '#4f46e5' },
+            { key: 'ocean',   name: 'Ocean',            color: '#0891b2' },
+            { key: 'forest',  name: 'Forest',           color: '#16a34a' },
+            { key: 'sunset',  name: 'Sunset',           color: '#d97706' },
+            { key: 'rose',    name: 'Rose',             color: '#e11d48' },
+            { key: 'slate',   name: 'Slate',            color: '#475569' },
+        ],
+
         init() {
             this.$watch('sidebarOpen', v => localStorage.setItem('sidebarOpen', v));
-            this.$watch('darkMode', v => localStorage.setItem('darkMode', v));
-        }
+            this.$watch('darkMode',    v => localStorage.setItem('darkMode', v));
+        },
+
+        setTheme(key) {
+            this.theme = key;
+            document.documentElement.setAttribute('data-theme', key);
+            const csrf = document.querySelector('meta[name="csrf-token"]').content;
+            fetch('/user/theme', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrf,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({ theme: key }),
+                credentials: 'same-origin',
+            }).catch(e => console.error('Failed to save theme', e));
+        },
     };
 }
 
