@@ -13,6 +13,12 @@
     <title>@yield('title', 'Dashboard') — IT MIS System</title>
 @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
+<style>
+.sidebar-nav::-webkit-scrollbar { width: 4px; }
+.sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+.sidebar-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+.sidebar-nav::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
+</style>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans antialiased">
 
@@ -30,44 +36,46 @@
             </div>
 
             {{-- Navigation --}}
-            <nav class="flex-1 overflow-y-auto py-4 space-y-1 px-2">
+            <nav class="sidebar-nav flex-1 overflow-y-auto py-3 space-y-0.5 px-2">
+
+                {{-- ─── MAIN ──────────────────────────────────── --}}
                 <a href="{{ route('dashboard') }}"
-                   title="{{ __('menu.dashboard') }}"
+                   title="แดชบอร์ด"
                    class="{{ request()->routeIs('dashboard') ? 'sidebar-active' : 'sidebar-link' }}">
-                    <i class="ti ti-dashboard text-xl flex-shrink-0"></i>
-                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">{{ __('menu.dashboard') }}</span>
+                    <i class="ti ti-layout-dashboard text-xl flex-shrink-0"></i>
+                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">แดชบอร์ด</span>
                 </a>
 
                 <a href="{{ route('applications.index') }}"
                    title="Applications"
                    class="{{ request()->routeIs('applications.*') ? 'sidebar-active' : 'sidebar-link' }}">
-                    <i class="ti ti-layout-grid text-xl flex-shrink-0"></i>
+                    <i class="ti ti-apps text-xl flex-shrink-0"></i>
                     <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">Applications</span>
                 </a>
 
                 @can('submission.view')
                 <div x-data="{ open: {{ request()->routeIs('submissions.*') || request()->routeIs('tasks.*') ? 'true' : 'false' }} }">
                     <button @click="open = !open"
-                            title="{{ __('menu.requests') }}"
+                            title="Requests"
                             class="sidebar-link w-full text-left">
-                        <i class="ti ti-apps text-xl flex-shrink-0"></i>
-                        <span class="ml-3 flex-1 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">{{ __('menu.requests') }}</span>
-                        <i class="ti ti-chevron-down text-xs transition-transform"
+                        <i class="ti ti-file-text text-xl flex-shrink-0"></i>
+                        <span class="ml-3 flex-1 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">Requests</span>
+                        <i class="ti ti-chevron-down text-xs transition-transform duration-200"
                            :class="open ? 'rotate-180' : ''"
                            x-show="sidebarOpen && !isFullscreen"></i>
                     </button>
-                    <div x-show="open" class="pl-4 space-y-1 mt-1">
+                    <div x-show="open" class="pl-3 space-y-0.5 mt-0.5">
                         <a href="{{ route('submissions.index') }}"
-                           title="{{ __('menu.all_requests') }}"
-                           class="{{ request()->routeIs('submissions.index') ? 'sidebar-active' : 'sidebar-link' }}">
+                           title="คำร้องของฉัน"
+                           class="{{ request()->routeIs('submissions.*') ? 'sidebar-active' : 'sidebar-link' }}">
                             <i class="ti ti-list text-base flex-shrink-0"></i>
-                            <span class="ml-3 text-sm whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">{{ __('menu.all_requests') }}</span>
+                            <span class="ml-3 text-sm whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">คำร้องของฉัน</span>
                         </a>
                         <a href="{{ route('tasks.index') }}"
-                           title="{{ __('menu.my_tasks') }}"
+                           title="งานที่ได้รับ"
                            class="{{ request()->routeIs('tasks.*') ? 'sidebar-active' : 'sidebar-link' }}">
                             <i class="ti ti-checklist text-base flex-shrink-0"></i>
-                            <span class="ml-3 text-sm whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">{{ __('menu.my_tasks') }}</span>
+                            <span class="ml-3 text-sm whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">งานที่ได้รับ</span>
                         </a>
                     </div>
                 </div>
@@ -75,35 +83,25 @@
 
                 @can('report.view')
                 <a href="{{ route('reports.index') }}"
-                   title="{{ __('menu.reports') }}"
+                   title="รายงาน"
                    class="{{ request()->routeIs('reports.*') ? 'sidebar-active' : 'sidebar-link' }}">
                     <i class="ti ti-chart-bar text-xl flex-shrink-0"></i>
-                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">{{ __('menu.reports') }}</span>
+                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">รายงาน</span>
                 </a>
                 @endcan
 
-                {{-- Checksheets --}}
-                <div x-data="{ open: {{ request()->routeIs('checksheets.*') ? 'true' : 'false' }} }">
-                    <button @click="open = !open"
-                            title="Checksheet"
-                            class="sidebar-link w-full text-left">
-                        <i class="ti ti-clipboard-list text-xl flex-shrink-0"></i>
-                        <span class="ml-3 flex-1 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">Checksheet</span>
-                        <i class="ti ti-chevron-down text-xs transition-transform"
-                           :class="open ? 'rotate-180' : ''"
-                           x-show="sidebarOpen && !isFullscreen"></i>
-                    </button>
-                    <div x-show="open" class="pl-4 space-y-1 mt-1">
-                        <a href="{{ route('checksheets.index') }}"
-                           title="กรอกข้อมูล"
-                           class="{{ request()->routeIs('checksheets.index') ? 'sidebar-active' : 'sidebar-link' }}">
-                            <i class="ti ti-list text-base flex-shrink-0"></i>
-                            <span class="ml-3 text-sm whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">กรอกข้อมูล</span>
-                        </a>
-                    </div>
-                </div>
+                {{-- ─── WORKSPACE ──────────────────────────────── --}}
+                <div class="border-t border-white/10 dark:border-gray-700 mx-1 my-2"></div>
+                <p class="text-xs text-white/40 uppercase tracking-wider px-2 pb-1 whitespace-nowrap"
+                   x-show="sidebarOpen && !isFullscreen">Workspace</p>
 
-                {{-- Dashboards --}}
+                <a href="{{ route('checksheets.index') }}"
+                   title="Checksheet"
+                   class="{{ request()->routeIs('checksheets.*') ? 'sidebar-active' : 'sidebar-link' }}">
+                    <i class="ti ti-clipboard-list text-xl flex-shrink-0"></i>
+                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">Checksheet</span>
+                </a>
+
                 <a href="{{ route('dashboards.index') }}"
                    title="Dashboard"
                    class="{{ request()->routeIs('dashboards.*') ? 'sidebar-active' : 'sidebar-link' }}">
@@ -111,57 +109,54 @@
                     <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">Dashboard</span>
                 </a>
 
+                {{-- ─── ADMIN ──────────────────────────────────── --}}
                 @canany(['user.view', 'master.view', 'app.view', 'setting.view'])
-                <div class="pt-3 pb-1" x-show="sidebarOpen && !isFullscreen">
-                    <p class="text-xs text-white/40 uppercase tracking-wider px-2">Admin</p>
-                </div>
+                <div class="border-t border-white/10 dark:border-gray-700 mx-1 my-2"></div>
+                <p class="text-xs text-white/40 uppercase tracking-wider px-2 pb-1 whitespace-nowrap"
+                   x-show="sidebarOpen && !isFullscreen">Admin</p>
                 @endcanany
 
-                {{-- Master Management: only super_admin OR (is_parent_factory it_manager) --}}
                 @if(auth()->user()->hasRole('super_admin') || (auth()->user()->is_parent_factory && auth()->user()->hasRole('it_manager')))
                 <a href="{{ route('admin.masters.index') }}"
-                   title="{{ __('menu.masters') }}"
+                   title="ข้อมูลหลัก"
                    class="{{ request()->routeIs('admin.masters.*') ? 'sidebar-active' : 'sidebar-link' }}">
-                    <i class="ti ti-sitemap text-xl flex-shrink-0"></i>
-                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">{{ __('menu.masters') }}</span>
+                    <i class="ti ti-building text-xl flex-shrink-0"></i>
+                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">ข้อมูลหลัก</span>
                 </a>
                 @endif
 
                 @can('user.view')
                 <a href="{{ route('admin.users.index') }}"
-                   title="{{ __('menu.users') }}"
+                   title="ผู้ใช้งาน"
                    class="{{ request()->routeIs('admin.users.*') ? 'sidebar-active' : 'sidebar-link' }}">
                     <i class="ti ti-users text-xl flex-shrink-0"></i>
-                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">{{ __('menu.users') }}</span>
+                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">ผู้ใช้งาน</span>
                 </a>
                 <a href="{{ route('admin.roles.index') }}"
-                   title="{{ __('menu.roles') }}"
+                   title="บทบาท"
                    class="{{ request()->routeIs('admin.roles.*') ? 'sidebar-active' : 'sidebar-link' }}">
-                    <i class="ti ti-shield-lock text-xl flex-shrink-0"></i>
-                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">{{ __('menu.roles') }}</span>
+                    <i class="ti ti-shield text-xl flex-shrink-0"></i>
+                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">บทบาท</span>
                 </a>
                 @endcan
 
                 @can('app.view')
                 <a href="{{ route('admin.apps.index') }}"
-                   title="{{ __('menu.app_builder') }}"
+                   title="App Builder"
                    class="{{ request()->routeIs('admin.apps.*') ? 'sidebar-active' : 'sidebar-link' }}">
-                    <i class="ti ti-device-desktop-code text-xl flex-shrink-0"></i>
-                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">{{ __('menu.app_builder') }}</span>
+                    <i class="ti ti-tool text-xl flex-shrink-0"></i>
+                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">App Builder</span>
                 </a>
                 <a href="{{ route('admin.app-categories.index') }}"
                    title="App Categories"
                    class="{{ request()->routeIs('admin.app-categories.*') ? 'sidebar-active' : 'sidebar-link' }}">
-                    <i class="ti ti-category-2 text-xl flex-shrink-0"></i>
+                    <i class="ti ti-category text-xl flex-shrink-0"></i>
                     <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">App Categories</span>
                 </a>
-                @endcan
-
-                @can('app.view')
                 <a href="{{ route('admin.checksheets.index') }}"
                    title="Checksheet Templates"
                    class="{{ request()->routeIs('admin.checksheets.*') ? 'sidebar-active' : 'sidebar-link' }}">
-                    <i class="ti ti-clipboard-check text-xl flex-shrink-0"></i>
+                    <i class="ti ti-template text-xl flex-shrink-0"></i>
                     <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">Checksheet Templates</span>
                 </a>
                 <a href="{{ route('admin.data-management.index') }}"
@@ -174,12 +169,13 @@
 
                 @can('setting.view')
                 <a href="{{ route('admin.settings.index') }}"
-                   title="{{ __('menu.settings') }}"
+                   title="การตั้งค่า"
                    class="{{ request()->routeIs('admin.settings.*') ? 'sidebar-active' : 'sidebar-link' }}">
                     <i class="ti ti-settings text-xl flex-shrink-0"></i>
-                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">{{ __('menu.settings') }}</span>
+                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">การตั้งค่า</span>
                 </a>
                 @endcan
+
             </nav>
 
             {{-- Fullscreen exit button — always accessible, visible only in fullscreen --}}
