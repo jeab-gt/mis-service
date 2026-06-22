@@ -166,7 +166,7 @@
         <div id="view-canvas-inner" style="position:relative; width:{{ $canvasW }}px; height:{{ $canvasH }}px; transform-origin:top left;">
             @foreach($pixelWidgets as $pw)
             @php $widget = $pw['model']; @endphp
-            <div x-data="widgetComponent({{ $widget->id }}, '{{ $widget->widget_type }}', {!! json_encode($widget->title) !!})"
+            <div x-data="widgetComponent({{ $widget->id }}, '{{ $widget->widget_type }}', {!! htmlspecialchars(json_encode($widget->title), ENT_QUOTES, 'UTF-8') !!})"
                  class="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden"
                  style="position:absolute; left:{{ $pw['x'] }}px; top:{{ $pw['y'] }}px; width:{{ $pw['pw'] }}px; height:{{ $pw['ph'] }}px;">
 
