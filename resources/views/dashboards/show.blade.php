@@ -10,11 +10,30 @@
 <div x-data="dashboardView('{{ $dashboard->slug }}')" class="space-y-4">
 
     {{-- Header --}}
-    <div class="flex items-center justify-between">
+    <div class="flex items-center justify-between"
+         x-data="{
+             isFullscreen: false,
+             toggleFullscreen() {
+                 if (!document.fullscreenElement) {
+                     document.documentElement.requestFullscreen();
+                 } else {
+                     document.exitFullscreen();
+                 }
+             }
+         }"
+         @fullscreenchange.window="isFullscreen = !!document.fullscreenElement">
         <h1 class="text-xl font-bold">{{ $dashboard->name }}</h1>
-        <a href="{{ route('dashboards.edit', $dashboard) }}" class="btn-secondary flex items-center space-x-1 text-sm">
-            <i class="ti ti-settings"></i><span>Edit Layout</span>
-        </a>
+        <div class="flex items-center gap-2">
+            <button @click="toggleFullscreen()"
+                    class="btn-secondary flex items-center gap-1.5 text-sm"
+                    :title="isFullscreen ? 'ออกจากเต็มจอ' : 'เต็มจอ'">
+                <i :class="isFullscreen ? 'ti ti-arrows-minimize' : 'ti ti-arrows-maximize'"></i>
+                <span x-text="isFullscreen ? 'ออกจากเต็มจอ' : 'เต็มจอ'"></span>
+            </button>
+            <a href="{{ route('dashboards.edit', $dashboard) }}" class="btn-secondary flex items-center gap-1.5 text-sm">
+                <i class="ti ti-settings"></i><span>Edit Layout</span>
+            </a>
+        </div>
     </div>
 
     {{-- Date Range Filter Bar --}}
