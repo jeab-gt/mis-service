@@ -90,91 +90,140 @@
                 </a>
                 @endcan
 
-                {{-- ─── WORKSPACE ──────────────────────────────── --}}
-                <div class="border-t border-white/10 dark:border-gray-700 mx-1 my-2"></div>
-                <p class="text-xs text-white/40 uppercase tracking-wider px-2 pb-1 whitespace-nowrap"
-                   x-show="sidebarOpen && !isFullscreen">Workspace</p>
+                {{-- ─── WORKSPACE (collapsible) ────────────────── --}}
+                @php $inWorkspace = request()->is('checksheets*', 'dashboards*'); @endphp
+                <div class="border-t border-white/10 dark:border-gray-700 mx-1 mt-2 mb-1"></div>
+                <div x-data="{
+                         open: {{ $inWorkspace ? 'true' : "(localStorage.getItem('sidebar_workspace') === 'true')" }},
+                         toggle() { this.open = !this.open; localStorage.setItem('sidebar_workspace', this.open); }
+                     }">
+                    {{-- Header (only shown in expanded sidebar) --}}
+                    <button @click="toggle()"
+                            x-show="sidebarOpen && !isFullscreen"
+                            title="Workspace"
+                            class="w-full flex items-center justify-between px-2 py-1 mb-0.5 rounded-lg
+                                   text-xs font-semibold text-white/40 uppercase tracking-wider
+                                   hover:text-white/60 hover:bg-white/5 transition-colors">
+                        <span>Workspace</span>
+                        <i class="ti text-xs transition-transform duration-200"
+                           :class="open ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
+                    </button>
 
-                <a href="{{ route('checksheets.index') }}"
-                   title="Checksheet"
-                   class="{{ request()->routeIs('checksheets.*') ? 'sidebar-active' : 'sidebar-link' }}">
-                    <i class="ti ti-clipboard-list text-xl flex-shrink-0"></i>
-                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">Checksheet</span>
-                </a>
+                    {{-- Items: always visible in icon-only mode, respect open state when expanded --}}
+                    <div x-show="open || !(sidebarOpen && !isFullscreen)"
+                         x-transition:enter="transition ease-out duration-150"
+                         x-transition:enter-start="opacity-0"
+                         x-transition:enter-end="opacity-100"
+                         x-transition:leave="transition ease-in duration-100"
+                         x-transition:leave-start="opacity-100"
+                         x-transition:leave-end="opacity-0"
+                         class="space-y-0.5">
+                        <a href="{{ route('checksheets.index') }}"
+                           title="Checksheet"
+                           class="{{ request()->routeIs('checksheets.*') ? 'sidebar-active' : 'sidebar-link' }}">
+                            <i class="ti ti-clipboard-list text-xl flex-shrink-0"></i>
+                            <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">Checksheet</span>
+                        </a>
+                        <a href="{{ route('dashboards.index') }}"
+                           title="Dashboard"
+                           class="{{ request()->routeIs('dashboards.*') ? 'sidebar-active' : 'sidebar-link' }}">
+                            <i class="ti ti-layout-dashboard text-xl flex-shrink-0"></i>
+                            <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">Dashboard</span>
+                        </a>
+                    </div>
+                </div>
 
-                <a href="{{ route('dashboards.index') }}"
-                   title="Dashboard"
-                   class="{{ request()->routeIs('dashboards.*') ? 'sidebar-active' : 'sidebar-link' }}">
-                    <i class="ti ti-layout-dashboard text-xl flex-shrink-0"></i>
-                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">Dashboard</span>
-                </a>
-
-                {{-- ─── ADMIN ──────────────────────────────────── --}}
+                {{-- ─── ADMIN (collapsible) ────────────────────── --}}
                 @canany(['user.view', 'master.view', 'app.view', 'setting.view'])
-                <div class="border-t border-white/10 dark:border-gray-700 mx-1 my-2"></div>
-                <p class="text-xs text-white/40 uppercase tracking-wider px-2 pb-1 whitespace-nowrap"
-                   x-show="sidebarOpen && !isFullscreen">Admin</p>
+                @php $inAdmin = request()->is('admin*'); @endphp
+                <div class="border-t border-white/10 dark:border-gray-700 mx-1 mt-2 mb-1"></div>
+                <div x-data="{
+                         open: {{ $inAdmin ? 'true' : "(localStorage.getItem('sidebar_admin') === 'true')" }},
+                         toggle() { this.open = !this.open; localStorage.setItem('sidebar_admin', this.open); }
+                     }">
+                    {{-- Header --}}
+                    <button @click="toggle()"
+                            x-show="sidebarOpen && !isFullscreen"
+                            title="Admin"
+                            class="w-full flex items-center justify-between px-2 py-1 mb-0.5 rounded-lg
+                                   text-xs font-semibold text-white/40 uppercase tracking-wider
+                                   hover:text-white/60 hover:bg-white/5 transition-colors">
+                        <span>Admin</span>
+                        <i class="ti text-xs transition-transform duration-200"
+                           :class="open ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
+                    </button>
+
+                    {{-- Items --}}
+                    <div x-show="open || !(sidebarOpen && !isFullscreen)"
+                         x-transition:enter="transition ease-out duration-150"
+                         x-transition:enter-start="opacity-0"
+                         x-transition:enter-end="opacity-100"
+                         x-transition:leave="transition ease-in duration-100"
+                         x-transition:leave-start="opacity-100"
+                         x-transition:leave-end="opacity-0"
+                         class="space-y-0.5">
+                        @if(auth()->user()->hasRole('super_admin') || (auth()->user()->is_parent_factory && auth()->user()->hasRole('it_manager')))
+                        <a href="{{ route('admin.masters.index') }}"
+                           title="ข้อมูลหลัก"
+                           class="{{ request()->routeIs('admin.masters.*') ? 'sidebar-active' : 'sidebar-link' }}">
+                            <i class="ti ti-building text-xl flex-shrink-0"></i>
+                            <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">ข้อมูลหลัก</span>
+                        </a>
+                        @endif
+
+                        @can('user.view')
+                        <a href="{{ route('admin.users.index') }}"
+                           title="ผู้ใช้งาน"
+                           class="{{ request()->routeIs('admin.users.*') ? 'sidebar-active' : 'sidebar-link' }}">
+                            <i class="ti ti-users text-xl flex-shrink-0"></i>
+                            <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">ผู้ใช้งาน</span>
+                        </a>
+                        <a href="{{ route('admin.roles.index') }}"
+                           title="บทบาท"
+                           class="{{ request()->routeIs('admin.roles.*') ? 'sidebar-active' : 'sidebar-link' }}">
+                            <i class="ti ti-shield text-xl flex-shrink-0"></i>
+                            <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">บทบาท</span>
+                        </a>
+                        @endcan
+
+                        @can('app.view')
+                        <a href="{{ route('admin.apps.index') }}"
+                           title="App Builder"
+                           class="{{ request()->routeIs('admin.apps.*') ? 'sidebar-active' : 'sidebar-link' }}">
+                            <i class="ti ti-tool text-xl flex-shrink-0"></i>
+                            <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">App Builder</span>
+                        </a>
+                        <a href="{{ route('admin.app-categories.index') }}"
+                           title="App Categories"
+                           class="{{ request()->routeIs('admin.app-categories.*') ? 'sidebar-active' : 'sidebar-link' }}">
+                            <i class="ti ti-category text-xl flex-shrink-0"></i>
+                            <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">App Categories</span>
+                        </a>
+                        <a href="{{ route('admin.checksheets.index') }}"
+                           title="Checksheet Templates"
+                           class="{{ request()->routeIs('admin.checksheets.*') ? 'sidebar-active' : 'sidebar-link' }}">
+                            <i class="ti ti-template text-xl flex-shrink-0"></i>
+                            <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">Checksheet Templates</span>
+                        </a>
+                        <a href="{{ route('admin.data-management.index') }}"
+                           title="Data Management"
+                           class="{{ request()->routeIs('admin.data-management.*') ? 'sidebar-active' : 'sidebar-link' }}">
+                            <i class="ti ti-database text-xl flex-shrink-0"></i>
+                            <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">Data Management</span>
+                        </a>
+                        @endcan
+
+                        @can('setting.view')
+                        <a href="{{ route('admin.settings.index') }}"
+                           title="การตั้งค่า"
+                           class="{{ request()->routeIs('admin.settings.*') ? 'sidebar-active' : 'sidebar-link' }}">
+                            <i class="ti ti-settings text-xl flex-shrink-0"></i>
+                            <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">การตั้งค่า</span>
+                        </a>
+                        @endcan
+                    </div>
+                </div>
                 @endcanany
-
-                @if(auth()->user()->hasRole('super_admin') || (auth()->user()->is_parent_factory && auth()->user()->hasRole('it_manager')))
-                <a href="{{ route('admin.masters.index') }}"
-                   title="ข้อมูลหลัก"
-                   class="{{ request()->routeIs('admin.masters.*') ? 'sidebar-active' : 'sidebar-link' }}">
-                    <i class="ti ti-building text-xl flex-shrink-0"></i>
-                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">ข้อมูลหลัก</span>
-                </a>
-                @endif
-
-                @can('user.view')
-                <a href="{{ route('admin.users.index') }}"
-                   title="ผู้ใช้งาน"
-                   class="{{ request()->routeIs('admin.users.*') ? 'sidebar-active' : 'sidebar-link' }}">
-                    <i class="ti ti-users text-xl flex-shrink-0"></i>
-                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">ผู้ใช้งาน</span>
-                </a>
-                <a href="{{ route('admin.roles.index') }}"
-                   title="บทบาท"
-                   class="{{ request()->routeIs('admin.roles.*') ? 'sidebar-active' : 'sidebar-link' }}">
-                    <i class="ti ti-shield text-xl flex-shrink-0"></i>
-                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">บทบาท</span>
-                </a>
-                @endcan
-
-                @can('app.view')
-                <a href="{{ route('admin.apps.index') }}"
-                   title="App Builder"
-                   class="{{ request()->routeIs('admin.apps.*') ? 'sidebar-active' : 'sidebar-link' }}">
-                    <i class="ti ti-tool text-xl flex-shrink-0"></i>
-                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">App Builder</span>
-                </a>
-                <a href="{{ route('admin.app-categories.index') }}"
-                   title="App Categories"
-                   class="{{ request()->routeIs('admin.app-categories.*') ? 'sidebar-active' : 'sidebar-link' }}">
-                    <i class="ti ti-category text-xl flex-shrink-0"></i>
-                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">App Categories</span>
-                </a>
-                <a href="{{ route('admin.checksheets.index') }}"
-                   title="Checksheet Templates"
-                   class="{{ request()->routeIs('admin.checksheets.*') ? 'sidebar-active' : 'sidebar-link' }}">
-                    <i class="ti ti-template text-xl flex-shrink-0"></i>
-                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">Checksheet Templates</span>
-                </a>
-                <a href="{{ route('admin.data-management.index') }}"
-                   title="Data Management"
-                   class="{{ request()->routeIs('admin.data-management.*') ? 'sidebar-active' : 'sidebar-link' }}">
-                    <i class="ti ti-database text-xl flex-shrink-0"></i>
-                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">Data Management</span>
-                </a>
-                @endcan
-
-                @can('setting.view')
-                <a href="{{ route('admin.settings.index') }}"
-                   title="การตั้งค่า"
-                   class="{{ request()->routeIs('admin.settings.*') ? 'sidebar-active' : 'sidebar-link' }}">
-                    <i class="ti ti-settings text-xl flex-shrink-0"></i>
-                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">การตั้งค่า</span>
-                </a>
-                @endcan
 
             </nav>
 
