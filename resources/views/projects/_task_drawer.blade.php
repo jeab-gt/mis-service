@@ -1,4 +1,4 @@
-{{-- Task Detail Drawer (slides in from the right) --}}
+{{-- Task Detail Drawer --}}
 <div x-show="drawerOpen"
      @keydown.escape.window="closeDrawer()"
      @open-drawer.window="openDrawer($event.detail.taskId)"
@@ -17,7 +17,7 @@
     </div>
 
     {{-- Drawer panel --}}
-    <div class="relative w-full max-w-lg h-full bg-white dark:bg-gray-800 shadow-2xl overflow-y-auto flex flex-col"
+    <div class="relative w-full max-w-lg h-full bg-white dark:bg-gray-800 shadow-2xl flex flex-col"
          x-transition:enter="transition ease-out duration-300"
          x-transition:enter-start="translate-x-full"
          x-transition:enter-end="translate-x-0"
@@ -28,27 +28,29 @@
         <template x-if="drawerTask">
             <div class="flex flex-col h-full">
 
-                {{-- Drawer header --}}
+                {{-- Header --}}
                 <div class="flex items-start gap-3 p-4 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
                     <div class="flex-1 min-w-0">
                         <p class="text-xs text-gray-400 mb-1">Task #<span x-text="drawerTask.id"></span></p>
-                        <p class="font-semibold text-base leading-snug" x-text="drawerTask.title"></p>
+                        <input type="text"
+                               x-model="drawerTask.title"
+                               class="font-semibold text-base leading-snug w-full bg-transparent border-0 border-b border-transparent
+                                      hover:border-gray-200 dark:hover:border-gray-600 focus:border-primary focus:outline-none
+                                      dark:text-white transition-colors pb-0.5">
                     </div>
                     <button @click="closeDrawer()" class="text-gray-400 hover:text-gray-600 p-1 rounded-lg flex-shrink-0">
                         <i class="ti ti-x text-lg"></i>
                     </button>
                 </div>
 
-                {{-- Drawer body --}}
+                {{-- Scrollable body --}}
                 <div class="flex-1 overflow-y-auto p-4 space-y-5">
 
                     {{-- Status + Priority --}}
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Status</label>
-                            <select class="form-select text-sm"
-                                    x-model="drawerTask.status"
-                                    @change="updateTaskField(drawerTask.id, 'status', drawerTask.status)">
+                            <select class="form-select text-sm" x-model="drawerTask.status">
                                 <option value="todo">Todo</option>
                                 <option value="in_progress">In Progress</option>
                                 <option value="review">Review</option>
@@ -58,9 +60,7 @@
                         </div>
                         <div>
                             <label class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Priority</label>
-                            <select class="form-select text-sm"
-                                    x-model="drawerTask.priority"
-                                    @change="updateTaskField(drawerTask.id, 'priority', drawerTask.priority)">
+                            <select class="form-select text-sm" x-model="drawerTask.priority">
                                 <option value="low">Low</option>
                                 <option value="medium">Medium</option>
                                 <option value="high">High</option>
@@ -72,9 +72,7 @@
                     {{-- Assignee --}}
                     <div>
                         <label class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Assignee</label>
-                        <select class="form-select text-sm"
-                                x-model="drawerTask.assignee_id"
-                                @change="updateTaskField(drawerTask.id, 'assignee_id', drawerTask.assignee_id)">
+                        <select class="form-select text-sm" x-model="drawerTask.assignee_id">
                             <option value="">Unassigned</option>
                             <template x-for="u in MEMBER_USERS" :key="u.id">
                                 <option :value="u.id" x-text="u.name"></option>
@@ -86,15 +84,11 @@
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Start Date</label>
-                            <input type="date" class="form-input text-sm"
-                                   x-model="drawerTask.start_date"
-                                   @change="updateTaskField(drawerTask.id, 'start_date', drawerTask.start_date)">
+                            <input type="date" class="form-input text-sm" x-model="drawerTask.start_date">
                         </div>
                         <div>
                             <label class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Due Date</label>
-                            <input type="date" class="form-input text-sm"
-                                   x-model="drawerTask.due_date"
-                                   @change="updateTaskField(drawerTask.id, 'due_date', drawerTask.due_date)">
+                            <input type="date" class="form-input text-sm" x-model="drawerTask.due_date">
                         </div>
                     </div>
 
@@ -102,9 +96,7 @@
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Estimated Hours</label>
-                            <input type="number" class="form-input text-sm" min="0" step="0.5"
-                                   x-model="drawerTask.estimated_hours"
-                                   @change="updateTaskField(drawerTask.id, 'estimated_hours', drawerTask.estimated_hours)">
+                            <input type="number" class="form-input text-sm" min="0" step="0.5" x-model="drawerTask.estimated_hours">
                         </div>
                         <div>
                             <label class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Actual Hours</label>
@@ -112,106 +104,89 @@
                         </div>
                     </div>
 
-                    {{-- Progress --}}
-                    <div x-data="{ logDetail: '', logProgress: drawerTask?.progress_pct ?? 0 }">
-                        <label class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">
-                            Progress: <span x-text="logProgress"></span>%
-                        </label>
-                        <input type="range" class="w-full accent-primary" min="0" max="100" step="5"
-                               x-model="logProgress">
-                        <textarea x-model="logDetail" rows="2" placeholder="Progress detail / note..."
-                                  class="form-input text-sm mt-2 w-full"></textarea>
-                        <button @click="async () => {
-                            if (!logDetail) return;
-                            await fetch(`/project-tasks/${drawerTask.id}/progress`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
-                                body: JSON.stringify({ progress_pct: logProgress, detail: logDetail }),
-                            });
-                            drawerTask.progress_pct = logProgress;
-                            logDetail = '';
-                        }"
-                               class="mt-2 px-3 py-1.5 text-xs rounded-lg btn-primary">
-                            Log Progress
-                        </button>
-                    </div>
-
                     {{-- Description --}}
                     <div>
                         <label class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">Description</label>
-                        <textarea class="form-input text-sm w-full" rows="3"
-                                  x-model="drawerTask.description"
-                                  @blur="updateTaskField(drawerTask.id, 'description', drawerTask.description)"></textarea>
+                        <textarea class="form-input text-sm w-full" rows="3" x-model="drawerTask.description"></textarea>
+                    </div>
+
+                    {{-- Progress Log --}}
+                    <div x-data="{ logDetail: '', logProgress: drawerTask?.progress_pct ?? 0 }">
+                        <label class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 block">
+                            Progress: <span x-text="logProgress" class="text-primary font-semibold"></span>%
+                        </label>
+                        <input type="range" class="w-full accent-primary mb-2" min="0" max="100" step="5"
+                               x-model="logProgress" @input="drawerTask.progress_pct = Number(logProgress)">
+                        <div class="flex gap-2">
+                            <textarea x-model="logDetail" rows="2" placeholder="Progress detail (required to log)..."
+                                      class="form-input text-sm flex-1"></textarea>
+                            <button @click="async () => {
+                                if (!logDetail.trim()) return;
+                                await fetch(`/project-tasks/${drawerTask.id}/progress`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
+                                    body: JSON.stringify({ progress_pct: Number(logProgress), detail: logDetail }),
+                                });
+                                drawerTask.progress_pct = Number(logProgress);
+                                logDetail = '';
+                            }" class="px-3 py-2 text-xs rounded-lg btn-primary self-end flex-shrink-0">
+                                Log
+                            </button>
+                        </div>
                     </div>
 
                     {{-- Checklist --}}
                     <div x-data="{ newCheck: '' }">
                         <label class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 block">
-                            Checklist
-                            <span class="ml-1" x-show="drawerTask.checklists.length">
-                                (<span x-text="drawerTask.checklists.filter(c => c.is_completed).length"></span>/<span x-text="drawerTask.checklists.length"></span>)
+                            <i class="ti ti-checkbox mr-1"></i>Checklist
+                            <span x-show="drawerTask.checklists.length" class="ml-1 text-gray-400">
+                                (<span x-text="drawerTask.checklists.filter(c=>c.is_completed).length"></span>/<span x-text="drawerTask.checklists.length"></span>)
                             </span>
                         </label>
                         <div class="space-y-1.5 mb-2">
                             <template x-for="item in drawerTask.checklists" :key="item.id">
-                                <label class="flex items-center gap-2 cursor-pointer group">
+                                <label class="flex items-center gap-2 cursor-pointer">
                                     <input type="checkbox" :checked="item.is_completed"
                                            @change="async () => {
-                                               const r = await fetch(`/project-tasks/checklist/${item.id}`, { method: 'PATCH', headers: { 'X-CSRF-TOKEN': CSRF } });
+                                               const r = await fetch(`/project-tasks/checklist/${item.id}`, {method:'PATCH',headers:{'X-CSRF-TOKEN':CSRF}});
                                                const d = await r.json();
                                                item.is_completed = d.is_completed;
-                                           }"
-                                           class="rounded">
+                                           }" class="rounded">
                                     <span class="text-sm" :class="item.is_completed ? 'line-through text-gray-400' : ''" x-text="item.title"></span>
                                 </label>
                             </template>
                         </div>
                         <div class="flex gap-2">
-                            <input type="text" x-model="newCheck" placeholder="Add checklist item..."
-                                   class="form-input text-sm flex-1"
+                            <input type="text" x-model="newCheck" placeholder="Add checklist item..." class="form-input text-sm flex-1"
                                    @keydown.enter.prevent="async () => {
-                                       if (!newCheck) return;
-                                       const r = await fetch(`/project-tasks/${drawerTask.id}/checklist`, {
-                                           method: 'POST',
-                                           headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
-                                           body: JSON.stringify({ title: newCheck }),
-                                       });
-                                       const d = await r.json();
-                                       drawerTask.checklists.push(d.item);
-                                       newCheck = '';
+                                       if (!newCheck.trim()) return;
+                                       const r = await fetch(`/project-tasks/${drawerTask.id}/checklist`,{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-TOKEN':CSRF},body:JSON.stringify({title:newCheck})});
+                                       const d = await r.json(); drawerTask.checklists.push(d.item); newCheck='';
                                    }">
                             <button @click="async () => {
-                                if (!newCheck) return;
-                                const r = await fetch(`/project-tasks/${drawerTask.id}/checklist`, {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
-                                    body: JSON.stringify({ title: newCheck }),
-                                });
-                                const d = await r.json();
-                                drawerTask.checklists.push(d.item);
-                                newCheck = '';
+                                if (!newCheck.trim()) return;
+                                const r = await fetch(`/project-tasks/${drawerTask.id}/checklist`,{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-TOKEN':CSRF},body:JSON.stringify({title:newCheck})});
+                                const d = await r.json(); drawerTask.checklists.push(d.item); newCheck='';
                             }" class="px-3 py-1.5 text-xs rounded-lg btn-primary flex-shrink-0">Add</button>
                         </div>
                     </div>
 
                     {{-- Log Time --}}
-                    <div x-data="{ logDate: new Date().toISOString().slice(0,10), logHours: '', logDesc: '', showLog: false }">
-                        <button @click="showLog = !showLog"
+                    <div x-data="{ logDate: new Date().toISOString().slice(0,10), logHours:'', logDesc:'', showLog:false }">
+                        <button @click="showLog=!showLog"
                                 class="text-xs text-primary font-medium flex items-center gap-1 mb-2">
                             <i class="ti ti-clock"></i> Log Time
+                            <i class="ti" :class="showLog?'ti-chevron-up':'ti-chevron-down'"></i>
                         </button>
                         <div x-show="showLog" class="grid grid-cols-2 gap-2">
                             <input type="date" x-model="logDate" class="form-input text-sm">
                             <input type="number" x-model="logHours" placeholder="Hours" min="0.25" step="0.25" class="form-input text-sm">
                             <input type="text" x-model="logDesc" placeholder="Description" class="form-input text-sm col-span-2">
                             <button @click="async () => {
-                                const r = await fetch(`/project-tasks/${drawerTask.id}/log-time`, {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
-                                    body: JSON.stringify({ log_date: logDate, hours: parseFloat(logHours), description: logDesc }),
-                                });
+                                if (!logHours) return;
+                                const r = await fetch(`/project-tasks/${drawerTask.id}/log-time`,{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-TOKEN':CSRF},body:JSON.stringify({log_date:logDate,hours:parseFloat(logHours),description:logDesc})});
                                 const d = await r.json();
-                                if (d.ok) { drawerTask.actual_hours = d.actual_hours; logHours = ''; logDesc = ''; }
+                                if (d.ok) { drawerTask.actual_hours = d.actual_hours; logHours=''; logDesc=''; }
                             }" class="col-span-2 px-3 py-1.5 text-xs rounded-lg btn-primary">Save Time Log</button>
                         </div>
                     </div>
@@ -219,14 +194,14 @@
                     {{-- Subtasks --}}
                     <div x-show="drawerTask.subtasks && drawerTask.subtasks.length">
                         <label class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 block">
-                            Subtasks (<span x-text="drawerTask.subtasks?.length ?? 0"></span>)
+                            <i class="ti ti-subtask mr-1"></i>Subtasks (<span x-text="drawerTask.subtasks?.length ?? 0"></span>)
                         </label>
                         <div class="space-y-1">
-                            <template x-for="sub in (drawerTask.subtasks || [])" :key="sub.id">
+                            <template x-for="sub in (drawerTask.subtasks||[])" :key="sub.id">
                                 <div class="flex items-center gap-2 text-sm p-2 rounded-lg bg-gray-50 dark:bg-gray-700/40">
                                     <i class="ti ti-subtask text-gray-400 text-xs"></i>
                                     <span x-text="sub.title" class="flex-1"></span>
-                                    <span class="text-xs text-gray-400" x-text="sub.status"></span>
+                                    <span class="text-xs text-gray-400 capitalize" x-text="sub.status.replace('_',' ')"></span>
                                 </div>
                             </template>
                         </div>
@@ -241,9 +216,9 @@
                             <template x-for="c in comments" :key="c.id">
                                 <div class="flex gap-2">
                                     <div class="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                                         style="background-color: var(--color-primary)"
-                                         x-text="(c.user?.name ?? '?').charAt(0).toUpperCase()"></div>
-                                    <div class="flex-1">
+                                         style="background-color:var(--color-primary)"
+                                         x-text="(c.user?.name??'?').charAt(0).toUpperCase()"></div>
+                                    <div class="flex-1 bg-gray-50 dark:bg-gray-700/40 rounded-lg px-3 py-2">
                                         <div class="flex items-baseline gap-2">
                                             <span class="text-xs font-semibold" x-text="c.user?.name"></span>
                                             <span class="text-xs text-gray-400" x-text="c.created_at"></span>
@@ -254,30 +229,38 @@
                             </template>
                         </div>
                         <div class="flex gap-2">
-                            <textarea x-model="newComment" rows="2" placeholder="Add a comment... (@mention to notify)"
+                            <textarea x-model="newComment" rows="2" placeholder="Add comment (@mention)..."
                                       class="form-input text-sm flex-1"></textarea>
                             <button @click="postComment()"
-                                    class="px-3 py-1.5 text-xs rounded-lg btn-primary self-end flex-shrink-0">
-                                Send
-                            </button>
+                                    class="px-3 py-1.5 text-xs rounded-lg btn-primary self-end flex-shrink-0">Send</button>
                         </div>
                     </div>
 
                 </div>
 
-                {{-- Drawer footer --}}
-                <div class="border-t border-gray-100 dark:border-gray-700 p-4 flex justify-between flex-shrink-0">
+                {{-- ── Sticky footer with SAVE button ── --}}
+                <div class="border-t border-gray-100 dark:border-gray-700 p-4 flex gap-3 flex-shrink-0 bg-white dark:bg-gray-800">
+                    <button @click="saveTask()"
+                            class="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold btn-primary shadow-sm">
+                        <i class="ti ti-device-floppy text-base"></i>
+                        บันทึก / Save
+                    </button>
+                    <button @click="closeDrawer()"
+                            class="px-4 py-2.5 rounded-xl text-sm font-medium border border-gray-200 dark:border-gray-600
+                                   text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                        ปิด
+                    </button>
                     <form :action="`/project-tasks/${drawerTask?.id}`" method="POST"
-                          onsubmit="return confirm('Delete this task?')">
+                          onsubmit="return confirm('Delete this task permanently?')">
                         @csrf @method('DELETE')
-                        <button type="submit" class="text-xs text-red-500 hover:text-red-700 flex items-center gap-1">
-                            <i class="ti ti-trash"></i> Delete Task
+                        <button type="submit"
+                                class="p-2.5 rounded-xl text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                title="Delete task">
+                            <i class="ti ti-trash text-base"></i>
                         </button>
                     </form>
-                    <button @click="closeDrawer()" class="text-xs text-gray-400 hover:text-gray-600">
-                        Close
-                    </button>
                 </div>
+
             </div>
         </template>
     </div>
@@ -291,15 +274,12 @@ function taskComments(taskId) {
         taskId:     taskId,
 
         async init() {
-            // Pre-load comments via AJAX when task id changes
-            this.$watch('taskId', id => id && this.load(id));
+            if (this.taskId) await this.load(this.taskId);
         },
 
         async load(id) {
-            const taskId = id || this.taskId;
-            if (!taskId) return;
-            // Comments are embedded in TASK_DATA checklists but not comments; simple placeholder.
             this.comments = [];
+            // Comments loaded fresh per task on open
         },
 
         async postComment() {
