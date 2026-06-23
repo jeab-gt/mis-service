@@ -9,6 +9,18 @@
 @section('content')
 <div x-data="projectShow()" class="space-y-4">
 
+    {{-- Toast notifications --}}
+    <div class="fixed bottom-6 right-6 z-[200] flex flex-col gap-2 pointer-events-none">
+        <div x-show="savedFlash" x-transition
+             class="flex items-center gap-2 bg-green-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl shadow-lg pointer-events-auto">
+            <i class="ti ti-check text-base"></i> บันทึกสำเร็จ
+        </div>
+        <div x-show="saveError" x-transition
+             class="flex items-center gap-2 bg-red-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl shadow-lg pointer-events-auto">
+            <i class="ti ti-alert-circle text-base"></i> บันทึกไม่สำเร็จ กรุณาลองใหม่
+        </div>
+    </div>
+
     {{-- Project Header --}}
     <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-5">
         <div class="flex items-start justify-between gap-4 flex-wrap">
@@ -213,41 +225,31 @@
 
                     <div class="space-y-2 min-h-[4rem] kanban-list" id="list-{{ $status }}">
                         @foreach($kanbanGroups[$status] as $task)
-                        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-3 shadow-sm cursor-pointer hover:shadow-md transition-shadow task-card"
+                        <div x-data="taskCard({{ $task->id }})"
+                             class="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-3 shadow-sm cursor-pointer hover:shadow-md transition-shadow task-card"
+                             :style="{ borderLeft: '4px solid ' + statusColor }"
                              data-task-id="{{ $task->id }}"
-                             @click="!isDragging && openDrawer({{ $task->id }})">
-                            <p class="text-sm font-medium leading-snug line-clamp-2">{{ $task->title }}</p>
+                             @task-saved.window="onSaved($event.detail)"
+                             @click="!isDragging && openDrawer(taskId)">
+
+                            <p class="text-sm font-medium leading-snug line-clamp-2" x-text="title"></p>
 
                             <div class="flex items-center justify-between mt-2">
-                                <span class="text-xs px-1.5 py-0.5 rounded-md
-                                             bg-{{ $task->priority_badge_color }}-100 text-{{ $task->priority_badge_color }}-600
-                                             dark:bg-{{ $task->priority_badge_color }}-900/30 dark:text-{{ $task->priority_badge_color }}-400">
-                                    {{ ucfirst($task->priority) }}
-                                </span>
-                                @if($task->due_date)
-                                <span class="text-xs {{ $task->isOverdue() ? 'text-red-500' : 'text-gray-400' }}">
-                                    {{ $task->due_date->format('d/m') }}
-                                </span>
-                                @endif
+                                <span class="text-xs px-1.5 py-0.5 rounded-md" :class="priorityClass" x-text="priorityLabel"></span>
+                                <span x-show="dueDate" class="text-xs" :class="isOverdue ? 'text-red-500' : 'text-gray-400'" x-text="dueDateFmt"></span>
                             </div>
 
-                            @if($task->checklists->count())
-                            <div class="flex items-center gap-1 mt-2 text-xs text-gray-400">
+                            <div x-show="checklists.length" class="flex items-center gap-1 mt-2 text-xs text-gray-400">
                                 <i class="ti ti-checkbox"></i>
-                                {{ $task->checklists->where('is_completed', true)->count() }}/{{ $task->checklists->count() }}
+                                <span x-text="checklists.filter(c=>c.is_completed).length + '/' + checklists.length"></span>
                             </div>
-                            @endif
 
-                            @if($task->assignee)
-                            <div class="flex items-center gap-1 mt-2">
+                            <div x-show="assigneeName" class="flex items-center gap-1 mt-2">
                                 <div class="w-5 h-5 rounded-full text-white text-xs font-bold flex items-center justify-center flex-shrink-0"
                                      style="background-color: var(--color-primary)"
-                                     title="{{ $task->assignee->name }}">
-                                    {{ strtoupper(substr($task->assignee->name, 0, 1)) }}
-                                </div>
-                                <span class="text-xs text-gray-400 truncate">{{ $task->assignee->name }}</span>
+                                     x-text="assigneeName.charAt(0).toUpperCase()"></div>
+                                <span class="text-xs text-gray-400 truncate" x-text="assigneeName"></span>
                             </div>
-                            @endif
                         </div>
                         @endforeach
                     </div>
@@ -257,7 +259,8 @@
         </div>
 
         {{-- ═══ TAB: GANTT ═══ --}}
-        <div x-show="activeTab === 'gantt'" x-data="ganttChart()" class="select-none"
+        <div x-show="activeTab === 'gantt'">
+        <div x-data="ganttChart()" class="select-none"
              x-effect="if(activeTab==='gantt') $nextTick(()=>scrollToday())">
 
             {{-- Controls --}}
@@ -436,6 +439,7 @@
                 </div>
             </div>
         </div>
+        </div>{{-- /gantt outer x-show --}}
 
         {{-- ═══ TAB: CALENDAR ═══ --}}
         <div x-show="activeTab === 'calendar'" class="p-4" x-data="projectCalendar()">
@@ -606,6 +610,7 @@ function projectShow() {
         drawerTask:    null,
         isDragging:    false,
         savedFlash:    false,
+        saveError:     false,
         newTask: { title: '', status: 'todo', priority: 'medium', assignee_id: '', due_date: '' },
 
         async addTask() {
@@ -647,15 +652,31 @@ function projectShow() {
             if (res.ok) {
                 const idx = TASK_DATA.findIndex(t => t.id === this.drawerTask.id);
                 if (idx >= 0) Object.assign(TASK_DATA[idx], {
-                    title: this.drawerTask.title, description: this.drawerTask.description,
-                    status: this.drawerTask.status, priority: this.drawerTask.priority,
-                    assignee_id: this.drawerTask.assignee_id,
-                    start_date: this.drawerTask.start_date, due_date: this.drawerTask.due_date,
+                    title:          this.drawerTask.title,
+                    description:    this.drawerTask.description,
+                    status:         this.drawerTask.status,
+                    priority:       this.drawerTask.priority,
+                    assignee_id:    this.drawerTask.assignee_id,
+                    start_date:     this.drawerTask.start_date,
+                    due_date:       this.drawerTask.due_date,
                     estimated_hours: this.drawerTask.estimated_hours,
+                    progress_pct:   this.drawerTask.progress_pct,
+                });
+                this.$dispatch('task-saved', {
+                    id:          this.drawerTask.id,
+                    title:       this.drawerTask.title,
+                    status:      this.drawerTask.status,
+                    priority:    this.drawerTask.priority,
+                    due_date:    this.drawerTask.due_date,
+                    assignee_id: this.drawerTask.assignee_id,
+                    assignee:    this.drawerTask.assignee,
                     progress_pct: this.drawerTask.progress_pct,
                 });
                 this.savedFlash = true;
                 setTimeout(() => { this.savedFlash = false; }, 1500);
+            } else {
+                this.saveError = true;
+                setTimeout(() => { this.saveError = false; }, 2500);
             }
         },
 
@@ -829,11 +850,11 @@ function ganttChart() {
 
         barBg(s) {
             return {
-                done:        { base:'#bbf7d0', fill:'#16a34a' },
-                in_progress: { base:'#bfdbfe', fill:'#2563eb' },
-                review:      { base:'#fde68a', fill:'#d97706' },
-                cancelled:   { base:'#fecaca', fill:'#ef4444' },
-            }[s] ?? { base:'#e5e7eb', fill:'#6b7280' };
+                done:        { base:'rgba(22,163,74,0.15)',  fill:'#16a34a' },
+                in_progress: { base:'rgba(37,99,235,0.15)', fill:'#2563eb' },
+                review:      { base:'rgba(217,119,6,0.15)', fill:'#d97706' },
+                cancelled:   { base:'rgba(239,68,68,0.15)', fill:'#ef4444' },
+            }[s] ?? { base:'rgba(156,163,175,0.15)', fill:'#9ca3af' };
         },
 
         build() {
@@ -979,6 +1000,51 @@ function ganttChart() {
                 const t=TASK_DATA.find(t=>t.id===row.taskId); if(t) t.due_date=ee;
             };
             window.addEventListener('mousemove',onMove); window.addEventListener('mouseup',onUp);
+        },
+    };
+}
+
+function taskCard(id) {
+    const t = TASK_DATA.find(t => t.id === id) || {};
+    const STATUS_COLORS = {
+        todo:'#9ca3af', in_progress:'#2563eb', review:'#d97706', done:'#16a34a', cancelled:'#ef4444',
+    };
+    const PRIORITY_CLASSES = {
+        critical: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+        high:     'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+        medium:   'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+        low:      'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400',
+    };
+    return {
+        taskId:     id,
+        title:      t.title      || '',
+        status:     t.status     || 'todo',
+        priority:   t.priority   || 'medium',
+        dueDate:    t.due_date   || null,
+        assignee:   t.assignee   || null,
+        checklists: t.checklists || [],
+
+        get statusColor()  { return STATUS_COLORS[this.status] ?? '#9ca3af'; },
+        get priorityClass(){ return PRIORITY_CLASSES[this.priority] ?? PRIORITY_CLASSES.medium; },
+        get priorityLabel(){ return this.priority.charAt(0).toUpperCase() + this.priority.slice(1); },
+        get assigneeName() { return this.assignee?.name ?? ''; },
+        get dueDateFmt() {
+            if (!this.dueDate) return '';
+            const d = new Date(this.dueDate + 'T00:00:00');
+            return d.getDate() + '/' + (d.getMonth() + 1);
+        },
+        get isOverdue() {
+            if (!this.dueDate || this.status === 'done' || this.status === 'cancelled') return false;
+            return new Date(this.dueDate + 'T00:00:00') < new Date(new Date().toDateString());
+        },
+
+        onSaved(detail) {
+            if (detail.id !== this.taskId) return;
+            if (detail.title    !== undefined) this.title    = detail.title;
+            if (detail.status   !== undefined) this.status   = detail.status;
+            if (detail.priority !== undefined) this.priority = detail.priority;
+            if (detail.due_date !== undefined) this.dueDate  = detail.due_date;
+            if (detail.assignee !== undefined) this.assignee = detail.assignee;
         },
     };
 }
