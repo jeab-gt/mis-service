@@ -371,7 +371,7 @@
                             <div x-show="todayLeft>=0"
                                  class="absolute top-0 bottom-0 bg-red-500 pointer-events-none"
                                  style="width:2px;z-index:20"
-                                 :style="`left:${todayLeft}px`"></div>
+                                 :style="{ left: todayLeft + 'px' }"></div>
                         </div>
 
                         {{-- Bar rows --}}
@@ -391,13 +391,13 @@
                                 <div x-show="todayLeft>=0"
                                      class="absolute top-0 bottom-0 bg-red-500/50 pointer-events-none"
                                      style="width:2px;z-index:5"
-                                     :style="`left:${todayLeft}px`"></div>
+                                     :style="{ left: todayLeft + 'px' }"></div>
 
                                 {{-- MILESTONE bar --}}
                                 <template x-if="row.isMilestone && row.barLeft!==null && row.barWidth">
                                     <div class="absolute rounded pointer-events-none"
                                          style="background:#1e40af;opacity:0.85;top:12px;bottom:12px;z-index:3"
-                                         :style="`left:${row.barLeft}px;width:${row.barWidth}px`">
+                                         :style="{ left: row.barLeft + 'px', width: row.barWidth + 'px' }">
                                     </div>
                                 </template>
 
@@ -405,12 +405,12 @@
                                 <template x-if="!row.isMilestone && row.status!=='todo' && row.barLeft!==null">
                                     <div class="absolute rounded group cursor-grab active:cursor-grabbing"
                                          style="top:9px;bottom:9px;z-index:4;overflow:hidden"
-                                         :style="`left:${row.barLeft}px;width:${Math.max(row.barWidth,8)}px;background:${barBg(row.status).base}`"
+                                         :style="{ left: row.barLeft + 'px', width: Math.max(row.barWidth, 8) + 'px', background: barBg(row.status).base }"
                                          @click.prevent="openDrawer(row.taskId)"
                                          @mousedown.prevent="startDrag($event,row)"
                                          :title="`${row.name} | ${fmtDate(row.startDate)} – ${fmtDate(row.endDate)} | ${row.pct}%`">
                                         <div class="absolute top-0 left-0 bottom-0 pointer-events-none"
-                                             :style="`width:${row.pct}%;background:${barBg(row.status).fill};border-radius:inherit`"></div>
+                                             :style="{ width: row.pct + '%', background: barBg(row.status).fill }"></div>
                                         <div class="absolute right-0 top-0 bottom-0 w-2.5 cursor-ew-resize flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
                                              style="background:rgba(0,0,0,0.1)"
                                              @mousedown.stop.prevent="startResize($event,row)">
@@ -423,7 +423,7 @@
                                 <template x-if="!row.isMilestone && row.status==='todo' && row.barLeft!==null">
                                     <div class="absolute rounded cursor-grab active:cursor-grabbing"
                                          style="top:9px;bottom:9px;z-index:4;border:1.5px dashed #9ca3af;background:rgba(156,163,175,0.08)"
-                                         :style="`left:${row.barLeft}px;width:${Math.max(row.barWidth,8)}px`"
+                                         :style="{ left: row.barLeft + 'px', width: Math.max(row.barWidth, 8) + 'px' }"
                                          @click.prevent="openDrawer(row.taskId)"
                                          @mousedown.prevent="startDrag($event,row)"
                                          :title="`${row.name} | ${fmtDate(row.startDate)} – ${fmtDate(row.endDate)} | ยังไม่เริ่ม`">
