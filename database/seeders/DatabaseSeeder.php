@@ -375,5 +375,6 @@ class DatabaseSeeder extends Seeder
         }
 
         $this->call(OptionSetSeeder::class);
+        $this->call(ProjectSeeder::class);
     }
 }

@@ -7,6 +7,7 @@ use App\Models\ApprovalAction;
 use App\Models\Flow;
 use App\Models\FlowNode;
 use App\Models\OptionSet;
+use App\Models\Project;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -128,6 +129,27 @@ class SubmissionService
             ),
             default => null,
         };
+
+        // Auto-create Project when a project-request App is approved
+        if ($node->type === 'end_approved' && $submission->app?->slug === 'project-request') {
+            $formData = $submission->form_data ?? [];
+            Project::create([
+                'name'          => $formData['f1'] ?? 'New Project',
+                'objective'     => $formData['f2'] ?? null,
+                'description'   => $formData['f3'] ?? null,
+                'end_date'      => $formData['f4'] ?? null,
+                'submission_id' => $submission->id,
+                'factory_id'    => $submission->factory_id,
+                'manager_id'    => auth()->id(),
+                'status'        => 'planning',
+                'priority'      => 'medium',
+            ]);
+
+            $this->notificationService->notify(
+                $submission->submitter, 'project_created',
+                ['project_name' => $formData['f1'] ?? 'New Project']
+            );
+        }
     }
 
     // ─── Resubmit after revision ─────────────────────────────────────

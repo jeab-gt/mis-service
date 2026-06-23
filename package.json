@@ -24,6 +24,7 @@
     },
     "dependencies": {
         "@tabler/icons-webfont": "^3.44.0",
-        "drawflow": "^0.0.60"
+        "drawflow": "^0.0.60",
+        "frappe-gantt": "^1.2.2"
     }
 }

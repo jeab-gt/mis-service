@@ -5,6 +5,11 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ProjectAttachmentController;
+use App\Http\Controllers\ProjectCommentController;
+use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ProjectReportController;
+use App\Http\Controllers\ProjectTaskController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SubmissionController;
 use App\Http\Controllers\TaskController;
@@ -47,6 +52,43 @@ Route::middleware(['auth', 'setlocale'])->group(function () {
         Route::get('/logs/{submission}', [TaskController::class, 'getLogs'])->name('logs');
         Route::post('/move/{assignment}', [TaskController::class, 'moveCard'])->name('move');
     });
+
+    // Projects
+    Route::prefix('projects')->name('projects.')->group(function () {
+        Route::get('/',                                            [ProjectController::class, 'index'])->name('index');
+        Route::get('/create',                                     [ProjectController::class, 'create'])->name('create');
+        Route::post('/',                                          [ProjectController::class, 'store'])->name('store');
+        Route::get('/{project}',                                  [ProjectController::class, 'show'])->name('show');
+        Route::get('/{project}/edit',                             [ProjectController::class, 'edit'])->name('edit');
+        Route::put('/{project}',                                  [ProjectController::class, 'update'])->name('update');
+        Route::delete('/{project}',                               [ProjectController::class, 'destroy'])->name('destroy');
+        Route::post('/{project}/members',                         [ProjectController::class, 'addMember'])->name('members.add');
+        Route::delete('/{project}/members/{user}',                [ProjectController::class, 'removeMember'])->name('members.remove');
+        Route::post('/{project}/tasks',                           [ProjectTaskController::class, 'store'])->name('tasks.store');
+        Route::post('/{project}/attachments',                     [ProjectAttachmentController::class, 'store'])->name('attachments.store');
+
+        // Reports
+        Route::get('/{project}/reports',                          [ProjectReportController::class, 'index'])->name('reports.index');
+        Route::get('/{project}/reports/burndown',                 [ProjectReportController::class, 'burndown'])->name('reports.burndown');
+        Route::get('/{project}/reports/workload',                 [ProjectReportController::class, 'workload'])->name('reports.workload');
+    });
+
+    // Project tasks (task-level operations)
+    Route::prefix('project-tasks')->name('project-tasks.')->group(function () {
+        Route::put('/{task}',                                     [ProjectTaskController::class, 'update'])->name('update');
+        Route::delete('/{task}',                                  [ProjectTaskController::class, 'destroy'])->name('destroy');
+        Route::post('/{task}/log-time',                           [ProjectTaskController::class, 'logTime'])->name('log-time');
+        Route::post('/{task}/progress',                           [ProjectTaskController::class, 'updateProgress'])->name('progress');
+        Route::post('/{task}/checklist',                          [ProjectTaskController::class, 'addChecklist'])->name('checklist.add');
+        Route::patch('/checklist/{item}',                         [ProjectTaskController::class, 'toggleChecklist'])->name('checklist.toggle');
+        Route::post('/{task}/comments',                           [ProjectCommentController::class, 'store'])->name('comments.store');
+        Route::post('/reorder',                                   [ProjectTaskController::class, 'reorder'])->name('reorder');
+    });
+
+    // Project comments + attachments
+    Route::delete('/project-comments/{comment}',                  [ProjectCommentController::class, 'destroy'])->name('project-comments.destroy');
+    Route::get('/project-attachments/{attachment}/download',      [ProjectAttachmentController::class, 'download'])->name('project-attachments.download');
+    Route::delete('/project-attachments/{attachment}',            [ProjectAttachmentController::class, 'destroy'])->name('project-attachments.destroy');
 
     // Reports
     Route::prefix('reports')->name('reports.')->middleware('can:report.view')->group(function () {

@@ -53,6 +53,13 @@
                     <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">Applications</span>
                 </a>
 
+                <a href="{{ route('projects.index') }}"
+                   title="Projects"
+                   class="{{ request()->routeIs('projects.*') ? 'sidebar-active' : 'sidebar-link' }}">
+                    <i class="ti ti-layout-kanban text-xl flex-shrink-0"></i>
+                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">Projects</span>
+                </a>
+
                 @can('submission.view')
                 <div x-data="{ open: {{ request()->routeIs('submissions.*') || request()->routeIs('tasks.*') ? 'true' : 'false' }} }">
                     <button @click="open = !open"

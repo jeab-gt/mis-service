@@ -1,5 +1,6 @@
 @import '@tabler/icons-webfont/dist/tabler-icons.css';
 @import 'drawflow/dist/drawflow.min.css';
+@import '/node_modules/frappe-gantt/dist/frappe-gantt.css';
 
 @tailwind base;
 @tailwind components;
