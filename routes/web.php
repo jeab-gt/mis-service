@@ -120,9 +120,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'setlocale', 'role:s
     // AJAX: sections cascade dropdown by factory
     Route::get('/factory-sections/{factoryId}', [\App\Http\Controllers\Admin\UserController::class, 'sectionsForFactory'])->name('factory.sections');
 
-    // Checksheet Templates (admin)
+    // Checksheet Templates (admin) — index redirects to App Builder
     Route::prefix('checksheets')->name('checksheets.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Admin\ChecksheetTemplateController::class, 'index'])->name('index');
+        Route::get('/', fn() => redirect()->route('admin.apps.index'))->name('index');
         Route::get('/create', [\App\Http\Controllers\Admin\ChecksheetTemplateController::class, 'create'])->name('create');
         Route::post('/', [\App\Http\Controllers\Admin\ChecksheetTemplateController::class, 'store'])->name('store');
         Route::get('/{template}/edit', [\App\Http\Controllers\Admin\ChecksheetTemplateController::class, 'edit'])->name('edit');

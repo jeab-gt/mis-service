@@ -30,7 +30,7 @@ class AppController extends Controller
         $canEdit   = auth()->user()->can('app.edit');
         $canDelete = auth()->user()->can('app.delete');
 
-        $allItems = $apps->map(fn($a) => [
+        $appItems = $apps->map(fn($a) => [
             'id'                => $a->id,
             'type'              => 'form',
             'name'              => $a->name,
@@ -38,13 +38,14 @@ class AppController extends Controller
             'category_name'     => $a->appCategory?->name_th ?? 'ไม่ระบุหมวดหมู่',
             'icon'              => $a->icon ?? 'ti-file-text',
             'submissions_count' => $a->submissions_count,
-            'created_ts'        => $a->created_at?->timestamp ?? 0,
             'edit_url'          => route('admin.apps.edit', $a->slug),
             'form_url'          => $a->initialFormTemplate ? route('admin.form-templates.designer', $a->initialFormTemplate) : null,
             'flow_url'          => $a->flow ? route('admin.flows.designer', $a->flow) : null,
             'delete_url'        => route('admin.apps.destroy', $a->slug),
             'delete_label'      => 'ลบ App "' . $a->name . '"?',
-        ])->merge($checksheets->map(fn($c) => [
+        ]);
+
+        $checksheetItems = $checksheets->map(fn($c) => [
             'id'               => $c->id,
             'type'             => 'checksheet',
             'name'             => $c->name,
@@ -54,15 +55,26 @@ class AppController extends Controller
             'parameters_count' => $c->parameters_count,
             'records_count'    => $c->records_count,
             'frequency'        => $c->frequency,
-            'created_ts'       => $c->created_at?->timestamp ?? 0,
             'edit_url'         => route('admin.checksheets.edit', $c->slug),
             'builder_url'      => route('admin.checksheets.builder', $c->slug),
             'records_url'      => route('checksheets.records', $c->slug),
             'delete_url'       => route('admin.checksheets.destroy', $c->slug),
             'delete_label'     => 'ลบ Checksheet "' . $c->name . '"?',
-        ]))->values();
+        ]);
 
-        return view('apps.index', compact('allItems', 'canEdit', 'canDelete'));
+        // Sort: alphabetical category, uncategorized last; then groupBy
+        $grouped = $appItems->merge($checksheetItems)
+            ->sortBy(fn($item) => $item['category_name'] === 'ไม่ระบุหมวดหมู่' ? "\xFF" : $item['category_name'])
+            ->groupBy('category_name');
+
+        // Lightweight meta for Alpine filter: numeric-indexed array of [{n,t}] per category
+        $groupedMeta = array_values(
+            $grouped->map(fn($items) =>
+                $items->map(fn($i) => ['n' => $i['name'], 't' => $i['type']])->values()->toArray()
+            )->toArray()
+        );
+
+        return view('apps.index', compact('grouped', 'groupedMeta', 'canEdit', 'canDelete'));
     }
 
     public function create(Request $request)
