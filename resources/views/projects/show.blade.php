@@ -261,7 +261,8 @@
         {{-- ═══ TAB: GANTT ═══ --}}
         <div x-show="activeTab === 'gantt'">
         <div x-data="ganttChart()" class="select-none"
-             x-effect="if(activeTab==='gantt') $nextTick(()=>scrollToday())">
+             x-effect="if(activeTab==='gantt') $nextTick(()=>scrollToday())"
+             @task-saved.window="updateGanttRow($event.detail)">
 
             {{-- Controls --}}
             <div class="flex items-center gap-2 p-3 border-b border-gray-100 dark:border-gray-700">
@@ -409,12 +410,12 @@
                                 <template x-if="!row.isMilestone && row.status!=='todo' && row.barLeft!==null">
                                     <div class="absolute rounded group cursor-grab active:cursor-grabbing"
                                          style="top:9px;bottom:9px;z-index:4;overflow:hidden"
-                                         :style="{ left: row.barLeft + 'px', width: Math.max(row.barWidth, 8) + 'px', background: barBg(row.status).base }"
+                                         :style="{ left: row.barLeft + 'px', width: Math.max(row.barWidth, 8) + 'px', background: barBg(row).base }"
                                          @click.prevent="!_barDragging && openDrawer(row.taskId)"
                                          @mousedown.prevent="startDrag($event,row)"
                                          :title="`${row.name} | ${fmtDate(row.startDate)} – ${fmtDate(row.endDate)} | ${row.pct}%`">
                                         <div class="absolute top-0 left-0 bottom-0 pointer-events-none"
-                                             :style="{ width: row.pct + '%', background: barBg(row.status).fill }"></div>
+                                             :style="{ width: row.pct + '%', background: barBg(row).fill }"></div>
                                         <div class="absolute right-0 top-0 bottom-0 w-2.5 cursor-ew-resize flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
                                              style="background:rgba(0,0,0,0.1)"
                                              @mousedown.stop.prevent="startResize($event,row)">
@@ -611,6 +612,7 @@ function projectShow() {
         isDragging:    false,
         savedFlash:    false,
         saveError:     false,
+        saveBtn:       'idle',
         newTask: { title: '', status: 'todo', priority: 'medium', assignee_id: '', due_date: '' },
 
         async addTask() {
@@ -633,50 +635,60 @@ function projectShow() {
         },
 
         async saveTask() {
-            if (!this.drawerTask) return;
-            const res = await fetch(`/project-tasks/${this.drawerTask.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
-                body: JSON.stringify({
-                    title:            this.drawerTask.title,
-                    description:      this.drawerTask.description,
-                    status:           this.drawerTask.status,
-                    priority:         this.drawerTask.priority,
-                    assignee_id:      this.drawerTask.assignee_id || null,
-                    start_date:       this.drawerTask.start_date || null,
-                    due_date:         this.drawerTask.due_date || null,
-                    estimated_hours:  this.drawerTask.estimated_hours || null,
-                    progress_pct:     this.drawerTask.progress_pct,
-                }),
-            });
-            if (res.ok) {
-                const idx = TASK_DATA.findIndex(t => t.id === this.drawerTask.id);
-                if (idx >= 0) Object.assign(TASK_DATA[idx], {
-                    title:          this.drawerTask.title,
-                    description:    this.drawerTask.description,
-                    status:         this.drawerTask.status,
-                    priority:       this.drawerTask.priority,
-                    assignee_id:    this.drawerTask.assignee_id,
-                    start_date:     this.drawerTask.start_date,
-                    due_date:       this.drawerTask.due_date,
-                    estimated_hours: this.drawerTask.estimated_hours,
-                    progress_pct:   this.drawerTask.progress_pct,
+            if (!this.drawerTask || this.saveBtn === 'saving') return;
+            this.saveBtn = 'saving';
+            try {
+                const res = await fetch(`/project-tasks/${this.drawerTask.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
+                    body: JSON.stringify({
+                        title:            this.drawerTask.title,
+                        description:      this.drawerTask.description,
+                        status:           this.drawerTask.status,
+                        priority:         this.drawerTask.priority,
+                        assignee_id:      this.drawerTask.assignee_id || null,
+                        start_date:       this.drawerTask.start_date || null,
+                        due_date:         this.drawerTask.due_date || null,
+                        estimated_hours:  this.drawerTask.estimated_hours || null,
+                        progress_pct:     this.drawerTask.progress_pct,
+                    }),
                 });
-                this.$dispatch('task-saved', {
-                    id:          this.drawerTask.id,
-                    title:       this.drawerTask.title,
-                    status:      this.drawerTask.status,
-                    priority:    this.drawerTask.priority,
-                    due_date:    this.drawerTask.due_date,
-                    assignee_id: this.drawerTask.assignee_id,
-                    assignee:    this.drawerTask.assignee,
-                    progress_pct: this.drawerTask.progress_pct,
-                });
-                this.savedFlash = true;
-                setTimeout(() => { this.savedFlash = false; }, 1500);
-            } else {
+                if (res.ok) {
+                    const idx = TASK_DATA.findIndex(t => t.id === this.drawerTask.id);
+                    if (idx >= 0) Object.assign(TASK_DATA[idx], {
+                        title:           this.drawerTask.title,
+                        description:     this.drawerTask.description,
+                        status:          this.drawerTask.status,
+                        priority:        this.drawerTask.priority,
+                        assignee_id:     this.drawerTask.assignee_id,
+                        start_date:      this.drawerTask.start_date,
+                        due_date:        this.drawerTask.due_date,
+                        estimated_hours: this.drawerTask.estimated_hours,
+                        progress_pct:    this.drawerTask.progress_pct,
+                    });
+                    this.$dispatch('task-saved', {
+                        id:           this.drawerTask.id,
+                        title:        this.drawerTask.title,
+                        status:       this.drawerTask.status,
+                        priority:     this.drawerTask.priority,
+                        due_date:     this.drawerTask.due_date,
+                        assignee_id:  this.drawerTask.assignee_id,
+                        assignee:     this.drawerTask.assignee,
+                        progress_pct: this.drawerTask.progress_pct,
+                        start_date:   this.drawerTask.start_date,
+                    });
+                    this.saveBtn    = 'saved';
+                    this.savedFlash = true;
+                    setTimeout(() => { this.saveBtn = 'idle'; this.savedFlash = false; }, 1500);
+                } else {
+                    this.saveBtn   = 'error';
+                    this.saveError = true;
+                    setTimeout(() => { this.saveBtn = 'idle'; this.saveError = false; }, 2500);
+                }
+            } catch (_) {
+                this.saveBtn   = 'error';
                 this.saveError = true;
-                setTimeout(() => { this.saveError = false; }, 2500);
+                setTimeout(() => { this.saveBtn = 'idle'; this.saveError = false; }, 2500);
             }
         },
 
@@ -848,13 +860,13 @@ function ganttChart() {
             return { done:'#16a34a', in_progress:'#2563eb', review:'#d97706', todo:'#9ca3af', cancelled:'#ef4444' }[s] ?? '#9ca3af';
         },
 
-        barBg(s) {
-            return {
-                done:        { base:'rgba(22,163,74,0.15)',  fill:'#16a34a' },
-                in_progress: { base:'rgba(37,99,235,0.15)', fill:'#2563eb' },
-                review:      { base:'rgba(217,119,6,0.15)', fill:'#d97706' },
-                cancelled:   { base:'rgba(239,68,68,0.15)', fill:'#ef4444' },
-            }[s] ?? { base:'rgba(156,163,175,0.15)', fill:'#9ca3af' };
+        barBg(row) {
+            const p = row.pct || 0;
+            if (row.status === 'done' || p >= 100) return { base:'rgba(22,163,74,0.18)',   fill:'#15803d' };
+            if (p >= 70)  return { base:'rgba(37,99,235,0.18)',  fill:'#1d4ed8' };
+            if (p >= 30)  return { base:'rgba(217,119,6,0.18)',  fill:'#b45309' };
+            if (p > 0)    return { base:'rgba(220,38,38,0.18)',  fill:'#b91c1c' };
+            return { base:'rgba(156,163,175,0.15)', fill:'#9ca3af' };
         },
 
         build() {
@@ -961,6 +973,26 @@ function ganttChart() {
                 }
             }
             this.cols = cols;
+        },
+
+        updateGanttRow(detail) {
+            const row = this.rows.find(r => r.taskId === detail.id);
+            if (!row) return;
+            if (detail.status       !== undefined) row.status = detail.status;
+            if (detail.progress_pct !== undefined) row.pct    = detail.progress_pct;
+            if (detail.title        !== undefined) row.name   = detail.title;
+            if (detail.start_date   !== undefined && detail.start_date) {
+                row.startDate = detail.start_date;
+                const s = new Date(detail.start_date + 'T00:00:00');
+                row.barLeft   = Math.floor((s - this.minDate) / 86400000) * this.ppd;
+            }
+            if (detail.due_date !== undefined && detail.due_date) {
+                row.endDate = detail.due_date;
+                const s = new Date(row.startDate + 'T00:00:00');
+                const e = new Date(detail.due_date  + 'T00:00:00');
+                row.barWidth  = Math.max(Math.ceil((e - s) / 86400000) * this.ppd, this.ppd);
+                row.duration  = Math.ceil((e - s) / 86400000) + 1;
+            }
         },
 
         startDrag(e, row) {

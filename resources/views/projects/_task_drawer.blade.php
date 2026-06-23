@@ -241,9 +241,18 @@
                 {{-- ── Sticky footer with SAVE button ── --}}
                 <div class="border-t border-gray-100 dark:border-gray-700 p-4 flex gap-3 flex-shrink-0 bg-white dark:bg-gray-800">
                     <button @click="saveTask()"
-                            class="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold btn-primary shadow-sm">
-                        <i class="ti ti-device-floppy text-base"></i>
-                        บันทึก / Save
+                            :disabled="saveBtn === 'saving'"
+                            :class="{
+                                'bg-indigo-600 hover:bg-indigo-700': saveBtn === 'idle',
+                                'bg-gray-400 cursor-wait':           saveBtn === 'saving',
+                                'bg-green-600 hover:bg-green-700':   saveBtn === 'saved',
+                                'bg-red-600 hover:bg-red-700':       saveBtn === 'error'
+                            }"
+                            class="flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white shadow-sm transition-all duration-200 active:scale-95 select-none">
+                        <span x-show="saveBtn === 'idle'"    class="flex items-center gap-2"><i class="ti ti-device-floppy text-base"></i> บันทึก / Save</span>
+                        <span x-show="saveBtn === 'saving'"  class="flex items-center gap-2"><i class="ti ti-loader-2 animate-spin text-base"></i> กำลังบันทึก...</span>
+                        <span x-show="saveBtn === 'saved'"   class="flex items-center gap-2"><i class="ti ti-check text-base"></i> บันทึกแล้ว</span>
+                        <span x-show="saveBtn === 'error'"   class="flex items-center gap-2"><i class="ti ti-alert-circle text-base"></i> เกิดข้อผิดพลาด</span>
                     </button>
                     <button @click="closeDrawer()"
                             class="px-4 py-2.5 rounded-xl text-sm font-medium border border-gray-200 dark:border-gray-600
