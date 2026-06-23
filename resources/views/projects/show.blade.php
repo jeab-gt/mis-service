@@ -294,21 +294,21 @@
                 {{-- LEFT TABLE (fixed, no horizontal scroll) --}}
                 <div x-ref="ganttLeft" @scroll.passive="syncScroll('left')"
                      class="overflow-y-auto overflow-x-hidden flex-shrink-0 border-r-2 border-gray-300 dark:border-gray-600"
-                     style="width:560px">
+                     style="width:450px">
 
                     {{-- Left header --}}
                     <div class="flex items-stretch bg-gray-100 dark:bg-gray-700 border-b-2 border-gray-300 dark:border-gray-600"
                          style="position:sticky;top:0;z-index:10;height:36px;min-height:36px">
-                        <div class="flex items-center px-3 text-xs font-semibold text-gray-600 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600"
-                             style="width:200px;min-width:200px">งานที่ต้องทำ</div>
+                        <div class="flex items-center px-2 text-xs font-semibold text-gray-600 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600"
+                             style="width:180px;min-width:180px">งานที่ต้องทำ</div>
                         <div class="flex items-center justify-center text-xs font-semibold text-gray-600 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600"
-                             style="width:78px;min-width:78px">เริ่มงาน</div>
+                             style="width:50px;min-width:50px">เริ่ม</div>
                         <div class="flex items-center justify-center text-xs font-semibold text-gray-600 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600"
-                             style="width:46px;min-width:46px">วัน</div>
+                             style="width:35px;min-width:35px">วัน</div>
                         <div class="flex items-center justify-center text-xs font-semibold text-gray-600 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600"
-                             style="width:78px;min-width:78px">สิ้นสุด</div>
+                             style="width:50px;min-width:50px">สิ้นสุด</div>
                         <div class="flex items-center justify-center text-xs font-semibold text-gray-600 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600"
-                             style="width:72px;min-width:72px">%</div>
+                             style="width:70px;min-width:70px">%</div>
                         <div class="flex items-center justify-center text-xs font-semibold text-gray-600 dark:text-gray-300 flex-1">สถานะ</div>
                     </div>
 
@@ -332,26 +332,26 @@
                             <template x-if="!row.isMilestone">
                                 <div class="flex items-stretch w-full bg-white dark:bg-gray-800">
                                     <div class="flex items-center gap-1.5 overflow-hidden border-r border-gray-100 dark:border-gray-700"
-                                         style="width:200px;min-width:200px;padding:0 8px 0 24px">
+                                         style="width:180px;min-width:180px;padding:0 6px 0 20px">
                                         <div class="w-2 h-2 rounded-full flex-shrink-0" :style="{ background: barBg(row).fill }"></div>
                                         <span class="text-xs text-gray-700 dark:text-gray-300 truncate cursor-pointer hover:underline"
-                                              @click="openDrawer(row.taskId)" x-text="row.name"></span>
+                                              @click="openDrawer(row.taskId)" x-text="row.name" :title="row.name"></span>
                                     </div>
                                     <div class="flex items-center justify-center text-xs text-gray-500 dark:text-gray-400 tabular-nums border-r border-gray-100 dark:border-gray-700"
-                                         style="width:78px;min-width:78px" x-text="fmtDate(row.startDate)"></div>
+                                         style="width:50px;min-width:50px" x-text="fmtDate(row.startDate)"></div>
                                     <div class="flex items-center justify-center text-xs text-gray-500 dark:text-gray-400 tabular-nums border-r border-gray-100 dark:border-gray-700"
-                                         style="width:46px;min-width:46px" x-text="row.duration+'d'"></div>
+                                         style="width:35px;min-width:35px" x-text="row.duration+'d'"></div>
                                     <div class="flex items-center justify-center text-xs text-gray-500 dark:text-gray-400 tabular-nums border-r border-gray-100 dark:border-gray-700"
-                                         style="width:78px;min-width:78px" x-text="fmtDate(row.endDate)"></div>
-                                    <div class="flex flex-col items-center justify-center gap-0.5 border-r border-gray-100 dark:border-gray-700 px-2"
-                                         style="width:72px;min-width:72px">
+                                         style="width:50px;min-width:50px" x-text="fmtDate(row.endDate)"></div>
+                                    <div class="flex flex-col items-center justify-center gap-0.5 border-r border-gray-100 dark:border-gray-700 px-1"
+                                         style="width:70px;min-width:70px">
                                         <span class="text-xs font-semibold tabular-nums leading-none"
                                               :style="{ color: barBg(row).fill }" x-text="row.pct+'%'"></span>
                                         <div class="w-full h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
                                             <div class="h-full rounded-full" :style="{ width: row.pct + '%', background: barBg(row).fill }"></div>
                                         </div>
                                     </div>
-                                    <div class="flex items-center justify-center flex-1 text-xs font-medium"
+                                    <div class="flex items-center justify-center flex-1 text-[10px] font-medium truncate px-1"
                                          :style="`color:${dotColor(row.status)}`" x-text="statusTh(row.status)"></div>
                                 </div>
                             </template>
@@ -916,7 +916,8 @@ function ganttChart() {
                 msTasks.forEach(t => rows.push(this.mkRow(t, minD, ppd)));
             });
 
-            const free = all.filter(t => !t.milestone_id);
+            const knownMsIds = new Set((MILESTONE_DATA || []).map(m => m.id));
+            const free = all.filter(t => !t.milestone_id || !knownMsIds.has(t.milestone_id));
             if (free.length) {
                 rows.push({ id:'ms-none', isMilestone:true, name:'ไม่มี Phase',
                     startDate:null, endDate:null, duration:0, pct:0, status:'todo',
