@@ -38,7 +38,7 @@
     <a href="{{ $openUrl }}"
        class="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium btn-primary whitespace-nowrap">
         <i class="ti ti-player-play text-xs"></i>
-        {{ $isForm ? 'เปิด' : 'กรอกข้อมูล' }}
+        {{ $isForm ? __('common.open') : __('common.fill_data') }}
     </a>
 
     {{-- Dashboard button --}}

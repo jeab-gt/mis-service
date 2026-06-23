@@ -40,4 +40,6 @@ return [
     'saved'          => 'Saved',
     'error'          => 'An error occurred',
     'confirm'        => 'Confirm',
+    'open'           => 'Open',
+    'fill_data'      => 'Fill Data',
 ];

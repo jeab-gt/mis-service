@@ -11,7 +11,7 @@
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-2xl font-bold">Applications</h1>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">ระบบและ Checksheet ที่คุณมีสิทธิ์เข้าถึง</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{{ __('applications.subtitle') }}</p>
         </div>
     </div>
 
@@ -43,7 +43,7 @@
                 @if($cat->name_en)
                 <span class="text-xs text-gray-400">{{ $cat->name_en }}</span>
                 @endif
-                <span class="ml-auto text-xs text-gray-400 font-normal">{{ $total }} รายการ</span>
+                <span class="ml-auto text-xs text-gray-400 font-normal">{{ __('applications.items', ['count' => $total]) }}</span>
             </button>
 
             {{-- Item rows --}}
@@ -75,8 +75,8 @@
             <div class="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
                 <i class="ti ti-apps text-gray-500 dark:text-gray-400 text-sm"></i>
             </div>
-            <span class="font-semibold text-sm text-gray-500 dark:text-gray-400">อื่น ๆ (ไม่ระบุหมวดหมู่)</span>
-            <span class="ml-auto text-xs text-gray-400">{{ $uncatApps->count() + $uncatChecksheets->count() }} รายการ</span>
+            <span class="font-semibold text-sm text-gray-500 dark:text-gray-400">{{ __('applications.uncategorized') }}</span>
+            <span class="ml-auto text-xs text-gray-400">{{ __('applications.items', ['count' => $uncatApps->count() + $uncatChecksheets->count()]) }}</span>
         </button>
         <div x-show="open"
              class="border-t border-gray-50 dark:border-gray-700 divide-y divide-gray-50 dark:divide-gray-700/50">
@@ -94,8 +94,8 @@
     @if(!$anyVisible)
     <div class="text-center py-24 text-gray-400">
         <i class="ti ti-apps-off text-6xl mb-4 block opacity-40"></i>
-        <p class="text-lg font-medium">ยังไม่มี Application ที่คุณมีสิทธิ์เข้าถึง</p>
-        <p class="text-sm mt-1">ติดต่อผู้ดูแลระบบเพื่อขอสิทธิ์</p>
+        <p class="text-lg font-medium">{{ __('applications.no_access') }}</p>
+        <p class="text-sm mt-1">{{ __('applications.no_access_hint') }}</p>
     </div>
     @endif
 
