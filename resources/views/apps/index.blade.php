@@ -5,7 +5,14 @@
 @endsection
 
 @section('content')
-<div x-data="appBuilder(@json($allItems), @json($canEdit), @json($canDelete))"
+<script>
+window.__appBuilderData = {
+    items:     @json($allItems),
+    canEdit:   @json($canEdit),
+    canDelete: @json($canDelete),
+};
+</script>
+<div x-data="appBuilder()"
      class="space-y-4">
 
     {{-- Header --}}
@@ -319,16 +326,18 @@
 @push('scripts')
 <script>
 document.addEventListener('alpine:init', () => {
-    Alpine.data('appBuilder', (items, canEdit, canDelete) => ({
-        items,
+    Alpine.data('appBuilder', () => {
+        const d = window.__appBuilderData || {};
+        return {
+        items:     d.items     || [],
+        canEdit:   d.canEdit   ?? false,
+        canDelete: d.canDelete ?? false,
         search: '',
         filterType: 'all',
         filterCategory: 'all',
         sortBy: 'latest',
         openCats: {},
         showCreateModal: false,
-        canEdit,
-        canDelete,
 
         get categoryNames() {
             return [...new Set(this.items.map(i => i.category_name))].sort((a, b) => {
@@ -391,7 +400,8 @@ document.addEventListener('alpine:init', () => {
             form.action = url;
             form.submit();
         },
-    }));
+        }; // end return object
+    }); // end Alpine.data
 });
 </script>
 @endpush
