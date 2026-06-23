@@ -333,7 +333,7 @@
                                 <div class="flex items-stretch w-full bg-white dark:bg-gray-800">
                                     <div class="flex items-center gap-1.5 overflow-hidden border-r border-gray-100 dark:border-gray-700"
                                          style="width:200px;min-width:200px;padding:0 8px 0 24px">
-                                        <div class="w-2 h-2 rounded-full flex-shrink-0" :style="`background:${dotColor(row.status)}`"></div>
+                                        <div class="w-2 h-2 rounded-full flex-shrink-0" :style="{ background: barBg(row).fill }"></div>
                                         <span class="text-xs text-gray-700 dark:text-gray-300 truncate cursor-pointer hover:underline"
                                               @click="openDrawer(row.taskId)" x-text="row.name"></span>
                                     </div>
@@ -346,9 +346,9 @@
                                     <div class="flex flex-col items-center justify-center gap-0.5 border-r border-gray-100 dark:border-gray-700 px-2"
                                          style="width:72px;min-width:72px">
                                         <span class="text-xs font-semibold tabular-nums leading-none"
-                                              :style="`color:${dotColor(row.status)}`" x-text="row.pct+'%'"></span>
+                                              :style="{ color: barBg(row).fill }" x-text="row.pct+'%'"></span>
                                         <div class="w-full h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
-                                            <div class="h-full rounded-full" :style="`width:${row.pct}%;background:${dotColor(row.status)}`"></div>
+                                            <div class="h-full rounded-full" :style="{ width: row.pct + '%', background: barBg(row).fill }"></div>
                                         </div>
                                     </div>
                                     <div class="flex items-center justify-center flex-1 text-xs font-medium"
