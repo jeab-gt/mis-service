@@ -59,7 +59,7 @@ class App extends Model
         return $this->belongsTo(Flow::class, 'flow_id');
     }
 
-    public function category(): BelongsTo
+    public function appCategory(): BelongsTo
     {
         return $this->belongsTo(AppCategory::class, 'category_id');
     }

@@ -28,7 +28,7 @@ class ApplicationsController extends Controller
                     $q->orWhereJsonContains('allowed_factories', (int) $factoryId);
                 }
             })
-            ->with(['category', 'primaryDashboard'])
+            ->with(['appCategory', 'primaryDashboard'])
             ->orderBy('name')
             ->get();
 

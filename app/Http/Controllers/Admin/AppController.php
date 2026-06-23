@@ -17,17 +17,52 @@ class AppController extends Controller
 {
     public function index()
     {
-        $apps = App::withCount('submissions')
-            ->with(['initialFormTemplate', 'flow', 'category'])
+        $apps = App::with(['appCategory', 'initialFormTemplate', 'flow'])
+            ->withCount('submissions')
             ->latest()
             ->get();
 
-        $checksheets = ChecksheetTemplate::withCount(['parameters', 'records'])
-            ->with(['category', 'creator'])
+        $checksheets = ChecksheetTemplate::with(['category'])
+            ->withCount(['parameters', 'records'])
             ->latest()
             ->get();
 
-        return view('apps.index', compact('apps', 'checksheets'));
+        $canEdit   = auth()->user()->can('app.edit');
+        $canDelete = auth()->user()->can('app.delete');
+
+        $allItems = $apps->map(fn($a) => [
+            'id'                => $a->id,
+            'type'              => 'form',
+            'name'              => $a->name,
+            'is_active'         => (bool) $a->is_active,
+            'category_name'     => $a->appCategory?->name_th ?? 'ไม่ระบุหมวดหมู่',
+            'icon'              => $a->icon ?? 'ti-file-text',
+            'submissions_count' => $a->submissions_count,
+            'created_ts'        => $a->created_at?->timestamp ?? 0,
+            'edit_url'          => route('admin.apps.edit', $a->slug),
+            'form_url'          => $a->initialFormTemplate ? route('admin.form-templates.designer', $a->initialFormTemplate) : null,
+            'flow_url'          => $a->flow ? route('admin.flows.designer', $a->flow) : null,
+            'delete_url'        => route('admin.apps.destroy', $a->slug),
+            'delete_label'      => 'ลบ App "' . $a->name . '"?',
+        ])->merge($checksheets->map(fn($c) => [
+            'id'               => $c->id,
+            'type'             => 'checksheet',
+            'name'             => $c->name,
+            'is_active'        => (bool) $c->is_active,
+            'category_name'    => $c->category?->name_th ?? 'ไม่ระบุหมวดหมู่',
+            'icon'             => 'ti-clipboard-list',
+            'parameters_count' => $c->parameters_count,
+            'records_count'    => $c->records_count,
+            'frequency'        => $c->frequency,
+            'created_ts'       => $c->created_at?->timestamp ?? 0,
+            'edit_url'         => route('admin.checksheets.edit', $c->slug),
+            'builder_url'      => route('admin.checksheets.builder', $c->slug),
+            'records_url'      => route('checksheets.records', $c->slug),
+            'delete_url'       => route('admin.checksheets.destroy', $c->slug),
+            'delete_label'     => 'ลบ Checksheet "' . $c->name . '"?',
+        ]))->values();
+
+        return view('apps.index', compact('allItems', 'canEdit', 'canDelete'));
     }
 
     public function create(Request $request)
