@@ -257,7 +257,8 @@
         </div>
 
         {{-- ═══ TAB: GANTT ═══ --}}
-        <div x-show="activeTab === 'gantt'" x-data="ganttChart()" class="select-none">
+        <div x-show="activeTab === 'gantt'" x-data="ganttChart()" class="select-none"
+             x-effect="if(activeTab==='gantt') $nextTick(()=>scrollToday())">
 
             {{-- Controls --}}
             <div class="flex items-center gap-2 p-3 border-b border-gray-100 dark:border-gray-700">
@@ -406,7 +407,7 @@
                                     <div class="absolute rounded group cursor-grab active:cursor-grabbing"
                                          style="top:9px;bottom:9px;z-index:4;overflow:hidden"
                                          :style="{ left: row.barLeft + 'px', width: Math.max(row.barWidth, 8) + 'px', background: barBg(row.status).base }"
-                                         @click.prevent="openDrawer(row.taskId)"
+                                         @click.prevent="!_barDragging && openDrawer(row.taskId)"
                                          @mousedown.prevent="startDrag($event,row)"
                                          :title="`${row.name} | ${fmtDate(row.startDate)} – ${fmtDate(row.endDate)} | ${row.pct}%`">
                                         <div class="absolute top-0 left-0 bottom-0 pointer-events-none"
@@ -424,7 +425,7 @@
                                     <div class="absolute rounded cursor-grab active:cursor-grabbing"
                                          style="top:9px;bottom:9px;z-index:4;border:1.5px dashed #9ca3af;background:rgba(156,163,175,0.08)"
                                          :style="{ left: row.barLeft + 'px', width: Math.max(row.barWidth, 8) + 'px' }"
-                                         @click.prevent="openDrawer(row.taskId)"
+                                         @click.prevent="!_barDragging && openDrawer(row.taskId)"
                                          @mousedown.prevent="startDrag($event,row)"
                                          :title="`${row.name} | ${fmtDate(row.startDate)} – ${fmtDate(row.endDate)} | ยังไม่เริ่ม`">
                                     </div>
@@ -785,8 +786,8 @@ function ganttChart() {
 
         init() {
             this._syncing = false;
+            this._barDragging = false;
             this.build();
-            this.$nextTick(() => this.scrollToday());
         },
 
         setView(mode) {
@@ -944,10 +945,16 @@ function ganttChart() {
         startDrag(e, row) {
             if (e.button!==0) return;
             const startX=e.clientX, origL=row.barLeft, ppd=this.ppd;
+            let hasMoved=false;
             const snap = v => Math.round(v/ppd)*ppd;
-            const onMove = e => { row.barLeft = Math.max(0, snap(origL+(e.clientX-startX))); };
+            const onMove = ev => {
+                if (Math.abs(ev.clientX-startX)>3) hasMoved=true;
+                row.barLeft = Math.max(0, snap(origL+(ev.clientX-startX)));
+            };
             const onUp = async () => {
                 window.removeEventListener('mousemove',onMove); window.removeEventListener('mouseup',onUp);
+                if (!hasMoved) return;
+                this._barDragging=true; setTimeout(()=>{ this._barDragging=false; },100);
                 const ns=new Date(this.minDate.getTime()+(row.barLeft/ppd)*86400000);
                 const ne=new Date(this.minDate.getTime()+((row.barLeft+row.barWidth)/ppd)*86400000);
                 const ss=ns.toISOString().slice(0,10), ee=ne.toISOString().slice(0,10);
