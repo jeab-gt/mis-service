@@ -257,128 +257,181 @@
         </div>
 
         {{-- ═══ TAB: GANTT ═══ --}}
-        <div x-show="activeTab === 'gantt'" x-data="ganttChart()" class="p-0">
+        <div x-show="activeTab === 'gantt'" x-data="ganttChart()" class="select-none">
 
             {{-- Controls --}}
-            <div class="flex items-center gap-2 p-3 border-b border-gray-100 dark:border-gray-700 flex-wrap">
+            <div class="flex items-center gap-2 p-3 border-b border-gray-100 dark:border-gray-700">
                 <div class="flex rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600">
-                    <template x-for="mode in ['Day','Week','Month']" :key="mode">
-                        <button @click="setView(mode)"
-                                :class="viewMode === mode ? 'bg-primary text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'"
+                    <template x-for="m in ['Day','Week','Month']" :key="m">
+                        <button @click="setView(m)"
+                                :class="viewMode===m ? 'bg-primary text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'"
                                 class="px-3 py-1.5 text-xs font-medium border-r border-gray-200 dark:border-gray-600 last:border-r-0 transition-colors"
-                                x-text="mode"></button>
+                                x-text="m"></button>
                     </template>
                 </div>
-                <button @click="scrollToToday()"
+                <button @click="scrollToday()"
                         class="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                     <i class="ti ti-calendar-event mr-1"></i>Today
                 </button>
-                <span class="text-xs text-gray-400 ml-auto" x-show="ganttRows.length"
-                      x-text="`${ganttRows.filter(r=>!r.isMilestone).length} tasks`"></span>
+                <span class="ml-auto text-xs text-gray-400" x-show="rows.length"
+                      x-text="`${rows.filter(r=>!r.isMilestone).length} tasks`"></span>
             </div>
 
             {{-- Empty state --}}
-            <div x-show="!ganttRows.length" class="py-16 text-center text-gray-400">
+            <div x-show="!rows.length" class="py-16 text-center text-gray-400">
                 <i class="ti ti-chart-gantt text-4xl mb-3 block"></i>
-                <p class="text-sm">No tasks with date ranges to display</p>
+                <p class="text-sm">ไม่มีงานที่มีกำหนดวันที่</p>
             </div>
 
-            {{-- Gantt grid --}}
-            <div x-show="ganttRows.length"
-                 class="gantt-scroll overflow-x-auto"
-                 style="max-height:520px; overflow-y:auto">
-                <div :style="`min-width:${250+timelineWidth}px`">
+            {{-- Excel-like layout: LEFT TABLE + RIGHT TIMELINE --}}
+            <div x-show="rows.length" class="flex overflow-hidden border-t border-gray-200 dark:border-gray-700" style="max-height:520px">
 
-                    {{-- Header row --}}
-                    <div class="flex border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/80"
-                         style="position:sticky;top:0;z-index:30;height:36px">
-                        <div class="flex items-center px-3 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/80"
-                             style="position:sticky;left:0;z-index:40;width:250px;min-width:250px">
-                            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Task / Phase</span>
+                {{-- LEFT TABLE (fixed, no horizontal scroll) --}}
+                <div x-ref="ganttLeft" @scroll.passive="syncScroll('left')"
+                     class="overflow-y-auto overflow-x-hidden flex-shrink-0 border-r-2 border-gray-300 dark:border-gray-600"
+                     style="width:560px">
+
+                    {{-- Left header --}}
+                    <div class="flex items-stretch bg-gray-100 dark:bg-gray-700 border-b-2 border-gray-300 dark:border-gray-600"
+                         style="position:sticky;top:0;z-index:10;height:36px;min-height:36px">
+                        <div class="flex items-center px-3 text-xs font-semibold text-gray-600 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600"
+                             style="width:200px;min-width:200px">งานที่ต้องทำ</div>
+                        <div class="flex items-center justify-center text-xs font-semibold text-gray-600 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600"
+                             style="width:78px;min-width:78px">เริ่มงาน</div>
+                        <div class="flex items-center justify-center text-xs font-semibold text-gray-600 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600"
+                             style="width:46px;min-width:46px">วัน</div>
+                        <div class="flex items-center justify-center text-xs font-semibold text-gray-600 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600"
+                             style="width:78px;min-width:78px">สิ้นสุด</div>
+                        <div class="flex items-center justify-center text-xs font-semibold text-gray-600 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600"
+                             style="width:72px;min-width:72px">%</div>
+                        <div class="flex items-center justify-center text-xs font-semibold text-gray-600 dark:text-gray-300 flex-1">สถานะ</div>
+                    </div>
+
+                    {{-- Left rows --}}
+                    <template x-for="row in rows" :key="row.id">
+                        <div class="flex items-stretch border-b border-gray-100 dark:border-gray-700"
+                             style="height:36px;min-height:36px"
+                             :class="!row.isMilestone ? 'hover:bg-indigo-50/50 dark:hover:bg-gray-700/30' : ''">
+
+                            {{-- Milestone row --}}
+                            <template x-if="row.isMilestone">
+                                <div class="flex items-center w-full px-3 gap-2" style="background:#1e40af">
+                                    <i class="ti ti-flag-3 text-white/80 text-sm flex-shrink-0"></i>
+                                    <span class="text-white font-bold text-xs truncate flex-1" x-text="row.name"></span>
+                                    <span class="text-white/60 text-xs flex-shrink-0 tabular-nums"
+                                          x-text="row.startDate ? fmtDate(row.startDate)+' – '+fmtDate(row.endDate) : ''"></span>
+                                </div>
+                            </template>
+
+                            {{-- Task row --}}
+                            <template x-if="!row.isMilestone">
+                                <div class="flex items-stretch w-full bg-white dark:bg-gray-800">
+                                    <div class="flex items-center gap-1.5 overflow-hidden border-r border-gray-100 dark:border-gray-700"
+                                         style="width:200px;min-width:200px;padding:0 8px 0 24px">
+                                        <div class="w-2 h-2 rounded-full flex-shrink-0" :style="`background:${dotColor(row.status)}`"></div>
+                                        <span class="text-xs text-gray-700 dark:text-gray-300 truncate cursor-pointer hover:underline"
+                                              @click="openDrawer(row.taskId)" x-text="row.name"></span>
+                                    </div>
+                                    <div class="flex items-center justify-center text-xs text-gray-500 dark:text-gray-400 tabular-nums border-r border-gray-100 dark:border-gray-700"
+                                         style="width:78px;min-width:78px" x-text="fmtDate(row.startDate)"></div>
+                                    <div class="flex items-center justify-center text-xs text-gray-500 dark:text-gray-400 tabular-nums border-r border-gray-100 dark:border-gray-700"
+                                         style="width:46px;min-width:46px" x-text="row.duration+'d'"></div>
+                                    <div class="flex items-center justify-center text-xs text-gray-500 dark:text-gray-400 tabular-nums border-r border-gray-100 dark:border-gray-700"
+                                         style="width:78px;min-width:78px" x-text="fmtDate(row.endDate)"></div>
+                                    <div class="flex flex-col items-center justify-center gap-0.5 border-r border-gray-100 dark:border-gray-700 px-2"
+                                         style="width:72px;min-width:72px">
+                                        <span class="text-xs font-semibold tabular-nums leading-none"
+                                              :style="`color:${dotColor(row.status)}`" x-text="row.pct+'%'"></span>
+                                        <div class="w-full h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+                                            <div class="h-full rounded-full" :style="`width:${row.pct}%;background:${dotColor(row.status)}`"></div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-center flex-1 text-xs font-medium"
+                                         :style="`color:${dotColor(row.status)}`" x-text="statusTh(row.status)"></div>
+                                </div>
+                            </template>
                         </div>
-                        <div class="relative" :style="`width:${timelineWidth}px`">
-                            <template x-for="col in ganttColumns" :key="col.key">
-                                <div class="absolute top-0 bottom-0 flex items-center justify-center text-xs text-gray-500 dark:text-gray-400 border-r border-gray-100 dark:border-gray-700/50 select-none"
+                    </template>
+                </div>
+
+                {{-- RIGHT TIMELINE (horizontal scroll) --}}
+                <div x-ref="ganttRight" @scroll.passive="syncScroll('right')"
+                     class="flex-1 overflow-auto" style="min-width:0">
+                    <div :style="`width:${timelineW}px;min-width:${timelineW}px`">
+
+                        {{-- Date header --}}
+                        <div class="relative bg-gray-100 dark:bg-gray-700 border-b-2 border-gray-300 dark:border-gray-600"
+                             style="position:sticky;top:0;z-index:10;height:36px;min-height:36px">
+                            <template x-for="col in cols" :key="col.key">
+                                <div class="absolute top-0 bottom-0 flex items-center justify-center text-xs text-gray-600 dark:text-gray-300 font-medium border-r border-gray-200 dark:border-gray-600 select-none overflow-hidden"
+                                     :class="col.weekend ? 'bg-gray-200 dark:bg-gray-600/60' : ''"
                                      :style="`left:${col.left}px;width:${col.width}px`"
                                      x-text="col.label"></div>
                             </template>
                             <div x-show="todayLeft>=0"
-                                 class="absolute top-0 bottom-0 bg-red-400"
+                                 class="absolute top-0 bottom-0 bg-red-500 pointer-events-none"
                                  style="width:2px;z-index:20"
                                  :style="`left:${todayLeft}px`"></div>
                         </div>
-                    </div>
 
-                    {{-- Task/milestone rows --}}
-                    <template x-for="row in ganttRows" :key="row.id">
-                        <div class="flex border-b border-gray-100 dark:border-gray-700/50"
-                             :style="`height:${row.isMilestone?30:44}px`">
+                        {{-- Bar rows --}}
+                        <template x-for="row in rows" :key="row.id">
+                            <div class="relative border-b border-gray-100 dark:border-gray-700/50"
+                                 style="height:36px;min-height:36px"
+                                 :class="row.isMilestone ? 'bg-blue-900/5 dark:bg-blue-900/15' : 'bg-white dark:bg-gray-800'">
 
-                            {{-- Name cell (sticky left) --}}
-                            <div class="flex items-center px-3 border-r border-gray-200 dark:border-gray-700 overflow-hidden"
-                                 :class="row.isMilestone
-                                     ? 'bg-blue-50 dark:bg-blue-900/25'
-                                     : 'bg-white dark:bg-gray-800'"
-                                 style="position:sticky;left:0;z-index:20;width:250px;min-width:250px">
-                                <template x-if="row.isMilestone">
-                                    <div class="flex items-center gap-1.5 w-full">
-                                        <i class="ti ti-flag-3 text-blue-500 text-sm flex-shrink-0"></i>
-                                        <span class="text-xs font-bold text-blue-700 dark:text-blue-300 truncate" x-text="row.name"></span>
-                                    </div>
-                                </template>
-                                <template x-if="!row.isMilestone">
-                                    <div class="flex items-center gap-1.5 w-full cursor-pointer" @click="openDrawer(row.taskId)">
-                                        <div class="w-2 h-2 rounded-full flex-shrink-0" :class="dotColor(row.status)"></div>
-                                        <span class="text-xs text-gray-700 dark:text-gray-300 truncate" x-text="row.name"></span>
-                                    </div>
-                                </template>
-                            </div>
-
-                            {{-- Timeline cell --}}
-                            <div class="relative"
-                                 :class="row.isMilestone ? 'bg-blue-50/40 dark:bg-blue-900/10' : 'bg-white dark:bg-gray-800'"
-                                 :style="`width:${timelineWidth}px`">
-
-                                {{-- Grid lines --}}
-                                <template x-for="col in ganttColumns" :key="col.key">
-                                    <div class="absolute top-0 bottom-0 border-r border-gray-100 dark:border-gray-700/30"
-                                         :style="`left:${col.left+col.width-1}px;width:1px`"></div>
+                                {{-- Column grid lines --}}
+                                <template x-for="col in cols" :key="col.key">
+                                    <div class="absolute top-0 bottom-0 border-r border-gray-100 dark:border-gray-700/30 pointer-events-none"
+                                         :class="col.weekend ? 'bg-gray-50 dark:bg-gray-700/20' : ''"
+                                         :style="`left:${col.left}px;width:${col.width}px`"></div>
                                 </template>
 
                                 {{-- Today line --}}
                                 <div x-show="todayLeft>=0"
-                                     class="absolute top-0 bottom-0 bg-red-400/50"
-                                     style="width:1px;z-index:10"
+                                     class="absolute top-0 bottom-0 bg-red-500/50 pointer-events-none"
+                                     style="width:2px;z-index:5"
                                      :style="`left:${todayLeft}px`"></div>
 
-                                {{-- Task bar --}}
-                                <template x-if="!row.isMilestone && row.barLeft!==null">
-                                    <div class="absolute rounded-md cursor-pointer flex items-center overflow-hidden group select-none"
-                                         :style="`left:${row.barLeft}px;width:${Math.max(row.barWidth,12)}px;top:7px;bottom:7px`"
-                                         :class="barColor(row.status)"
-                                         @click="openDrawer(row.taskId)"
-                                         @mousedown.prevent="startDrag($event,row)">
-                                        <div class="absolute top-0 left-0 bottom-0 bg-black/20 rounded-l-md pointer-events-none"
-                                             :style="`width:${row.progress_pct}%`"></div>
-                                        <span x-show="row.barWidth>50"
-                                              class="relative z-10 text-white text-xs px-1.5 truncate leading-none pointer-events-none"
-                                              x-text="row.name"></span>
-                                        <div class="absolute right-0 top-0 bottom-0 w-3 cursor-ew-resize flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                {{-- MILESTONE bar --}}
+                                <template x-if="row.isMilestone && row.barLeft!==null && row.barWidth">
+                                    <div class="absolute rounded pointer-events-none"
+                                         style="background:#1e40af;opacity:0.85;top:12px;bottom:12px;z-index:3"
+                                         :style="`left:${row.barLeft}px;width:${row.barWidth}px`">
+                                    </div>
+                                </template>
+
+                                {{-- TASK bar (non-todo, colored + progress split) --}}
+                                <template x-if="!row.isMilestone && row.status!=='todo' && row.barLeft!==null">
+                                    <div class="absolute rounded group cursor-grab active:cursor-grabbing"
+                                         style="top:9px;bottom:9px;z-index:4;overflow:hidden"
+                                         :style="`left:${row.barLeft}px;width:${Math.max(row.barWidth,8)}px;background:${barBg(row.status).base}`"
+                                         @click.prevent="openDrawer(row.taskId)"
+                                         @mousedown.prevent="startDrag($event,row)"
+                                         :title="`${row.name} | ${fmtDate(row.startDate)} – ${fmtDate(row.endDate)} | ${row.pct}%`">
+                                        <div class="absolute top-0 left-0 bottom-0 pointer-events-none"
+                                             :style="`width:${row.pct}%;background:${barBg(row.status).fill};border-radius:inherit`"></div>
+                                        <div class="absolute right-0 top-0 bottom-0 w-2.5 cursor-ew-resize flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                             style="background:rgba(0,0,0,0.1)"
                                              @mousedown.stop.prevent="startResize($event,row)">
-                                            <div class="w-0.5 h-4 bg-white/70 rounded"></div>
+                                            <div class="w-px h-3/4 bg-white/80 rounded"></div>
                                         </div>
                                     </div>
                                 </template>
 
-                                {{-- Milestone diamond --}}
-                                <template x-if="row.isMilestone && row.dueLeft!==null">
-                                    <div class="absolute w-3 h-3 rotate-45 bg-blue-500 border-2 border-white dark:border-gray-800"
-                                         style="top:50%;transform:translateY(-50%) rotate(45deg);z-index:10"
-                                         :style="`left:${row.dueLeft-6}px`"></div>
+                                {{-- TASK bar (todo: dashed outline only) --}}
+                                <template x-if="!row.isMilestone && row.status==='todo' && row.barLeft!==null">
+                                    <div class="absolute rounded cursor-grab active:cursor-grabbing"
+                                         style="top:9px;bottom:9px;z-index:4;border:1.5px dashed #9ca3af;background:rgba(156,163,175,0.08)"
+                                         :style="`left:${row.barLeft}px;width:${Math.max(row.barWidth,8)}px`"
+                                         @click.prevent="openDrawer(row.taskId)"
+                                         @mousedown.prevent="startDrag($event,row)"
+                                         :title="`${row.name} | ${fmtDate(row.startDate)} – ${fmtDate(row.endDate)} | ยังไม่เริ่ม`">
+                                    </div>
                                 </template>
                             </div>
-                        </div>
-                    </template>
+                        </template>
+                    </div>
                 </div>
             </div>
         </div>
@@ -720,38 +773,77 @@ function projectCalendar() {
 
 function ganttChart() {
     return {
-        viewMode:     'Week',
-        pixelsPerDay: 18,
-        ganttRows:    [],
-        ganttColumns: [],
-        minDate:      null,
-        todayLeft:    0,
-        totalDays:    0,
+        viewMode:  'Week',
+        ppd:       28,
+        rows:      [],
+        cols:      [],
+        minDate:   null,
+        totalDays: 0,
+        todayLeft: 0,
 
-        get timelineWidth() { return this.totalDays * this.pixelsPerDay; },
+        get timelineW() { return this.totalDays * this.ppd; },
 
-        init() { this.build(); this.$nextTick(() => this.scrollToToday()); },
-
-        setView(mode) { this.viewMode = mode; this.build(); this.$nextTick(() => this.scrollToToday()); },
-
-        scrollToToday() {
-            const el = this.$el.querySelector('.gantt-scroll');
-            if (el) el.scrollLeft = Math.max(0, this.todayLeft - 200);
+        init() {
+            this._syncing = false;
+            this.build();
+            this.$nextTick(() => this.scrollToday());
         },
 
-        openDrawer(taskId) { this.$dispatch('open-drawer', { taskId }); },
+        setView(mode) {
+            this.viewMode = mode;
+            this.ppd = { Day: 36, Week: 28, Month: 8 }[mode] ?? 28;
+            this.build();
+            this.$nextTick(() => this.scrollToday());
+        },
+
+        scrollToday() {
+            if (this.$refs.ganttRight)
+                this.$refs.ganttRight.scrollLeft = Math.max(0, this.todayLeft - 250);
+        },
+
+        syncScroll(from) {
+            if (this._syncing) return;
+            this._syncing = true;
+            const L = this.$refs.ganttLeft, R = this.$refs.ganttRight;
+            if (from === 'left'  && L && R) R.scrollTop = L.scrollTop;
+            if (from === 'right' && L && R) L.scrollTop = R.scrollTop;
+            requestAnimationFrame(() => { this._syncing = false; });
+        },
+
+        openDrawer(id) { this.$dispatch('open-drawer', { taskId: id }); },
+
+        fmtDate(str) {
+            if (!str) return '-';
+            const d = new Date(str + 'T00:00:00');
+            return d.getDate() + '/' + (d.getMonth() + 1);
+        },
+
+        statusTh(s) {
+            return { done:'เสร็จแล้ว', in_progress:'กำลังทำ', review:'Review', todo:'ยังไม่เริ่ม', cancelled:'ยกเลิก' }[s] ?? s;
+        },
+
+        dotColor(s) {
+            return { done:'#16a34a', in_progress:'#2563eb', review:'#d97706', todo:'#9ca3af', cancelled:'#ef4444' }[s] ?? '#9ca3af';
+        },
+
+        barBg(s) {
+            return {
+                done:        { base:'#bbf7d0', fill:'#16a34a' },
+                in_progress: { base:'#bfdbfe', fill:'#2563eb' },
+                review:      { base:'#fde68a', fill:'#d97706' },
+                cancelled:   { base:'#fecaca', fill:'#ef4444' },
+            }[s] ?? { base:'#e5e7eb', fill:'#6b7280' };
+        },
 
         build() {
-            const ppd = { Day: 40, Week: 18, Month: 6 }[this.viewMode] ?? 18;
-            this.pixelsPerDay = ppd;
+            const ppd = this.ppd;
+            const all = TASK_DATA.filter(t => t.start_date && t.due_date);
+            if (!all.length) { this.rows = []; this.cols = []; return; }
 
-            const withDates = TASK_DATA.filter(t => t.start_date && t.due_date);
-            if (!withDates.length) { this.ganttRows = []; this.ganttColumns = []; return; }
-
-            const allD = withDates.flatMap(t => [new Date(t.start_date + 'T00:00:00'), new Date(t.due_date + 'T00:00:00')]);
-            const minD = new Date(Math.min(...allD.map(d => d.getTime())));
-            const maxD = new Date(Math.max(...allD.map(d => d.getTime())));
-            minD.setDate(minD.getDate() - 5);
+            const dts  = all.flatMap(t => [new Date(t.start_date+'T00:00:00'), new Date(t.due_date+'T00:00:00')]);
+            const minD = new Date(Math.min(...dts.map(d => d.getTime())));
+            const maxD = new Date(Math.max(...dts.map(d => d.getTime())));
+            minD.setDate(minD.getDate() - 3);
             maxD.setDate(maxD.getDate() + 14);
             this.minDate   = minD;
             this.totalDays = Math.ceil((maxD - minD) / 86400000) + 1;
@@ -759,120 +851,127 @@ function ganttChart() {
             const today = new Date(); today.setHours(0,0,0,0);
             this.todayLeft = Math.floor((today - minD) / 86400000) * ppd;
 
-            this.buildColumns(minD, maxD, ppd);
+            this.buildCols(minD, maxD, ppd);
 
             const rows = [];
-            const used = new Set();
 
             (MILESTONE_DATA || []).forEach(ms => {
-                const dl = ms.due_date
-                    ? Math.floor((new Date(ms.due_date + 'T00:00:00') - minD) / 86400000) * ppd
-                    : null;
-                rows.push({ id: 'ms-' + ms.id, name: ms.name, isMilestone: true, dueLeft: dl });
-                withDates.filter(t => t.milestone_id === ms.id).forEach(t => {
-                    used.add(t.id);
-                    rows.push(this.makeRow(t, minD, ppd));
+                const msTasks = all.filter(t => t.milestone_id === ms.id);
+                let msS = null, msE = null;
+                msTasks.forEach(t => {
+                    const s = new Date(t.start_date+'T00:00:00'), e = new Date(t.due_date+'T00:00:00');
+                    if (!msS || s < msS) msS = s;
+                    if (!msE || e > msE) msE = e;
                 });
+                if (!msS && ms.due_date) { msS = new Date(ms.due_date+'T00:00:00'); msE = msS; }
+
+                const bL = msS ? Math.floor((msS - minD) / 86400000) * ppd : null;
+                const bW = (msS && msE) ? Math.max(Math.ceil((msE - msS) / 86400000) * ppd, ppd) : null;
+                const doneCnt = msTasks.filter(t => t.status==='done').length;
+                const msPct   = msTasks.length ? Math.round(doneCnt / msTasks.length * 100) : 0;
+
+                rows.push({
+                    id: 'ms-'+ms.id, isMilestone: true, name: ms.name,
+                    startDate: msS ? msS.toISOString().slice(0,10) : null,
+                    endDate:   msE ? msE.toISOString().slice(0,10) : (ms.due_date || null),
+                    duration:  (msS && msE) ? Math.ceil((msE - msS) / 86400000) + 1 : 0,
+                    pct: msPct,
+                    status: msTasks.every(t=>t.status==='done') ? 'done' : msTasks.some(t=>['in_progress','review'].includes(t.status)) ? 'in_progress' : 'todo',
+                    barLeft: bL, barWidth: bW, taskId: null,
+                });
+                msTasks.forEach(t => rows.push(this.mkRow(t, minD, ppd)));
             });
 
-            const free = withDates.filter(t => !t.milestone_id);
+            const free = all.filter(t => !t.milestone_id);
             if (free.length) {
-                rows.push({ id: 'ms-none', name: 'No Milestone', isMilestone: true, dueLeft: null });
-                free.forEach(t => rows.push(this.makeRow(t, minD, ppd)));
+                rows.push({ id:'ms-none', isMilestone:true, name:'ไม่มี Phase',
+                    startDate:null, endDate:null, duration:0, pct:0, status:'todo',
+                    barLeft:null, barWidth:null, taskId:null });
+                free.forEach(t => rows.push(this.mkRow(t, minD, ppd)));
             }
 
-            this.ganttRows = rows;
+            this.rows = rows;
         },
 
-        makeRow(t, minD, ppd) {
-            const s = new Date(t.start_date + 'T00:00:00');
-            const e = new Date(t.due_date   + 'T00:00:00');
+        mkRow(t, minD, ppd) {
+            const s = new Date(t.start_date+'T00:00:00'), e = new Date(t.due_date+'T00:00:00');
             return {
-                id: 'task-' + t.id, taskId: t.id, name: t.title, isMilestone: false,
-                status:       t.status,
-                barLeft:      Math.floor((s - minD) / 86400000) * ppd,
-                barWidth:     Math.max(Math.ceil((e - s) / 86400000) * ppd, ppd),
-                progress_pct: t.progress_pct ?? 0,
-                dueLeft:      null,
+                id: 'task-'+t.id, taskId: t.id, isMilestone: false,
+                name: t.title, startDate: t.start_date, endDate: t.due_date,
+                duration: Math.ceil((e - s) / 86400000) + 1,
+                pct: t.progress_pct ?? 0, status: t.status,
+                barLeft:  Math.floor((s - minD) / 86400000) * ppd,
+                barWidth: Math.max(Math.ceil((e - s) / 86400000) * ppd, ppd),
             };
         },
 
-        buildColumns(minD, maxD, ppd) {
+        buildCols(minD, maxD, ppd) {
             const cols = [];
             if (this.viewMode === 'Day') {
                 let d = new Date(minD);
                 while (d <= maxD) {
-                    cols.push({ key: d.toISOString().slice(0,10), label: d.getDate() + '/' + (d.getMonth()+1), left: Math.floor((d - minD) / 86400000) * ppd, width: ppd });
-                    d = new Date(d); d.setDate(d.getDate() + 1);
+                    const dow = d.getDay();
+                    cols.push({ key: d.toISOString().slice(0,10),
+                        label: d.getDate()+'/'+(d.getMonth()+1),
+                        left: Math.floor((d-minD)/86400000)*ppd,
+                        width: ppd, weekend: dow===0||dow===6 });
+                    d = new Date(d); d.setDate(d.getDate()+1);
                 }
             } else if (this.viewMode === 'Week') {
                 let d = new Date(minD);
-                const dow = d.getDay(); d.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1));
+                const dow = d.getDay(); d.setDate(d.getDate()-(dow===0?6:dow-1));
                 while (d <= maxD) {
-                    const left = Math.floor((d - minD) / 86400000) * ppd;
-                    const wn   = this.weekNum(d);
-                    const label = 'W' + wn + ' ' + d.toLocaleDateString('en', {day:'2-digit', month:'short'});
-                    cols.push({ key: d.toISOString().slice(0,10), label, left: Math.max(0, left), width: 7 * ppd });
-                    d = new Date(d); d.setDate(d.getDate() + 7);
+                    cols.push({ key: d.toISOString().slice(0,10),
+                        label: d.getDate()+'/'+(d.getMonth()+1),
+                        left: Math.max(0, Math.floor((d-minD)/86400000)*ppd),
+                        width: 7*ppd, weekend: false });
+                    d = new Date(d); d.setDate(d.getDate()+7);
                 }
             } else {
                 let d = new Date(minD.getFullYear(), minD.getMonth(), 1);
                 while (d <= maxD) {
-                    const days = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
-                    cols.push({ key: d.toISOString().slice(0,10), label: d.toLocaleString('en', {month:'short', year:'2-digit'}), left: Math.max(0, Math.floor((d - minD) / 86400000) * ppd), width: days * ppd });
-                    d = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+                    const days = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
+                    cols.push({ key: d.toISOString().slice(0,10),
+                        label: d.toLocaleString('th-TH',{month:'short',year:'2-digit'}),
+                        left: Math.max(0, Math.floor((d-minD)/86400000)*ppd),
+                        width: days*ppd, weekend: false });
+                    d = new Date(d.getFullYear(), d.getMonth()+1, 1);
                 }
             }
-            this.ganttColumns = cols;
-        },
-
-        weekNum(date) {
-            const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-            d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-            return Math.ceil(((d - new Date(Date.UTC(d.getUTCFullYear(), 0, 1))) / 86400000 + 1) / 7);
-        },
-
-        barColor(s) {
-            return { todo:'bg-gray-400 dark:bg-gray-500', in_progress:'bg-blue-500', review:'bg-amber-400', done:'bg-green-500', cancelled:'bg-red-400' }[s] ?? 'bg-gray-400';
-        },
-
-        dotColor(s) {
-            return { todo:'bg-gray-400', in_progress:'bg-blue-500', review:'bg-amber-400', done:'bg-green-500', cancelled:'bg-red-400' }[s] ?? 'bg-gray-400';
+            this.cols = cols;
         },
 
         startDrag(e, row) {
-            if (e.button !== 0) return;
-            const startX = e.clientX, origLeft = row.barLeft;
-            const onMove = e => { row.barLeft = Math.max(0, origLeft + (e.clientX - startX)); };
-            const onUp   = async () => {
-                window.removeEventListener('mousemove', onMove);
-                window.removeEventListener('mouseup',   onUp);
-                const newS = new Date(this.minDate.getTime() + (row.barLeft / this.pixelsPerDay) * 86400000);
-                const newE = new Date(this.minDate.getTime() + ((row.barLeft + row.barWidth) / this.pixelsPerDay) * 86400000);
-                const ss = newS.toISOString().slice(0,10), ee = newE.toISOString().slice(0,10);
-                await fetch(`/project-tasks/${row.taskId}`, { method:'PUT', headers:{'Content-Type':'application/json','X-CSRF-TOKEN':CSRF}, body: JSON.stringify({ start_date: ss, due_date: ee }) });
-                const t = TASK_DATA.find(t => t.id === row.taskId);
-                if (t) { t.start_date = ss; t.due_date = ee; }
+            if (e.button!==0) return;
+            const startX=e.clientX, origL=row.barLeft, ppd=this.ppd;
+            const snap = v => Math.round(v/ppd)*ppd;
+            const onMove = e => { row.barLeft = Math.max(0, snap(origL+(e.clientX-startX))); };
+            const onUp = async () => {
+                window.removeEventListener('mousemove',onMove); window.removeEventListener('mouseup',onUp);
+                const ns=new Date(this.minDate.getTime()+(row.barLeft/ppd)*86400000);
+                const ne=new Date(this.minDate.getTime()+((row.barLeft+row.barWidth)/ppd)*86400000);
+                const ss=ns.toISOString().slice(0,10), ee=ne.toISOString().slice(0,10);
+                row.startDate=ss; row.endDate=ee;
+                await fetch(`/project-tasks/${row.taskId}`,{method:'PUT',headers:{'Content-Type':'application/json','X-CSRF-TOKEN':CSRF},body:JSON.stringify({start_date:ss,due_date:ee})});
+                const t=TASK_DATA.find(t=>t.id===row.taskId); if(t){t.start_date=ss;t.due_date=ee;}
             };
-            window.addEventListener('mousemove', onMove);
-            window.addEventListener('mouseup',   onUp);
+            window.addEventListener('mousemove',onMove); window.addEventListener('mouseup',onUp);
         },
 
         startResize(e, row) {
-            if (e.button !== 0) return;
-            const startX = e.clientX, origW = row.barWidth;
-            const onMove = e => { row.barWidth = Math.max(this.pixelsPerDay, origW + (e.clientX - startX)); };
-            const onUp   = async () => {
-                window.removeEventListener('mousemove', onMove);
-                window.removeEventListener('mouseup',   onUp);
-                const newE = new Date(this.minDate.getTime() + ((row.barLeft + row.barWidth) / this.pixelsPerDay) * 86400000);
-                const ee = newE.toISOString().slice(0,10);
-                await fetch(`/project-tasks/${row.taskId}`, { method:'PUT', headers:{'Content-Type':'application/json','X-CSRF-TOKEN':CSRF}, body: JSON.stringify({ due_date: ee }) });
-                const t = TASK_DATA.find(t => t.id === row.taskId);
-                if (t) t.due_date = ee;
+            if (e.button!==0) return;
+            const startX=e.clientX, origW=row.barWidth, ppd=this.ppd;
+            const snap = v => Math.max(ppd, Math.round(v/ppd)*ppd);
+            const onMove = e => { row.barWidth = snap(origW+(e.clientX-startX)); };
+            const onUp = async () => {
+                window.removeEventListener('mousemove',onMove); window.removeEventListener('mouseup',onUp);
+                const ne=new Date(this.minDate.getTime()+((row.barLeft+row.barWidth)/ppd)*86400000);
+                const ee=ne.toISOString().slice(0,10);
+                row.endDate=ee;
+                await fetch(`/project-tasks/${row.taskId}`,{method:'PUT',headers:{'Content-Type':'application/json','X-CSRF-TOKEN':CSRF},body:JSON.stringify({due_date:ee})});
+                const t=TASK_DATA.find(t=>t.id===row.taskId); if(t) t.due_date=ee;
             };
-            window.addEventListener('mousemove', onMove);
-            window.addEventListener('mouseup',   onUp);
+            window.addEventListener('mousemove',onMove); window.addEventListener('mouseup',onUp);
         },
     };
 }
