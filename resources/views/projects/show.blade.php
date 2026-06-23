@@ -261,7 +261,7 @@
         {{-- ═══ TAB: GANTT ═══ --}}
         <div x-show="activeTab === 'gantt'">
         <div x-data="ganttChart()" class="select-none"
-             x-effect="if(activeTab==='gantt') $nextTick(()=>scrollToday())"
+             x-effect="if(activeTab==='gantt') $nextTick(()=>fitAll())"
              @task-saved.window="updateGanttRow($event.detail)">
 
             {{-- Controls --}}
@@ -277,6 +277,10 @@
                 <button @click="scrollToday()"
                         class="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                     <i class="ti ti-calendar-event mr-1"></i>Today
+                </button>
+                <button @click="fitAll()"
+                        class="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    <i class="ti ti-arrows-maximize mr-1"></i>Fit All
                 </button>
                 <span class="ml-auto text-xs text-gray-400" x-show="rows.length"
                       x-text="`${rows.filter(r=>!r.isMilestone).length} tasks`"></span>
@@ -833,6 +837,21 @@ function ganttChart() {
         scrollToday() {
             if (this.$refs.ganttRight)
                 this.$refs.ganttRight.scrollLeft = Math.max(0, this.todayLeft - 250);
+        },
+
+        fitAll() {
+            const R = this.$refs.ganttRight;
+            if (!R || !this.totalDays) return;
+            const availW = Math.max(R.clientWidth, 300);
+            const newPpd = Math.max(4, Math.min(28, Math.floor(availW / this.totalDays)));
+            if (newPpd !== this.ppd) {
+                this.ppd     = newPpd;
+                this.viewMode = '';
+                this.build();
+            }
+            this.$nextTick(() => {
+                if (this.$refs.ganttRight) this.$refs.ganttRight.scrollLeft = 0;
+            });
         },
 
         syncScroll(from) {
