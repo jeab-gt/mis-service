@@ -1,19 +1,19 @@
 @extends('layouts.app')
-@section('title', 'แก้ไข Template: ' . $template->name)
+@section('title', __('checksheet.edit_title', ['name' => $template->name]))
 @section('breadcrumb')
 <span>Admin</span>
 <i class="ti ti-chevron-right text-xs mx-1"></i>
 <a href="{{ route('admin.checksheets.index') }}" class="hover:text-indigo-500">Checksheet Templates</a>
 <i class="ti ti-chevron-right text-xs mx-1"></i>
-<span>แก้ไข</span>
+<span>{{ __('common.edit') }}</span>
 @endsection
 
 @section('content')
 <div class="max-w-2xl mx-auto space-y-4">
     <div class="flex items-center justify-between">
-        <h1 class="text-xl font-bold">แก้ไข: {{ $template->name }}</h1>
+        <h1 class="text-xl font-bold">{{ __('checksheet.edit_title', ['name' => $template->name]) }}</h1>
         <a href="{{ route('admin.checksheets.builder', $template) }}" class="btn-secondary flex items-center space-x-1 text-sm">
-            <i class="ti ti-layout-grid-add"></i><span>ไปที่ Builder</span>
+            <i class="ti ti-layout-grid-add"></i><span>{{ __('checksheet.go_to_builder') }}</span>
         </a>
     </div>
 
@@ -22,28 +22,28 @@
             @csrf
 
             <div>
-                <label class="form-label">ชื่อ Template <span class="text-red-500">*</span></label>
+                <label class="form-label">{{ __('checksheet.template_name') }} <span class="text-red-500">*</span></label>
                 <input type="text" name="name" value="{{ old('name', $template->name) }}" class="form-input" required>
             </div>
 
             <div>
-                <label class="form-label">คำอธิบาย</label>
+                <label class="form-label">{{ __('common.description') }}</label>
                 <textarea name="description" rows="3" class="form-input">{{ old('description', $template->description) }}</textarea>
             </div>
 
             <div>
-                <label class="form-label">ความถี่ในการกรอก <span class="text-red-500">*</span></label>
+                <label class="form-label">{{ __('checksheet.frequency') }} <span class="text-red-500">*</span></label>
                 <select name="frequency" class="form-select" required>
-                    @foreach(['realtime' => 'Real-time', 'hourly' => 'ทุกชั่วโมง', 'daily' => 'ทุกวัน', 'weekly' => 'ทุกสัปดาห์', 'monthly' => 'ทุกเดือน'] as $value => $label)
+                    @foreach(['realtime' => __('checksheet.freq_realtime'), 'hourly' => __('checksheet.freq_hourly'), 'daily' => __('checksheet.freq_daily'), 'weekly' => __('checksheet.freq_weekly'), 'monthly' => __('checksheet.freq_monthly')] as $value => $label)
                     <option value="{{ $value }}" {{ old('frequency', $template->frequency) === $value ? 'selected' : '' }}>{{ $label }}</option>
                     @endforeach
                 </select>
             </div>
 
             <div>
-                <label class="form-label">Flow (ถ้ามี)</label>
+                <label class="form-label">{{ __('checksheet.flow_optional') }}</label>
                 <select name="flow_id" class="form-select">
-                    <option value="">— ไม่มี Flow —</option>
+                    <option value="">{{ __('checksheet.no_flow') }}</option>
                     @foreach($flows as $flow)
                     <option value="{{ $flow->id }}" {{ old('flow_id', $template->flow_id) == $flow->id ? 'selected' : '' }}>{{ $flow->name }}</option>
                     @endforeach
@@ -72,7 +72,7 @@
                 <input type="checkbox" id="is_active" name="is_active" value="1"
                        {{ old('is_active', $template->is_active) ? 'checked' : '' }}
                        class="rounded text-indigo-600">
-                <label for="is_active" class="form-label mb-0 cursor-pointer">เปิดใช้งาน (Active)</label>
+                <label for="is_active" class="form-label mb-0 cursor-pointer">{{ __('checksheet.active_label') }}</label>
             </div>
 
             {{-- Portal Settings --}}
@@ -82,9 +82,9 @@
                 </h3>
                 <div class="space-y-4">
                     <div>
-                        <label class="form-label">หมวดหมู่ (Portal)</label>
+                        <label class="form-label">{{ __('checksheet.portal_category') }}</label>
                         <select name="category_id" class="form-select">
-                            <option value="">— ไม่ระบุ —</option>
+                            <option value="">{{ __('checksheet.no_category') }}</option>
                             @foreach($categories as $cat)
                             <option value="{{ $cat->id }}"
                                 {{ old('category_id', $template->category_id) == $cat->id ? 'selected' : '' }}>
@@ -94,9 +94,9 @@
                         </select>
                     </div>
                     <div>
-                        <label class="form-label">Dashboard ที่ผูกไว้</label>
+                        <label class="form-label">{{ __('checksheet.linked_dashboard') }}</label>
                         <select name="primary_dashboard_id" class="form-select">
-                            <option value="">— ไม่มี Dashboard —</option>
+                            <option value="">{{ __('checksheet.no_dashboard') }}</option>
                             @foreach($dashboards as $db)
                             <option value="{{ $db->id }}"
                                 {{ old('dashboard_id', $template->primary_dashboard_id) == $db->id ? 'selected' : '' }}>
@@ -106,7 +106,7 @@
                         </select>
                     </div>
                     <div>
-                        <label class="form-label">Roles ที่มีสิทธิ์ (ว่าง = ทุก Role)</label>
+                        <label class="form-label">{{ __('checksheet.allowed_roles') }} <span class="font-normal text-gray-400 text-xs">({{ __('checksheet.allowed_roles_help') }})</span></label>
                         <div class="flex flex-wrap gap-3 mt-1">
                             @foreach($roles as $role)
                             <label class="flex items-center space-x-2 cursor-pointer">
@@ -119,7 +119,7 @@
                         </div>
                     </div>
                     <div>
-                        <label class="form-label">Factories ที่มีสิทธิ์ (ว่าง = ทุก Factory)</label>
+                        <label class="form-label">{{ __('checksheet.allowed_factories') }} <span class="font-normal text-gray-400 text-xs">({{ __('checksheet.allowed_factories_help') }})</span></label>
                         <div class="flex flex-wrap gap-3 mt-1">
                             @foreach($factories as $factory)
                             <label class="flex items-center space-x-2 cursor-pointer">
@@ -136,9 +136,9 @@
 
             <div class="flex space-x-3 pt-2 border-t border-gray-100 dark:border-gray-700">
                 <button type="submit" class="btn-primary flex items-center space-x-2">
-                    <i class="ti ti-device-floppy"></i><span>บันทึก</span>
+                    <i class="ti ti-device-floppy"></i><span>{{ __('common.save') }}</span>
                 </button>
-                <a href="{{ route('admin.checksheets.index') }}" class="btn-secondary">ยกเลิก</a>
+                <a href="{{ route('admin.checksheets.index') }}" class="btn-secondary">{{ __('common.cancel') }}</a>
             </div>
         </form>
     </div>

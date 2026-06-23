@@ -1,15 +1,15 @@
 @extends('layouts.app')
-@section('title', isset($app) ? 'แก้ไข App' : 'สร้าง App')
+@section('title', isset($app) ? __('appbuilder.edit_title', ['name' => $app->name]) : __('appbuilder.create_title'))
 @section('breadcrumb')
 <a href="{{ route('admin.apps.index') }}" class="hover:text-indigo-600">{{ __('menu.app_builder') }}</a>
 <i class="ti ti-chevron-right text-xs"></i>
-<span>{{ isset($app) ? 'แก้ไข' : 'สร้างใหม่' }}</span>
+<span>{{ isset($app) ? __('common.edit') : __('common.create') }}</span>
 @endsection
 
 @section('content')
 <div class="max-w-2xl mx-auto">
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-        <h1 class="text-xl font-bold mb-6">{{ isset($app) ? 'แก้ไข App: ' . $app->name : 'สร้าง App ใหม่' }}</h1>
+        <h1 class="text-xl font-bold mb-6">{{ isset($app) ? __('appbuilder.edit_title', ['name' => $app->name]) : __('appbuilder.create_title') }}</h1>
 
         @if($errors->any())
         <div class="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
@@ -28,7 +28,7 @@
             <!-- Basic Info -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="md:col-span-2">
-                    <label class="form-label">ชื่อ App <span class="text-red-500">*</span></label>
+                    <label class="form-label">{{ __('appbuilder.app_name') }} <span class="text-red-500">*</span></label>
                     <input type="text" name="name" value="{{ old('name', $app?->name ?? '') }}"
                            class="form-input" required>
                 </div>
@@ -36,7 +36,7 @@
                     <label class="form-label">Slug <span class="text-red-500">*</span></label>
                     <input type="text" name="slug" value="{{ old('slug', $app?->slug ?? '') }}"
                            class="form-input font-mono" required placeholder="my-app">
-                    <p class="text-xs text-gray-400 mt-1">ใช้เป็น URL: /submissions/{slug}/create</p>
+                    <p class="text-xs text-gray-400 mt-1">{{ __('appbuilder.slug_help') }}</p>
                 </div>
                 <div>
                     <label class="form-label">Category (legacy) <span class="text-red-500">*</span></label>
@@ -44,9 +44,9 @@
                            class="form-input" required placeholder="maintenance">
                 </div>
                 <div>
-                    <label class="form-label">หมวดหมู่ (Portal)</label>
+                    <label class="form-label">{{ __('appbuilder.portal_category') }}</label>
                     <select name="category_id" class="form-select">
-                        <option value="">— ไม่ระบุ —</option>
+                        <option value="">{{ __('appbuilder.no_category') }}</option>
                         @foreach($categories as $cat)
                         <option value="{{ $cat->id }}"
                             {{ old('category_id', $app?->category_id) == $cat->id ? 'selected' : '' }}>
@@ -70,7 +70,7 @@
             </div>
 
             <div>
-                <label class="form-label">คำอธิบาย</label>
+                <label class="form-label">{{ __('common.description') }}</label>
                 <textarea name="description" rows="2" class="form-input">{{ old('description', $app?->description ?? '') }}</textarea>
             </div>
 
@@ -84,7 +84,7 @@
                         <label class="form-label">Initial Form Template</label>
                         <div class="flex space-x-2">
                             <select name="initial_form_template_id" class="form-select flex-1">
-                                <option value="">-- ไม่มี --</option>
+                                <option value="">{{ __('appbuilder.no_form') }}</option>
                                 @foreach($formTemplates as $t)
                                 <option value="{{ $t->id }}"
                                     {{ old('initial_form_template_id', $app?->initial_form_template_id ?? '') == $t->id ? 'selected' : '' }}>
@@ -93,17 +93,17 @@
                                 @endforeach
                             </select>
                             <a href="{{ route('admin.form-templates.index') }}" target="_blank"
-                               class="btn-secondary text-sm px-2" title="สร้าง Form Template ใหม่">
+                               class="btn-secondary text-sm px-2" title="{{ __('appbuilder.create_form_tip') }}">
                                 <i class="ti ti-external-link"></i>
                             </a>
                         </div>
-                        <p class="text-xs text-gray-400 mt-1">ฟอร์มที่ผู้ขอกรอกตอน submit</p>
+                        <p class="text-xs text-gray-400 mt-1">{{ __('appbuilder.initial_form_help') }}</p>
                     </div>
                     <div>
                         <label class="form-label">Revision Form Template</label>
                         <div class="flex space-x-2">
                             <select name="revision_form_template_id" class="form-select flex-1">
-                                <option value="">-- ไม่มี --</option>
+                                <option value="">{{ __('appbuilder.no_form') }}</option>
                                 @foreach($formTemplates as $t)
                                 <option value="{{ $t->id }}"
                                     {{ old('revision_form_template_id', $app?->revision_form_template_id ?? '') == $t->id ? 'selected' : '' }}>
@@ -112,7 +112,7 @@
                                 @endforeach
                             </select>
                         </div>
-                        <p class="text-xs text-gray-400 mt-1">ฟอร์มที่ผู้ขอกรอกตอนแก้ไขกลับ</p>
+                        <p class="text-xs text-gray-400 mt-1">{{ __('appbuilder.revision_form_help') }}</p>
                     </div>
                 </div>
             </div>
@@ -126,7 +126,7 @@
                     <label class="form-label">Flow</label>
                     <div class="flex space-x-2">
                         <select name="flow_id" class="form-select flex-1">
-                            <option value="">-- ไม่มี --</option>
+                            <option value="">{{ __('appbuilder.no_form') }}</option>
                             @foreach($flows as $f)
                             <option value="{{ $f->id }}"
                                 {{ old('flow_id', $app?->flow_id ?? '') == $f->id ? 'selected' : '' }}>
@@ -135,11 +135,11 @@
                             @endforeach
                         </select>
                         <a href="{{ route('admin.flows.index') }}" target="_blank"
-                           class="btn-secondary text-sm px-2" title="สร้าง Flow ใหม่">
+                           class="btn-secondary text-sm px-2" title="{{ __('appbuilder.create_flow_tip') }}">
                             <i class="ti ti-external-link"></i>
                         </a>
                     </div>
-                    <p class="text-xs text-gray-400 mt-1">กระบวนการอนุมัติ</p>
+                    <p class="text-xs text-gray-400 mt-1">{{ __('appbuilder.flow_help') }}</p>
                 </div>
             </div>
 
@@ -150,9 +150,9 @@
                 </h3>
                 <div class="space-y-4">
                     <div>
-                        <label class="form-label">Dashboard ที่ผูกไว้</label>
+                        <label class="form-label">{{ __('appbuilder.linked_dashboard') }}</label>
                         <select name="primary_dashboard_id" class="form-select">
-                            <option value="">— ไม่มี Dashboard —</option>
+                            <option value="">{{ __('appbuilder.no_dashboard') }}</option>
                             @foreach($dashboards as $db)
                             <option value="{{ $db->id }}"
                                 {{ old('dashboard_id', $app?->primary_dashboard_id) == $db->id ? 'selected' : '' }}>
@@ -162,7 +162,7 @@
                         </select>
                     </div>
                     <div>
-                        <label class="form-label">Roles ที่มีสิทธิ์ (ว่าง = ทุก Role)</label>
+                        <label class="form-label">{{ __('appbuilder.allowed_roles') }} <span class="font-normal text-gray-400 text-xs">({{ __('appbuilder.allowed_roles_help') }})</span></label>
                         <div class="flex flex-wrap gap-3 mt-1">
                             @foreach($roles as $role)
                             <label class="flex items-center space-x-2 cursor-pointer">
@@ -175,7 +175,7 @@
                         </div>
                     </div>
                     <div>
-                        <label class="form-label">Factories ที่มีสิทธิ์ (ว่าง = ทุก Factory)</label>
+                        <label class="form-label">{{ __('appbuilder.allowed_factories') }} <span class="font-normal text-gray-400 text-xs">({{ __('appbuilder.allowed_factories_help') }})</span></label>
                         <div class="flex flex-wrap gap-3 mt-1">
                             @foreach($factories as $factory)
                             <label class="flex items-center space-x-2 cursor-pointer">

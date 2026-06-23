@@ -13,7 +13,7 @@
         <h1 class="text-xl font-bold">App Categories</h1>
         <a href="{{ route('applications.index') }}" target="_blank"
            class="btn-secondary text-sm flex items-center space-x-1">
-            <i class="ti ti-external-link text-sm"></i><span>ดูหน้า Applications</span>
+            <i class="ti ti-external-link text-sm"></i><span>{{ __('category.view_applications') }}</span>
         </a>
     </div>
 
@@ -25,15 +25,15 @@
 
     {{-- Add Category --}}
     <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6">
-        <h2 class="font-semibold mb-4">เพิ่มหมวดหมู่ใหม่</h2>
+        <h2 class="font-semibold mb-4">{{ __('category.add_new') }}</h2>
         <form method="POST" action="{{ route('admin.app-categories.store') }}" class="grid grid-cols-2 md:grid-cols-4 gap-3 items-end">
             @csrf
             <div>
-                <label class="form-label">ชื่อ (ภาษาไทย) <span class="text-red-500">*</span></label>
+                <label class="form-label">{{ __('category.name_th') }} <span class="text-red-500">*</span></label>
                 <input type="text" name="name_th" class="form-input" required placeholder="IT Services">
             </div>
             <div>
-                <label class="form-label">ชื่อ (ภาษาอังกฤษ)</label>
+                <label class="form-label">{{ __('category.name_en') }}</label>
                 <input type="text" name="name_en" class="form-input" placeholder="IT Services">
             </div>
             <div>
@@ -54,7 +54,7 @@
             </div>
             <div class="md:col-start-4 flex items-end">
                 <button type="submit" class="btn-primary w-full">
-                    <i class="ti ti-plus mr-1"></i>เพิ่ม
+                    <i class="ti ti-plus mr-1"></i>{{ __('common.add') }}
                 </button>
             </div>
         </form>
@@ -65,13 +65,13 @@
         @if($categories->isEmpty())
         <div class="p-10 text-center text-gray-400">
             <i class="ti ti-category-2 text-4xl block mb-2"></i>
-            <p>ยังไม่มีหมวดหมู่</p>
+            <p>{{ __('category.no_categories') }}</p>
         </div>
         @else
         <table class="w-full text-sm">
             <thead class="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700">
                 <tr>
-                    <th class="text-left px-4 py-3 font-medium text-gray-500 dark:text-gray-400">หมวดหมู่</th>
+                    <th class="text-left px-4 py-3 font-medium text-gray-500 dark:text-gray-400">{{ __('category.category') }}</th>
                     <th class="text-left px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Icon / Color</th>
                     <th class="text-center px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Apps</th>
                     <th class="text-center px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Checksheets</th>
@@ -102,13 +102,14 @@
                     <td class="px-4 py-3">
                         <div class="flex items-center justify-end space-x-2">
                             <button @click="editing = {{ $cat->id }}; form = { name_th: '{{ addslashes($cat->name_th) }}', name_en: '{{ addslashes($cat->name_en ?? '') }}', icon: '{{ $cat->icon }}', color: '{{ $cat->color }}', sort_order: {{ $cat->sort_order }} }"
-                                    class="text-gray-400 hover:text-indigo-600 transition-colors" title="แก้ไข">
+                                    class="text-gray-400 hover:text-indigo-600 transition-colors" title="{{ __('common.edit') }}">
                                 <i class="ti ti-pencil"></i>
                             </button>
                             <form method="POST" action="{{ route('admin.app-categories.destroy', $cat) }}"
-                                  onsubmit="return confirm('ลบหมวดหมู่ {{ $cat->name_th }} ?')">
+                                  data-confirm="{{ __('category.delete_confirm') }} {{ $cat->name_th }}"
+                                  onsubmit="return confirm(this.dataset.confirm)">
                                 @csrf @method('DELETE')
-                                <button type="submit" class="text-gray-400 hover:text-red-500 transition-colors" title="ลบ">
+                                <button type="submit" class="text-gray-400 hover:text-red-500 transition-colors" title="{{ __('common.delete') }}">
                                     <i class="ti ti-trash"></i>
                                 </button>
                             </form>
@@ -122,11 +123,11 @@
                               class="grid grid-cols-2 md:grid-cols-5 gap-3 items-end">
                             @csrf @method('PUT')
                             <div>
-                                <label class="form-label text-xs">ชื่อ (ไทย) *</label>
+                                <label class="form-label text-xs">{{ __('category.name_th_short') }} *</label>
                                 <input type="text" name="name_th" x-model="form.name_th" class="form-input text-sm" required>
                             </div>
                             <div>
-                                <label class="form-label text-xs">ชื่อ (อังกฤษ)</label>
+                                <label class="form-label text-xs">{{ __('category.name_en_short') }}</label>
                                 <input type="text" name="name_en" x-model="form.name_en" class="form-input text-sm">
                             </div>
                             <div>
@@ -146,8 +147,8 @@
                                 <input type="number" name="sort_order" x-model="form.sort_order" class="form-input text-sm" min="0">
                             </div>
                             <div class="flex space-x-2 md:col-span-5">
-                                <button type="submit" class="btn-primary text-sm">บันทึก</button>
-                                <button type="button" @click="editing = null" class="btn-secondary text-sm">ยกเลิก</button>
+                                <button type="submit" class="btn-primary text-sm">{{ __('common.save') }}</button>
+                                <button type="button" @click="editing = null" class="btn-secondary text-sm">{{ __('common.cancel') }}</button>
                             </div>
                         </form>
                     </td>

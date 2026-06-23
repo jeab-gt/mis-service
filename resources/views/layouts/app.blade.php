@@ -40,10 +40,10 @@
 
                 {{-- ─── MAIN ──────────────────────────────────── --}}
                 <a href="{{ route('dashboard') }}"
-                   title="แดชบอร์ด"
+                   title="{{ __('menu.dashboard') }}"
                    class="{{ request()->routeIs('dashboard') ? 'sidebar-active' : 'sidebar-link' }}">
                     <i class="ti ti-layout-dashboard text-xl flex-shrink-0"></i>
-                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">แดชบอร์ด</span>
+                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">{{ __('menu.dashboard') }}</span>
                 </a>
 
                 <a href="{{ route('applications.index') }}"
@@ -66,16 +66,16 @@
                     </button>
                     <div x-show="open" class="pl-3 space-y-0.5 mt-0.5">
                         <a href="{{ route('submissions.index') }}"
-                           title="คำร้องของฉัน"
+                           title="{{ __('menu.my_requests') }}"
                            class="{{ request()->routeIs('submissions.*') ? 'sidebar-active' : 'sidebar-link' }}">
                             <i class="ti ti-list text-base flex-shrink-0"></i>
-                            <span class="ml-3 text-sm whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">คำร้องของฉัน</span>
+                            <span class="ml-3 text-sm whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">{{ __('menu.my_requests') }}</span>
                         </a>
                         <a href="{{ route('tasks.index') }}"
-                           title="งานที่ได้รับ"
+                           title="{{ __('menu.assigned_tasks') }}"
                            class="{{ request()->routeIs('tasks.*') ? 'sidebar-active' : 'sidebar-link' }}">
                             <i class="ti ti-checklist text-base flex-shrink-0"></i>
-                            <span class="ml-3 text-sm whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">งานที่ได้รับ</span>
+                            <span class="ml-3 text-sm whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">{{ __('menu.assigned_tasks') }}</span>
                         </a>
                     </div>
                 </div>
@@ -83,10 +83,10 @@
 
                 @can('report.view')
                 <a href="{{ route('reports.index') }}"
-                   title="รายงาน"
+                   title="{{ __('menu.reports') }}"
                    class="{{ request()->routeIs('reports.*') ? 'sidebar-active' : 'sidebar-link' }}">
                     <i class="ti ti-chart-bar text-xl flex-shrink-0"></i>
-                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">รายงาน</span>
+                    <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">{{ __('menu.reports') }}</span>
                 </a>
                 @endcan
 
@@ -164,25 +164,25 @@
                          class="space-y-0.5">
                         @if(auth()->user()->hasRole('super_admin') || (auth()->user()->is_parent_factory && auth()->user()->hasRole('it_manager')))
                         <a href="{{ route('admin.masters.index') }}"
-                           title="ข้อมูลหลัก"
+                           title="{{ __('menu.masters') }}"
                            class="{{ request()->routeIs('admin.masters.*') ? 'sidebar-active' : 'sidebar-link' }}">
                             <i class="ti ti-building text-xl flex-shrink-0"></i>
-                            <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">ข้อมูลหลัก</span>
+                            <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">{{ __('menu.masters') }}</span>
                         </a>
                         @endif
 
                         @can('user.view')
                         <a href="{{ route('admin.users.index') }}"
-                           title="ผู้ใช้งาน"
+                           title="{{ __('menu.users') }}"
                            class="{{ request()->routeIs('admin.users.*') ? 'sidebar-active' : 'sidebar-link' }}">
                             <i class="ti ti-users text-xl flex-shrink-0"></i>
-                            <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">ผู้ใช้งาน</span>
+                            <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">{{ __('menu.users') }}</span>
                         </a>
                         <a href="{{ route('admin.roles.index') }}"
-                           title="บทบาท"
+                           title="{{ __('menu.roles') }}"
                            class="{{ request()->routeIs('admin.roles.*') ? 'sidebar-active' : 'sidebar-link' }}">
                             <i class="ti ti-shield text-xl flex-shrink-0"></i>
-                            <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">บทบาท</span>
+                            <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">{{ __('menu.roles') }}</span>
                         </a>
                         @endcan
 
@@ -209,10 +209,10 @@
 
                         @can('setting.view')
                         <a href="{{ route('admin.settings.index') }}"
-                           title="การตั้งค่า"
+                           title="{{ __('menu.settings') }}"
                            class="{{ request()->routeIs('admin.settings.*') ? 'sidebar-active' : 'sidebar-link' }}">
                             <i class="ti ti-settings text-xl flex-shrink-0"></i>
-                            <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">การตั้งค่า</span>
+                            <span class="ml-3 whitespace-nowrap" x-show="sidebarOpen && !isFullscreen">{{ __('menu.settings') }}</span>
                         </a>
                         @endcan
                     </div>
@@ -225,7 +225,7 @@
             <div class="flex-shrink-0 border-t border-white/10 dark:border-gray-700 p-2"
                  x-show="isFullscreen">
                 <button @click="toggleFullscreen()"
-                        title="ออกจากเต็มจอ"
+                        title="{{ __('ui.exit_fullscreen') }}"
                         class="w-full flex items-center justify-center p-2 rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition-colors">
                     <i class="ti ti-arrows-minimize text-xl"></i>
                 </button>
@@ -281,7 +281,7 @@
                         <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-700">
                             <div class="flex items-center gap-2">
                                 <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-100">
-                                    {{ app()->getLocale() === 'th' ? 'การแจ้งเตือน' : 'Notifications' }}
+                                    {{ __('menu.notifications') }}
                                 </h3>
                                 <span x-show="unreadCount > 0" x-text="unreadCount"
                                       class="text-xs bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full px-2 py-0.5 font-semibold">
@@ -289,7 +289,7 @@
                             </div>
                             <button @click="markAllRead()" x-show="unreadCount > 0"
                                     class="text-xs text-primary hover:opacity-75 font-medium">
-                                {{ app()->getLocale() === 'th' ? 'อ่านทั้งหมด' : 'Mark all read' }}
+                                {{ __('ui.mark_all_read') }}
                             </button>
                         </div>
 
@@ -306,7 +306,7 @@
                             <template x-if="!loading && notifications.length === 0">
                                 <div class="flex flex-col items-center justify-center py-10 text-gray-400">
                                     <i class="ti ti-bell-off text-4xl mb-2 block"></i>
-                                    <p class="text-sm">{{ app()->getLocale() === 'th' ? 'ไม่มีการแจ้งเตือน' : 'No notifications' }}</p>
+                                    <p class="text-sm">{{ __('ui.no_notifications') }}</p>
                                 </div>
                             </template>
 
@@ -331,7 +331,7 @@
                                     </a>
                                     <!-- Unread dot (click to mark read) -->
                                     <button x-show="!n.read_at" @click.stop="markRead(n)"
-                                            title="{{ app()->getLocale() === 'th' ? 'อ่านแล้ว' : 'Mark read' }}"
+                                            title="{{ __('ui.mark_read') }}"
                                             class="flex-shrink-0 w-2.5 h-2.5 rounded-full bg-primary mt-1.5 hover:bg-red-400 transition-colors opacity-80 hover:opacity-100">
                                     </button>
                                     <!-- Read indicator -->
@@ -344,7 +344,7 @@
                         <div class="px-4 py-2.5 bg-gray-50 dark:bg-gray-750 border-t border-gray-100 dark:border-gray-700 text-center">
                             <a href="{{ route('notifications.index') }}"
                                class="text-xs text-primary hover:opacity-75 font-medium">
-                                {{ app()->getLocale() === 'th' ? 'ดูทั้งหมด' : 'View all notifications' }}
+                                {{ __('ui.view_all_notif') }}
                                 <i class="ti ti-arrow-right text-xs ml-0.5"></i>
                             </a>
                         </div>
@@ -368,7 +368,7 @@
                 <div class="relative" x-data="{ open: false }">
                     <button @click="open = !open"
                             class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
-                            title="เปลี่ยน Theme">
+                            title="{{ __('ui.change_theme') }}">
                         <i class="ti ti-palette text-xl"></i>
                     </button>
                     <div x-show="open" @click.away="open = false"
@@ -380,7 +380,7 @@
                          x-transition:leave-end="opacity-0 scale-95"
                          class="absolute right-0 mt-2 p-3 bg-white dark:bg-gray-700 rounded-xl shadow-xl border border-gray-200 dark:border-gray-600 z-50 origin-top-right"
                          style="display:none;">
-                        <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2.5 whitespace-nowrap">เลือก Theme</p>
+                        <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2.5 whitespace-nowrap">{{ __('ui.select_theme') }}</p>
                         <div class="grid grid-cols-3 gap-2">
                             <template x-for="t in themes" :key="t.key">
                                 <button @click="setTheme(t.key); open = false"
@@ -397,7 +397,7 @@
                 <!-- Fullscreen toggle -->
                 <button @click="toggleFullscreen()"
                         class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
-                        :title="isFullscreen ? 'ออกจากเต็มจอ' : 'เต็มจอ'">
+                        :title="isFullscreen ? '{{ __('ui.exit_fullscreen') }}' : '{{ __('ui.fullscreen') }}'">
                     <i :class="isFullscreen ? 'ti ti-arrows-minimize text-xl' : 'ti ti-arrows-maximize text-xl'"></i>
                 </button>
 
@@ -432,11 +432,11 @@
                          class="absolute right-0 mt-1 w-52 bg-white dark:bg-gray-700 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 z-50 py-1">
                         @if(auth()->user()->factory)
                         <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-600">
-                            <p class="text-xs text-gray-400">{{ app()->getLocale() === 'th' ? 'โรงงาน' : 'Factory' }}</p>
+                            <p class="text-xs text-gray-400">{{ __('ui.factory_label') }}</p>
                             <p class="text-sm font-medium text-primary">{{ auth()->user()->factory->name_th }}</p>
                             @if(auth()->user()->is_parent_factory)
                             <p class="text-xs text-purple-500 mt-0.5">
-                                <i class="ti ti-star-filled mr-1"></i>{{ app()->getLocale() === 'th' ? 'เข้าถึงได้ทุก Factory' : 'Cross-Factory Access' }}
+                                <i class="ti ti-star-filled mr-1"></i>{{ __('ui.cross_factory') }}
                             </p>
                             @endif
                         </div>
