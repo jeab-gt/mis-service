@@ -1,5 +1,5 @@
 {{-- Shared tab navigation for report pages --}}
-<div class="flex items-center bg-white dark:bg-gray-800 rounded-xl border border-gray-300 dark:border-gray-600 overflow-hidden shadow-sm w-fit">
+<div class="flex items-center bg-white dark:bg-gray-800 rounded-xl border border-gray-300 dark:border-gray-600 overflow-hidden shadow-sm w-fit mis-card">
     <a href="{{ route('reports.daily') }}"
        class="px-4 py-2 text-sm font-medium flex items-center space-x-1.5
               {{ request()->routeIs('reports.daily') ? 'bg-indigo-600 text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700' }}">

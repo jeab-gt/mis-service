@@ -75,7 +75,7 @@
     </div>
 
     <!-- Gantt Chart -->
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden mis-card">
         <div class="overflow-x-auto">
             <div style="min-width: {{ max(800, 160 + $totalDays * 36) }}px">
                 <!-- Day headers -->

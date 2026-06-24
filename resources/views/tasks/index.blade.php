@@ -19,7 +19,7 @@
     <!-- Kanban Columns -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <!-- Todo -->
-        <div class="flex flex-col bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden">
+        <div class="flex flex-col bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden mis-card">
             <div class="px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-100 dark:border-blue-800 flex items-center justify-between">
                 <h3 class="font-semibold text-blue-700 dark:text-blue-300 flex items-center space-x-2">
                     <i class="ti ti-inbox"></i>
@@ -41,7 +41,7 @@
         </div>
 
         <!-- In Progress -->
-        <div class="flex flex-col bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden">
+        <div class="flex flex-col bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden mis-card">
             <div class="px-4 py-3 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-100 dark:border-amber-800 flex items-center justify-between">
                 <h3 class="font-semibold text-amber-700 dark:text-amber-300 flex items-center space-x-2">
                     <i class="ti ti-loader"></i>
@@ -63,7 +63,7 @@
         </div>
 
         <!-- Done -->
-        <div class="flex flex-col bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden">
+        <div class="flex flex-col bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden mis-card">
             <div class="px-4 py-3 bg-green-50 dark:bg-green-900/20 border-b border-green-100 dark:border-green-800 flex items-center justify-between">
                 <h3 class="font-semibold text-green-700 dark:text-green-300 flex items-center space-x-2">
                     <i class="ti ti-circle-check"></i>

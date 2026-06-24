@@ -9,7 +9,7 @@
 <div class="space-y-6">
     <!-- KPI Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-300 dark:border-gray-600">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-300 dark:border-gray-600 mis-card">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm text-gray-500 dark:text-gray-400">{{ app()->getLocale() === 'th' ? 'เปิดอยู่' : 'Open' }}</p>
@@ -20,7 +20,7 @@
                 </div>
             </div>
         </div>
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-300 dark:border-gray-600">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-300 dark:border-gray-600 mis-card">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm text-gray-500 dark:text-gray-400">{{ app()->getLocale() === 'th' ? 'กำลังดำเนินการ' : 'In Progress' }}</p>
@@ -31,7 +31,7 @@
                 </div>
             </div>
         </div>
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-300 dark:border-gray-600">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-300 dark:border-gray-600 mis-card">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm text-gray-500 dark:text-gray-400">{{ app()->getLocale() === 'th' ? 'เกินกำหนด' : 'Overdue' }}</p>
@@ -42,7 +42,7 @@
                 </div>
             </div>
         </div>
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-300 dark:border-gray-600">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-300 dark:border-gray-600 mis-card">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm text-gray-500 dark:text-gray-400">{{ app()->getLocale() === 'th' ? 'ปิดแล้ว (เดือนนี้)' : 'Closed (this month)' }}</p>
@@ -58,14 +58,14 @@
     <!-- Charts row -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <!-- Daily submissions chart -->
-        <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-300 dark:border-gray-600">
+        <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-300 dark:border-gray-600 mis-card">
             <h3 class="font-semibold text-gray-700 dark:text-gray-200 mb-4">
                 {{ app()->getLocale() === 'th' ? 'คำร้อง 7 วันล่าสุด' : 'Submissions (Last 7 Days)' }}
             </h3>
             <canvas id="dailyChart" height="100"></canvas>
         </div>
         <!-- Status doughnut -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-300 dark:border-gray-600">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-300 dark:border-gray-600 mis-card">
             <h3 class="font-semibold text-gray-700 dark:text-gray-200 mb-4">
                 {{ app()->getLocale() === 'th' ? 'สถานะคำร้อง' : 'By Status' }}
             </h3>
@@ -74,7 +74,7 @@
     </div>
 
     <!-- My Tasks -->
-    <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-300 dark:border-gray-600">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-300 dark:border-gray-600 mis-card">
         <div class="flex items-center justify-between mb-4">
             <h3 class="font-semibold text-gray-700 dark:text-gray-200">{{ __('menu.my_tasks') }}</h3>
             <a href="{{ route('tasks.index') }}" class="text-sm text-indigo-600 hover:underline">{{ __('common.view_all') }}</a>

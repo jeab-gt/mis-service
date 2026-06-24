@@ -55,7 +55,7 @@ window.__appMeta = @json($groupedMeta);
     @endif
 
     {{-- Search + Filter bar --}}
-    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-300 dark:border-gray-600 shadow-sm px-3 py-2.5 flex flex-wrap gap-2.5 items-center">
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-300 dark:border-gray-600 shadow-sm px-3 py-2.5 flex flex-wrap gap-2.5 items-center mis-card">
 
         {{-- Search --}}
         <div class="relative flex-1 min-w-48">
@@ -112,7 +112,7 @@ window.__appMeta = @json($groupedMeta);
         @php $catIdx = $loop->index; @endphp
 
         <div x-show="hasVisible({{ $catIdx }})"
-             class="bg-white dark:bg-gray-800 rounded-xl border border-gray-300 dark:border-gray-600 shadow-sm overflow-hidden">
+             class="bg-white dark:bg-gray-800 rounded-xl border border-gray-300 dark:border-gray-600 shadow-sm overflow-hidden mis-card">
 
             {{-- Category header --}}
             <button @click="openCats[{{ $catIdx }}] = !(openCats[{{ $catIdx }}] ?? true)"
