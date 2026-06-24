@@ -627,6 +627,7 @@ window.__ganttLabels = {
     no_phase:           @json(__('project.no_phase')),
     today:              @json(__('project.today')),
     fit_all:            @json(__('project.fit_all')),
+    locale:             @json(app()->getLocale()),
 };
 const __ganttLabels = window.__ganttLabels;
 
@@ -1080,13 +1081,24 @@ function ganttChart() {
         },
 
         buildCols(minD, maxD, ppd) {
-            const cols = [];
+            const cols  = [];
+            const isTh  = __ganttLabels.locale === 'th';
+            const jsLocale = isTh ? 'th-TH' : 'en-US';
+
+            const fmtDay = d => isTh
+                ? d.getDate() + '/' + (d.getMonth() + 1)
+                : d.toLocaleString('en-US', { month: 'short', day: 'numeric' });
+
+            const fmtMonth = d => isTh
+                ? d.toLocaleString('th-TH', { month: 'short', year: '2-digit' })
+                : d.toLocaleString('en-US', { month: 'short', year: 'numeric' });
+
             if (this.viewMode === 'Day') {
                 let d = new Date(minD);
                 while (d <= maxD) {
                     const dow = d.getDay();
                     cols.push({ key: d.toISOString().slice(0,10),
-                        label: d.getDate()+'/'+(d.getMonth()+1),
+                        label: fmtDay(d),
                         left: Math.floor((d-minD)/86400000)*ppd,
                         width: ppd, weekend: dow===0||dow===6 });
                     d = new Date(d); d.setDate(d.getDate()+1);
@@ -1096,7 +1108,7 @@ function ganttChart() {
                 const dow = d.getDay(); d.setDate(d.getDate()-(dow===0?6:dow-1));
                 while (d <= maxD) {
                     cols.push({ key: d.toISOString().slice(0,10),
-                        label: d.getDate()+'/'+(d.getMonth()+1),
+                        label: fmtDay(d),
                         left: Math.max(0, Math.floor((d-minD)/86400000)*ppd),
                         width: 7*ppd, weekend: false });
                     d = new Date(d); d.setDate(d.getDate()+7);
@@ -1106,7 +1118,7 @@ function ganttChart() {
                 while (d <= maxD) {
                     const days = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
                     cols.push({ key: d.toISOString().slice(0,10),
-                        label: d.toLocaleString('th-TH',{month:'short',year:'2-digit'}),
+                        label: fmtMonth(d),
                         left: Math.max(0, Math.floor((d-minD)/86400000)*ppd),
                         width: days*ppd, weekend: false });
                     d = new Date(d.getFullYear(), d.getMonth()+1, 1);
