@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', $dashboard->name)
 @section('breadcrumb')
 <a href="{{ route('dashboards.index') }}" class="hover:text-indigo-500">Dashboards</a>
@@ -173,13 +173,13 @@
     @endphp
 
     {{-- Canvas — outer clips to scaled visual height, inner is fixed logical size --}}
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-3">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-3 card-bordered">
         <div id="view-canvas-outer" style="overflow:hidden; width:100%; height:{{ $canvasH }}px;">
         <div id="view-canvas-inner" style="position:relative; width:{{ $canvasW }}px; height:{{ $canvasH }}px; transform-origin:top left;">
             @foreach($pixelWidgets as $pw)
             @php $widget = $pw['model']; @endphp
             <div x-data="widgetComponent({{ $widget->id }}, '{{ $widget->widget_type }}', {!! htmlspecialchars(json_encode($widget->title), ENT_QUOTES, 'UTF-8') !!})"
-                 class="bg-white dark:bg-gray-800 rounded-xl border border-gray-300 dark:border-gray-600 shadow-sm overflow-hidden"
+                 class="bg-white dark:bg-gray-800 rounded-xl border border-gray-300 dark:border-gray-600 shadow-sm overflow-hidden card-bordered"
                  style="position:absolute; left:{{ $pw['x'] }}px; top:{{ $pw['y'] }}px; width:{{ $pw['pw'] }}px; height:{{ $pw['ph'] }}px;">
 
                 <div class="flex flex-col h-full p-3">

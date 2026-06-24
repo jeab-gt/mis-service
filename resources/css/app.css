@@ -50,6 +50,16 @@
 }
 
 @layer components {
+    /* ─── Card border utility ─────────────────────────────────────────── */
+    .card-bordered {
+        border: 1px solid #d1d5db;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.03);
+    }
+    .dark .card-bordered {
+        border-color: #4b5563;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.04);
+    }
+
     /* ─── Sidebar ─────────────────────────────────────────────────────── */
     .sidebar-bg-theme {
         background-color: var(--color-sidebar-bg);

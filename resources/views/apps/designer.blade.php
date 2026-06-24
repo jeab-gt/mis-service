@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'Form Designer — ' . $app->name)
 @section('breadcrumb')
 <a href="{{ route('admin.apps.index') }}" class="hover:text-indigo-600">Apps</a>

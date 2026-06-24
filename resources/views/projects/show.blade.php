@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', $project->name)
 @section('breadcrumb')
 <a href="{{ route('projects.index') }}" class="hover:text-indigo-500">Projects</a>
@@ -81,7 +81,7 @@
     </div>
 
     {{-- Tabs --}}
-    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-300 dark:border-gray-600 shadow-sm overflow-hidden"
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-300 dark:border-gray-600 shadow-sm overflow-hidden card-bordered"
          style="border-top: 3px solid {{ $project->color }}">
         {{-- Tab Nav --}}
         <div class="flex border-b border-gray-200 dark:border-gray-600 overflow-x-auto">

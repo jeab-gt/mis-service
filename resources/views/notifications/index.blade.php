@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', app()->getLocale() === 'th' ? 'การแจ้งเตือน' : 'Notifications')
 @section('breadcrumb')
 <span>{{ app()->getLocale() === 'th' ? 'การแจ้งเตือน' : 'Notifications' }}</span>

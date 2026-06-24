@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', __('checksheet.create_title'))
 @section('breadcrumb')
 <span>Admin</span>

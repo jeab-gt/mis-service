@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', __('menu.roles'))
 @section('breadcrumb')
 <span>{{ __('menu.roles') }}</span>

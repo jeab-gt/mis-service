@@ -1,4 +1,4 @@
-﻿{{-- Shared tab navigation for report pages --}}
+{{-- Shared tab navigation for report pages --}}
 <div class="flex items-center bg-white dark:bg-gray-800 rounded-xl border border-gray-300 dark:border-gray-600 overflow-hidden shadow-sm w-fit">
     <a href="{{ route('reports.daily') }}"
        class="px-4 py-2 text-sm font-medium flex items-center space-x-1.5

@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'Form Designer — ' . $formTemplate->name)
 @section('breadcrumb')
 <a href="{{ route('admin.form-templates.index') }}" class="hover:text-indigo-600">Form Library</a>

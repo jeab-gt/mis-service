@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'Edit Dashboard: ' . $dashboard->name)
 @section('breadcrumb')
 <a href="{{ route('dashboards.index') }}" class="hover:text-indigo-500">Dashboards</a>

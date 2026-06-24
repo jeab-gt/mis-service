@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'Flow Designer — ' . $flow->name)
 @section('breadcrumb')
 <a href="{{ route('admin.flows.index') }}" class="hover:text-indigo-600">Flow Library</a>

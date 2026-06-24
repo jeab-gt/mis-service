@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'Edit: ' . $project->name)
 @section('breadcrumb')
 <a href="{{ route('projects.index') }}" class="hover:text-indigo-500">Projects</a>

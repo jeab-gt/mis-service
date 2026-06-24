@@ -1,4 +1,4 @@
-﻿@php
+@php
     $progress = $assignment->_progress ?? $assignment->submission->progress ?? 0;
     $title    = $assignment->submission->title ?? '#' . $assignment->submission_id;
     $appName  = $assignment->submission->app->name ?? '-';

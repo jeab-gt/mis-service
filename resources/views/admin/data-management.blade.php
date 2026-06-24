@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'Data Management')
 @section('breadcrumb')
 <span>Admin</span>

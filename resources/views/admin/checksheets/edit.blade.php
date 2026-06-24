@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', __('checksheet.edit_title', ['name' => $template->name]))
 @section('breadcrumb')
 <span>Admin</span>

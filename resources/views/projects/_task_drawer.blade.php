@@ -1,4 +1,4 @@
-﻿{{-- Task Detail Drawer --}}
+{{-- Task Detail Drawer --}}
 <div x-show="drawerOpen"
      @keydown.escape.window="closeDrawer()"
      @open-drawer.window="openDrawer($event.detail.taskId)"

@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'Builder: ' . $template->name)
 @section('breadcrumb')
 <span>Admin</span>

@@ -1,4 +1,4 @@
-﻿@php
+@php
     $isForm       = $type === 'form';
     $icon         = $entry->icon ?? ($isForm ? 'ti-forms' : 'ti-clipboard-list');
     $hasDashboard = !empty($entry->dashboard_id) && $entry->dashboard;

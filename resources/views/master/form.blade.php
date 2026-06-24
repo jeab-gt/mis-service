@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', isset($master) ? __('common.edit') : __('common.create'))
 
 @section('breadcrumb')

@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'Preview — ' . $app->name)
 @section('content')
 <div class="max-w-2xl mx-auto">

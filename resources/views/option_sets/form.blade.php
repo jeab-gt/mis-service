@@ -1,4 +1,4 @@
-﻿@php $optionSet = isset($optionSet) && $optionSet instanceof \App\Models\OptionSet ? $optionSet : null; @endphp
+@php $optionSet = isset($optionSet) && $optionSet instanceof \App\Models\OptionSet ? $optionSet : null; @endphp
 @extends('layouts.app')
 @section('title', $optionSet ? 'Edit Option Set' : 'Create Option Set')
 @section('breadcrumb')

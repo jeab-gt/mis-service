@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'Option Sets')
 @section('breadcrumb')
 <span>Option Sets</span>

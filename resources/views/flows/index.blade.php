@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'Flow Library')
 @section('breadcrumb')
 <span>Flow Library</span>

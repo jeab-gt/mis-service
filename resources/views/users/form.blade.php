@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', isset($user) ? __('common.edit') . ' User' : __('common.create') . ' User')
 
 @section('breadcrumb')

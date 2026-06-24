@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', isset($role) ? 'Edit Role' : 'Create Role')
 @section('breadcrumb')
 <a href="{{ route('admin.roles.index') }}" class="hover:text-indigo-600">{{ __('menu.roles') }}</a>

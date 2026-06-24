@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'กรอกข้อมูล: ' . $template->name)
 @section('breadcrumb')
 <a href="{{ route('checksheets.index') }}" class="hover:text-indigo-500">Checksheet</a>

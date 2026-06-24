@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'Team Schedule')
 @section('breadcrumb')
 <a href="{{ route('tasks.index') }}" class="hover:text-indigo-600">{{ __('menu.my_tasks') }}</a>

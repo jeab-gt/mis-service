@@ -1,4 +1,4 @@
-﻿@php $app = (isset($app) && $app instanceof \App\Models\App) ? $app : null; @endphp
+@php $app = (isset($app) && $app instanceof \App\Models\App) ? $app : null; @endphp
 @extends('layouts.app')
 @section('title', $app ? 'Edit App' : 'Create App')
 @section('breadcrumb')
