@@ -13,7 +13,7 @@
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         @foreach($roles as $role)
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-5">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-5 mis-card">
             <div class="flex items-start justify-between">
                 <div>
                     <h3 class="font-bold text-gray-800 dark:text-gray-100">{{ $role->name }}</h3>

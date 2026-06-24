@@ -24,7 +24,7 @@
     @endif
 
     {{-- Add Category --}}
-    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-300 dark:border-gray-600 p-6">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-300 dark:border-gray-600 p-6 mis-card">
         <h2 class="font-semibold mb-4">{{ __('category.add_new') }}</h2>
         <form method="POST" action="{{ route('admin.app-categories.store') }}" class="grid grid-cols-2 md:grid-cols-4 gap-3 items-end">
             @csrf
@@ -61,7 +61,7 @@
     </div>
 
     {{-- Category List --}}
-    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-300 dark:border-gray-600 overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-300 dark:border-gray-600 overflow-hidden mis-card">
         @if($categories->isEmpty())
         <div class="p-10 text-center text-gray-400">
             <i class="ti ti-category-2 text-4xl block mb-2"></i>

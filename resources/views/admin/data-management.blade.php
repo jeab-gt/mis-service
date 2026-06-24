@@ -18,7 +18,7 @@
     @endif
 
     {{-- Hot Table Stats --}}
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-6">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-6 mis-card">
         <h2 class="font-semibold text-base mb-4 flex items-center space-x-2">
             <i class="ti ti-database-export text-indigo-500 text-lg"></i>
             <span>Hot Table: {{ $hotStats['table'] }}</span>
@@ -66,7 +66,7 @@
     </div>
 
     {{-- Archive Tables --}}
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-6">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-6 mis-card">
         <h2 class="font-semibold text-base mb-4 flex items-center space-x-2">
             <i class="ti ti-archive text-yellow-500 text-lg"></i>
             <span>Archive Tables ({{ count($archiveTables) }})</span>
