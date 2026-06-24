@@ -8,7 +8,7 @@
 
 @section('content')
 <div class="max-w-2xl mx-auto">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-6">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-6 mis-card">
         <h1 class="text-xl font-bold mb-6">{{ isset($app) ? __('appbuilder.edit_title', ['name' => $app->name]) : __('appbuilder.create_title') }}</h1>
 
         @if($errors->any())

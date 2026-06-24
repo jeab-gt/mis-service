@@ -9,7 +9,7 @@
 
 @section('content')
 <div class="max-w-3xl mx-auto">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden mis-card">
         <div class="p-6 border-b border-gray-200 dark:border-gray-600 flex items-center space-x-3">
             <div class="w-12 h-12 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center">
                 <i class="ti {{ $app->icon }} text-2xl text-indigo-500"></i>

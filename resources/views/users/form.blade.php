@@ -22,7 +22,7 @@
          }
      }"
      x-init="if(factoryId) loadSections(factoryId)">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden mis-card">
         <div class="p-6 border-b border-gray-200 dark:border-gray-600">
             <h1 class="text-xl font-bold">{{ isset($user) ? 'แก้ไขผู้ใช้งาน' : 'สร้างผู้ใช้งาน' }}</h1>
         </div>

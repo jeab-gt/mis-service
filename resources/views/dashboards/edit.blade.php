@@ -37,7 +37,7 @@
 
         {{-- ② LEFT: Widget Palette --}}
         <div class="w-44 flex-shrink-0 space-y-3">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-3">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-3 mis-card">
                 <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Widget Types</p>
                 <div class="space-y-1">
                     @php
@@ -71,7 +71,7 @@
 
         {{-- ③ CENTER: Free-form Canvas --}}
         <div class="flex-1 min-w-0">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-3">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-3 mis-card">
                 <div class="flex items-center justify-between mb-2">
                     <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                         Canvas — <span x-text="widgets.length"></span> widgets
@@ -163,7 +163,7 @@
 
         {{-- ④ RIGHT: Widget Config --}}
         <div class="w-56 flex-shrink-0">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4 sticky top-16 space-y-3">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4 sticky top-16 space-y-3 mis-card">
                 <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Widget Config</p>
 
                 <div x-show="selectedIndex === null" class="text-center py-8 text-gray-400">

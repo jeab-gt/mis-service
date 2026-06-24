@@ -14,7 +14,7 @@
 )" class="flex gap-4 h-[calc(100vh-10rem)]">
 
     <!-- Left: field palette -->
-    <div class="w-64 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4 overflow-y-auto flex-shrink-0">
+    <div class="w-64 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4 overflow-y-auto flex-shrink-0 mis-card">
         <div class="mb-4 pb-3 border-b border-gray-200 dark:border-gray-600">
             <h3 class="font-bold text-sm truncate">{{ $formTemplate->name }}</h3>
             <span class="text-xs text-gray-400">{{ $formTemplate->category }}</span>
@@ -41,7 +41,7 @@
     </div>
 
     <!-- Center: canvas -->
-    <div class="flex-1 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4 overflow-y-auto">
+    <div class="flex-1 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4 overflow-y-auto mis-card">
         <div class="flex items-center justify-between mb-4">
             <h3 class="font-semibold">Form Canvas</h3>
             <div class="flex items-center space-x-2">
@@ -79,7 +79,7 @@
     </div>
 
     <!-- Right: field editor -->
-    <div class="w-72 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4 overflow-y-auto flex-shrink-0"
+    <div class="w-72 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4 overflow-y-auto flex-shrink-0 mis-card"
          x-show="editingIdx !== null" x-cloak>
         <h3 class="font-semibold text-sm mb-3">แก้ไขฟิลด์</h3>
         <template x-if="editingIdx !== null && schema.fields[editingIdx]">

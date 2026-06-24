@@ -17,7 +17,7 @@
         </a>
     </div>
 
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-6">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-6 mis-card">
         <form method="POST" action="{{ route('admin.checksheets.save', $template) }}" class="space-y-5">
             @csrf
 

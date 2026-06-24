@@ -17,7 +17,7 @@
 )" class="space-y-4">
 
     {{-- Top Toolbar --}}
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4 flex items-center space-x-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4 flex items-center space-x-4 mis-card">
         <div class="flex-1 min-w-0">
             <input type="text" x-model="templateName"
                    class="form-input text-lg font-bold w-full max-w-md"
@@ -40,7 +40,7 @@
     <div class="grid grid-cols-12 gap-4">
         {{-- LEFT PANEL: Parameters --}}
         <div class="col-span-12 lg:col-span-4 space-y-3">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4 mis-card">
                 <div class="flex items-center justify-between mb-3">
                     <h3 class="font-semibold text-sm flex items-center space-x-2">
                         <i class="ti ti-sliders text-indigo-500"></i>
@@ -89,7 +89,7 @@
 
         {{-- CENTER PANEL: Preview --}}
         <div class="col-span-12 lg:col-span-5">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4 mis-card">
                 <h3 class="font-semibold text-sm flex items-center space-x-2 mb-3">
                     <i class="ti ti-eye text-indigo-500"></i>
                     <span>Preview</span>
@@ -150,7 +150,7 @@
         {{-- RIGHT PANEL: Time Slots + Settings --}}
         <div class="col-span-12 lg:col-span-3 space-y-3">
             {{-- Time Slots --}}
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4 mis-card">
                 <div class="flex items-center justify-between mb-3">
                     <h3 class="font-semibold text-sm flex items-center space-x-2">
                         <i class="ti ti-clock text-indigo-500"></i>
@@ -178,7 +178,7 @@
             </div>
 
             {{-- Template Settings --}}
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4 mis-card">
                 <h3 class="font-semibold text-sm flex items-center space-x-2 mb-3">
                     <i class="ti ti-settings text-indigo-500"></i>
                     <span>Settings</span>

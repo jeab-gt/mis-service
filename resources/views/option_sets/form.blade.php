@@ -13,7 +13,7 @@
         ? $optionSet->items->map(fn($i) => ['value'=>$i->value,'label_th'=>$i->label_th,'label_en'=>$i->label_en])->toArray()
         : [],
 ]), ENT_QUOTES, 'UTF-8') !!})">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden mis-card">
         <div class="p-6 border-b border-gray-200 dark:border-gray-600">
             <h1 class="text-xl font-bold">{{ $optionSet ? 'แก้ไข Option Set' : 'สร้าง Option Set' }}</h1>
         </div>

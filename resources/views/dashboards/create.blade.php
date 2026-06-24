@@ -10,7 +10,7 @@
 <div class="max-w-xl mx-auto space-y-4">
     <h1 class="text-xl font-bold">สร้าง Dashboard ใหม่</h1>
 
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-6">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-6 mis-card">
         <form method="POST" action="{{ route('dashboards.store') }}" class="space-y-5">
             @csrf
 

@@ -12,7 +12,7 @@
 <div class="max-w-2xl mx-auto space-y-4">
     <h1 class="text-xl font-bold">{{ __('checksheet.create_title') }}</h1>
 
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-6">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-6 mis-card">
         <form method="POST" action="{{ route('admin.checksheets.store') }}" class="space-y-5">
             @csrf
 

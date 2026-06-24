@@ -104,7 +104,7 @@
     <div class="flex gap-3 flex-1 min-h-0">
 
         <!-- Left: Node Palette -->
-        <div class="w-44 flex-shrink-0 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-3 flex flex-col space-y-2 overflow-y-auto">
+        <div class="w-44 flex-shrink-0 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-3 flex flex-col space-y-2 overflow-y-auto mis-card">
             <p class="text-xs font-semibold text-gray-500 uppercase">Node Types</p>
             <p class="text-xs text-gray-400 -mt-1 mb-1">ลากหรือคลิกเพื่อเพิ่ม</p>
             @foreach([
@@ -134,7 +134,7 @@
         </div>
 
         <!-- Right: Node Properties -->
-        <div class="w-64 flex-shrink-0 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4 overflow-y-auto"
+        <div class="w-64 flex-shrink-0 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4 overflow-y-auto mis-card"
              x-show="selectedNodeId !== null" x-cloak>
             <div class="flex items-center justify-between mb-3">
                 <h3 class="font-semibold text-sm">Node Properties</h3>
