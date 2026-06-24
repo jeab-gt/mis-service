@@ -591,6 +591,17 @@
 
         {{-- ═══ TAB: REPORTS ═══ --}}
         <div x-show="activeTab === 'reports'" class="p-5 space-y-6">
+            {{-- Report Builder shortcut --}}
+            <div class="flex items-center justify-between">
+                <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    {{ app()->getLocale() === 'th' ? 'ชาร์ตโปรเจกต์' : 'Project Charts' }}
+                </h3>
+                <a href="{{ route('projects.reports.index', $project) }}"
+                   class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs hover:bg-indigo-700 transition-colors">
+                    <i class="ti ti-presentation"></i>
+                    {{ app()->getLocale() === 'th' ? 'Report Builder' : 'Report Builder' }}
+                </a>
+            </div>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {{-- Burndown Chart --}}
                 <div class="bg-gray-50 dark:bg-gray-700/40 rounded-xl p-4">

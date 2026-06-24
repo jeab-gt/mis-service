@@ -9,6 +9,7 @@ use App\Http\Controllers\ProjectAttachmentController;
 use App\Http\Controllers\ProjectBlockerController;
 use App\Http\Controllers\ProjectCommentController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ProjectReportAttachmentController;
 use App\Http\Controllers\ProjectReportController;
 use App\Http\Controllers\ProjectTaskController;
 use App\Http\Controllers\ReportController;
@@ -69,10 +70,25 @@ Route::middleware(['auth', 'setlocale'])->group(function () {
         Route::post('/{project}/tasks',                           [ProjectTaskController::class, 'store'])->name('tasks.store');
         Route::post('/{project}/attachments',                     [ProjectAttachmentController::class, 'store'])->name('attachments.store');
 
-        // Reports
-        Route::get('/{project}/reports',                          [ProjectReportController::class, 'index'])->name('reports.index');
-        Route::get('/{project}/reports/burndown',                 [ProjectReportController::class, 'burndown'])->name('reports.burndown');
-        Route::get('/{project}/reports/workload',                 [ProjectReportController::class, 'workload'])->name('reports.workload');
+        // Reports (chart data)
+        Route::get('/{project}/reports/burndown',                   [ProjectReportController::class, 'burndown'])->name('reports.burndown');
+        Route::get('/{project}/reports/workload',                   [ProjectReportController::class, 'workload'])->name('reports.workload');
+
+        // Report Builder
+        Route::get('/{project}/reports',                            [ProjectReportController::class, 'index'])->name('reports.index');
+        Route::get('/{project}/reports/create',                     [ProjectReportController::class, 'create'])->name('reports.create');
+        Route::post('/{project}/reports',                           [ProjectReportController::class, 'store'])->name('reports.store');
+        Route::get('/{project}/reports/templates',                  [ProjectReportController::class, 'templates'])->name('reports.templates');
+        Route::get('/{project}/reports/{report}/builder',           [ProjectReportController::class, 'builder'])->name('reports.builder');
+        Route::put('/{project}/reports/{report}/save',              [ProjectReportController::class, 'save'])->name('reports.save');
+        Route::get('/{project}/reports/{report}/preview',           [ProjectReportController::class, 'preview'])->name('reports.preview');
+        Route::get('/{project}/reports/{report}/export',            [ProjectReportController::class, 'export'])->name('reports.export');
+        Route::post('/{project}/reports/{report}/save-as-template', [ProjectReportController::class, 'saveAsTemplate'])->name('reports.save-as-template');
+        Route::delete('/{project}/reports/{report}',                [ProjectReportController::class, 'destroy'])->name('reports.destroy');
+
+        // Report Attachments
+        Route::post('/{project}/reports/{report}/attachments',      [ProjectReportAttachmentController::class, 'store'])->name('reports.attachments.store');
+        Route::delete('/{project}/reports/{report}/attachments/{attachment}', [ProjectReportAttachmentController::class, 'destroy'])->name('reports.attachments.destroy');
     });
 
     // Project tasks (task-level operations)
