@@ -16,7 +16,7 @@
         @endcan
     </div>
 
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-6"
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-6 mis-card"
          x-data="{ tree: {} }">
         @forelse($roots as $root)
         <div x-data="{ open: true }" class="mb-2">

@@ -4,6 +4,8 @@
       :class="{ 'dark': darkMode }"
       data-theme="{{ auth()->user()->theme_preference ?? 'default' }}"
       :data-theme="theme"
+      data-card-style="{{ auth()->user()->card_style ?? 'default' }}"
+      :data-card-style="cardStyle"
       @fullscreenchange.window="onFullscreenChange()"
       x-cloak>
 <head>
@@ -355,6 +357,31 @@
                                 </button>
                             </template>
                         </div>
+
+                        <!-- Card Style -->
+                        <div class="border-t border-gray-200 dark:border-gray-600 pt-3 mt-3">
+                            <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">Card Style</p>
+                            <div class="flex gap-1.5">
+                                <button @click="setCardStyle('default')"
+                                        :class="cardStyle === 'default' ? 'ring-2 ring-primary bg-gray-50 dark:bg-gray-600' : 'bg-white dark:bg-gray-700'"
+                                        class="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-lg text-center hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+                                    <div class="w-full h-5 bg-white dark:bg-gray-500 border border-gray-200 dark:border-gray-400 rounded mb-1 shadow-none"></div>
+                                    <span class="text-[10px] text-gray-600 dark:text-gray-300">Default</span>
+                                </button>
+                                <button @click="setCardStyle('bordered')"
+                                        :class="cardStyle === 'bordered' ? 'ring-2 ring-primary bg-gray-50 dark:bg-gray-600' : 'bg-white dark:bg-gray-700'"
+                                        class="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-lg text-center hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+                                    <div class="w-full h-5 bg-white dark:bg-gray-500 border-2 border-gray-400 dark:border-gray-300 rounded mb-1"></div>
+                                    <span class="text-[10px] text-gray-600 dark:text-gray-300">Bordered</span>
+                                </button>
+                                <button @click="setCardStyle('shadow')"
+                                        :class="cardStyle === 'shadow' ? 'ring-2 ring-primary bg-gray-50 dark:bg-gray-600' : 'bg-white dark:bg-gray-700'"
+                                        class="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-lg text-center hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+                                    <div class="w-full h-5 bg-white dark:bg-gray-500 border border-gray-200 dark:border-gray-400 rounded shadow-md mb-1"></div>
+                                    <span class="text-[10px] text-gray-600 dark:text-gray-300">Shadow</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -461,6 +488,7 @@ function appLayout() {
         darkMode:     localStorage.getItem('darkMode') === 'true',
         isFullscreen: false,
         theme:        '{{ auth()->user()->theme_preference ?? "default" }}',
+        cardStyle:    '{{ auth()->user()->card_style ?? "default" }}',
         themes: [
             { key: 'default', name: 'Default (Indigo)', color: '#4f46e5' },
             { key: 'ocean',   name: 'Ocean',            color: '#0891b2' },
@@ -473,6 +501,7 @@ function appLayout() {
         init() {
             this.$watch('sidebarOpen', v => localStorage.setItem('sidebarOpen', v));
             this.$watch('darkMode',    v => localStorage.setItem('darkMode', v));
+            document.documentElement.setAttribute('data-card-style', this.cardStyle);
         },
 
         toggleFullscreen() {
@@ -503,6 +532,22 @@ function appLayout() {
                 body: JSON.stringify({ theme: key }),
                 credentials: 'same-origin',
             }).catch(e => console.error('Failed to save theme', e));
+        },
+
+        setCardStyle(style) {
+            this.cardStyle = style;
+            document.documentElement.setAttribute('data-card-style', style);
+            const csrf = document.querySelector('meta[name="csrf-token"]').content;
+            fetch('/user/card-style', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrf,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({ card_style: style }),
+                credentials: 'same-origin',
+            }).catch(e => console.error('Failed to save card style', e));
         },
     };
 }

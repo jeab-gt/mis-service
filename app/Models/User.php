@@ -26,6 +26,7 @@ class User extends Authenticatable
         'is_active',
         'is_parent_factory',
         'theme_preference',
+        'card_style',
     ];
 
     protected $hidden = [

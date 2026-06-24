@@ -31,7 +31,7 @@
 
     {{-- Date Range Filter Bar --}}
     @if(!$dashboard->widgets->isEmpty())
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 px-4 py-2.5 flex flex-wrap items-center gap-3">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 px-4 py-2.5 flex flex-wrap items-center gap-3 mis-card">
 
         {{-- Label --}}
         <span class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider shrink-0">ช่วงเวลา</span>
@@ -173,7 +173,7 @@
     @endphp
 
     {{-- Canvas — outer clips to scaled visual height, inner is fixed logical size --}}
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-3 card-bordered">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-3 card-bordered mis-card">
         <div id="view-canvas-outer" style="overflow:hidden; width:100%; height:{{ $canvasH }}px;">
         <div id="view-canvas-inner" style="position:relative; width:{{ $canvasW }}px; height:{{ $canvasH }}px; transform-origin:top left;">
             @foreach($pixelWidgets as $pw)

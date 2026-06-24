@@ -146,3 +146,35 @@
 }
 
 [x-cloak] { display: none !important; }
+
+/* ─── Card Style (data-card-style on <html>) ────────────────────────────── */
+/* Default — subtle border */
+[data-card-style="default"] .mis-card {
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+/* Bordered — visible border, no shadow */
+[data-card-style="bordered"] .mis-card {
+    border: 1.5px solid #d1d5db;
+    box-shadow: none;
+}
+/* Shadow — soft shadow, faint border */
+[data-card-style="shadow"] .mis-card {
+    border: 1px solid #f3f4f6;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.08);
+}
+/* Dark mode overrides */
+.dark [data-card-style="default"] .mis-card,
+[data-card-style="default"] .dark .mis-card {
+    border-color: #374151;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+.dark [data-card-style="bordered"] .mis-card,
+[data-card-style="bordered"] .dark .mis-card {
+    border-color: #4b5563;
+}
+.dark [data-card-style="shadow"] .mis-card,
+[data-card-style="shadow"] .dark .mis-card {
+    border-color: #374151;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.35), 0 1px 3px rgba(0,0,0,0.2);
+}

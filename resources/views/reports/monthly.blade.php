@@ -108,7 +108,7 @@
     @endif
 
     <!-- Submissions table -->
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden mis-card">
         <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-600 flex items-center justify-between">
             <h3 class="font-semibold">{{ app()->getLocale() === 'th' ? 'รายการทั้งหมด' : 'All Submissions' }}</h3>
             <span class="text-sm text-gray-500">{{ $submissions->count() }} records</span>

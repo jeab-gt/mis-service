@@ -16,4 +16,15 @@ class ThemeController extends Controller
 
         return response()->json(['ok' => true]);
     }
+
+    public function updateCardStyle(Request $request)
+    {
+        $validated = $request->validate([
+            'card_style' => 'required|in:default,bordered,shadow',
+        ]);
+
+        auth()->user()->update(['card_style' => $validated['card_style']]);
+
+        return response()->json(['ok' => true]);
+    }
 }

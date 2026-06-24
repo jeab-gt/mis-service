@@ -19,7 +19,7 @@
         <input type="hidden" name="action" id="form-action" value="draft">
 
         {{-- Header Form --}}
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-5 mb-4">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-5 mb-4 mis-card">
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                     <label class="form-label">วันที่ <span class="text-red-500">*</span></label>
@@ -51,7 +51,7 @@
         </div>
 
         {{-- Data Grid --}}
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden mb-4">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden mb-4 mis-card">
             <div class="overflow-x-auto">
                 <table class="w-full text-sm min-w-max">
                     <thead>

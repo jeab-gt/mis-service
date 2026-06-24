@@ -81,7 +81,7 @@
     </div>
 
     {{-- Tabs --}}
-    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-300 dark:border-gray-600 shadow-sm overflow-hidden card-bordered"
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-300 dark:border-gray-600 shadow-sm overflow-hidden card-bordered mis-card"
          style="border-top: 3px solid {{ $project->color }}">
         {{-- Tab Nav --}}
         <div class="flex border-b border-gray-200 dark:border-gray-600 overflow-x-auto">

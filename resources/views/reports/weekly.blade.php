@@ -65,7 +65,7 @@
     </div>
 
     <!-- Submissions table -->
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden mis-card">
         <table class="w-full text-sm">
             <thead class="bg-gray-50 dark:bg-gray-700">
                 <tr>
@@ -96,7 +96,7 @@
 
     <!-- Assignee summary table -->
     @if($assigneeStats->count())
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden mis-card">
         <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">
             <h3 class="font-semibold">{{ app()->getLocale() === 'th' ? 'สรุปตามผู้รับผิดชอบ' : 'Summary by Assignee' }}</h3>
         </div>

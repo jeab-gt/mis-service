@@ -58,7 +58,7 @@
     </div>
 
     <!-- All submissions table -->
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden mis-card">
         <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">
             <h3 class="font-semibold">{{ app()->getLocale() === 'th' ? 'คำร้องทั้งหมดวันนี้' : 'All Submissions Today' }}</h3>
         </div>
@@ -94,7 +94,7 @@
 
     @if($pendingList->count())
     <!-- Pending requests -->
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden mis-card">
         <div class="px-4 py-3 border-b border-amber-100 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20">
             <h3 class="font-semibold text-amber-700 dark:text-amber-300">
                 <i class="ti ti-clock mr-2"></i>{{ app()->getLocale() === 'th' ? 'รอดำเนินการ' : 'Still Pending' }} ({{ $pendingList->count() }})
