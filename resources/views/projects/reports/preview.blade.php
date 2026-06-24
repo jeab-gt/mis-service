@@ -87,16 +87,23 @@ body { background: #0a0a0f; color: #fff; font-family: sans-serif; overflow: hidd
     </div>
 </div>
 
+@php
+$slidesJson = $report->slides->map(function($s) {
+    return [
+        'id'       => $s->id,
+        'bg_color' => $s->bg_color,
+        'elements' => $s->elements->map(function($e) {
+            return [
+                'id' => $e->id, 'type' => $e->type,
+                'x' => $e->x, 'y' => $e->y, 'w' => $e->w, 'h' => $e->h,
+                'z_index' => $e->z_index, 'props' => $e->props,
+            ];
+        })->values(),
+    ];
+})->values();
+@endphp
 <script>
-const SLIDES    = @json($report->slides->map(fn($s) => [
-    'id'       => $s->id,
-    'bg_color' => $s->bg_color,
-    'elements' => $s->elements->map(fn($e) => [
-        'id' => $e->id, 'type' => $e->type,
-        'x' => $e->x, 'y' => $e->y, 'w' => $e->w, 'h' => $e->h,
-        'z_index' => $e->z_index, 'props' => $e->props,
-    ])->values(),
-])->values());
+const SLIDES    = @json($slidesJson);
 const PROJECT_KPI  = @json($kpi);
 const CHART_DATA   = @json($chartData);
 

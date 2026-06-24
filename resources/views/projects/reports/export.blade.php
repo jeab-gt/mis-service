@@ -101,6 +101,18 @@ body { background: #fff; font-family: sans-serif; }
 </div>
 @endforeach
 
+@php
+$elementsJson = $report->slides->flatMap(function($s) {
+    return $s->elements->map(function($e) {
+        return [
+            'id'         => $e->id,
+            'type'       => $e->type,
+            'chartType'  => $e->props['chart_type'] ?? 'doughnut',
+            'dataSource' => $e->props['data_source'] ?? 'status',
+        ];
+    });
+})->values();
+@endphp
 <script>
 const CHART_DATA = @json($chartData);
 const KPI        = @json($kpi);
@@ -134,12 +146,7 @@ function buildExportChart(canvas, el) {
     });
 }
 
-const ELEMENTS = @json($report->slides->flatMap(fn($s) => $s->elements->map(fn($e) => [
-    'id'         => $e->id,
-    'type'       => $e->type,
-    'chartType'  => $e->props['chart_type'] ?? 'doughnut',
-    'dataSource' => $e->props['data_source'] ?? 'status',
-]))->values());
+const ELEMENTS = @json($elementsJson);
 
 document.addEventListener('DOMContentLoaded', () => {
     ELEMENTS.filter(e => e.type === 'chart').forEach(e => {

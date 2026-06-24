@@ -544,28 +544,34 @@
 @endsection
 
 @push('scripts')
-<script>
-const REPORT_DATA = @json([
+@php
+$reportJson = [
     'id'     => $report->id,
     'title'  => $report->title,
-    'slides' => $report->slides->map(fn($s) => [
-        'id'          => $s->id,
-        'slide_order' => $s->slide_order,
-        'bg_color'    => $s->bg_color,
-        'notes'       => $s->notes ?? '',
-        'elements'    => $s->elements->map(fn($e) => [
-            'id'      => $e->id,
-            'type'    => $e->type,
-            'x'       => $e->x,
-            'y'       => $e->y,
-            'w'       => $e->w,
-            'h'       => $e->h,
-            'z_index' => $e->z_index,
-            'props'   => $e->props,
-        ])->values(),
-    ])->values(),
-]);
-
+    'slides' => $report->slides->map(function($s) {
+        return [
+            'id'          => $s->id,
+            'slide_order' => $s->slide_order,
+            'bg_color'    => $s->bg_color,
+            'notes'       => $s->notes ?? '',
+            'elements'    => $s->elements->map(function($e) {
+                return [
+                    'id'      => $e->id,
+                    'type'    => $e->type,
+                    'x'       => $e->x,
+                    'y'       => $e->y,
+                    'w'       => $e->w,
+                    'h'       => $e->h,
+                    'z_index' => $e->z_index,
+                    'props'   => $e->props,
+                ];
+            })->values(),
+        ];
+    })->values(),
+];
+@endphp
+<script>
+const REPORT_DATA = @json($reportJson);
 const PROJECT_KPI   = @json($kpi);
 const CHART_DATA    = @json($chartData);
 const SAVE_URL      = '{{ route('projects.reports.save', [$project, $report]) }}';
