@@ -21,63 +21,60 @@
         </div>
     </div>
 
-    {{-- Project Header --}}
-    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-5">
-        <div class="flex items-start justify-between gap-4 flex-wrap">
-            <div class="flex items-start gap-3">
-                <div class="w-3 h-3 rounded-full mt-2 flex-shrink-0" style="background-color: {{ $project->color }}"></div>
-                <div>
-                    <h1 class="text-xl font-bold">{{ $project->name }}</h1>
-                    <div class="flex items-center gap-2 mt-1 flex-wrap">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
-                                     bg-{{ $project->status_badge_color }}-100 text-{{ $project->status_badge_color }}-700
-                                     dark:bg-{{ $project->status_badge_color }}-900/30 dark:text-{{ $project->status_badge_color }}-400">
-                            {{ ucfirst(str_replace('_', ' ', $project->status)) }}
-                        </span>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
-                                     bg-{{ $project->priority_badge_color }}-100 text-{{ $project->priority_badge_color }}-700
-                                     dark:bg-{{ $project->priority_badge_color }}-900/30 dark:text-{{ $project->priority_badge_color }}-400">
-                            {{ ucfirst($project->priority) }} Priority
-                        </span>
-                        @if($project->is_cross_factory)
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
-                            <i class="ti ti-building-factory-2 mr-1"></i> Cross-Factory
-                        </span>
-                        @endif
-                        <span class="text-xs text-gray-400">{{ $project->factory?->name_th }}</span>
-                    </div>
-                </div>
-            </div>
-            <div class="flex items-center gap-2">
+    {{-- Project Header (compact) --}}
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm"
+         style="border-left: 4px solid {{ $project->color }}">
+        <div class="px-4 py-2.5">
+            {{-- Row 1: dot + name + badges + edit --}}
+            <div class="flex items-center gap-2 flex-wrap min-w-0">
+                <div class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: {{ $project->color }}"></div>
+                <h1 class="text-sm font-bold text-gray-900 dark:text-white mr-1">{{ $project->name }}</h1>
+                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium flex-shrink-0
+                             bg-{{ $project->status_badge_color }}-100 text-{{ $project->status_badge_color }}-700
+                             dark:bg-{{ $project->status_badge_color }}-900/30 dark:text-{{ $project->status_badge_color }}-400">
+                    {{ ucfirst(str_replace('_', ' ', $project->status)) }}
+                </span>
+                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium flex-shrink-0
+                             bg-{{ $project->priority_badge_color }}-100 text-{{ $project->priority_badge_color }}-700
+                             dark:bg-{{ $project->priority_badge_color }}-900/30 dark:text-{{ $project->priority_badge_color }}-400">
+                    {{ ucfirst($project->priority) }}
+                </span>
+                @if($project->is_cross_factory)
+                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium flex-shrink-0 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
+                    <i class="ti ti-building-factory-2 mr-0.5" style="font-size:9px"></i>Cross-Factory
+                </span>
+                @endif
+                @if($project->factory)
+                <span class="text-[10px] text-gray-400 flex-shrink-0">{{ $project->factory->name_th }}</span>
+                @endif
                 <a href="{{ route('projects.edit', $project) }}"
-                   class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">
+                   class="ml-auto inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium flex-shrink-0
+                          bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
                     <i class="ti ti-edit"></i> Edit
                 </a>
             </div>
-        </div>
-
-        {{-- Progress --}}
-        <div class="mt-4">
-            <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
-                <span>Overall Progress</span>
-                <span class="font-semibold">{{ $project->progress_pct }}%</span>
+            {{-- Row 2: progress bar + % + dates --}}
+            <div class="flex items-center gap-2 mt-1.5">
+                <span class="text-[10px] text-gray-400 flex-shrink-0">Progress</span>
+                <div class="flex-1 h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div class="h-full rounded-full transition-all duration-500"
+                         style="width: {{ $project->progress_pct }}%; background-color: {{ $project->color }}"></div>
+                </div>
+                <span class="text-[10px] font-bold flex-shrink-0" style="color: {{ $project->color }}">{{ $project->progress_pct }}%</span>
+                @if($project->start_date || $project->end_date)
+                <span class="text-[10px] text-gray-400 flex-shrink-0 hidden sm:block">
+                    @if($project->start_date){{ $project->start_date->format('d/m/Y') }}@endif
+                    @if($project->start_date && $project->end_date) → @endif
+                    @if($project->end_date){{ $project->end_date->format('d/m/Y') }}@endif
+                </span>
+                @endif
             </div>
-            <div class="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                <div class="h-full rounded-full transition-all duration-500" style="width: {{ $project->progress_pct }}%; background-color: {{ $project->color }}"></div>
-            </div>
         </div>
-
-        {{-- Dates --}}
-        @if($project->start_date || $project->end_date)
-        <div class="flex items-center gap-4 mt-3 text-xs text-gray-400">
-            @if($project->start_date)<span><i class="ti ti-calendar-event mr-1"></i>Start: {{ $project->start_date->format('d M Y') }}</span>@endif
-            @if($project->end_date)<span><i class="ti ti-calendar-due mr-1"></i>End: {{ $project->end_date->format('d M Y') }}</span>@endif
-        </div>
-        @endif
     </div>
 
     {{-- Tabs --}}
-    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden"
+         style="border-top: 3px solid {{ $project->color }}">
         {{-- Tab Nav --}}
         <div class="flex border-b border-gray-100 dark:border-gray-700 overflow-x-auto">
             @foreach(['overview' => ['ti-dashboard', 'Overview'], 'tasks' => ['ti-layout-kanban', 'Tasks'], 'gantt' => ['ti-chart-gantt', 'Gantt'], 'calendar' => ['ti-calendar', 'Calendar'], 'members' => ['ti-users', 'Members'], 'reports' => ['ti-chart-bar', 'Reports']] as $tab => [$icon, $label])
@@ -293,7 +290,8 @@
             </div>
 
             {{-- Excel-like layout: LEFT TABLE + RIGHT TIMELINE --}}
-            <div x-show="rows.length" class="flex overflow-hidden border-t border-gray-200 dark:border-gray-700" style="max-height:520px">
+            {{-- height: 100vh - topbar(64) - main-padding(48) - compact-header(66) - space-y-4(16) - tab-nav(44) - gantt-controls(44) - buffer(18) --}}
+            <div x-show="rows.length" class="flex overflow-hidden border-t border-gray-200 dark:border-gray-700" style="height:calc(100vh - 300px);min-height:340px">
 
                 {{-- LEFT TABLE (fixed, no horizontal scroll) --}}
                 <div x-ref="ganttLeft" @scroll.passive="syncScroll('left')"
