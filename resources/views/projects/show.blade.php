@@ -410,16 +410,17 @@
                         {{-- Date header --}}
                         <div class="relative bg-gray-100 dark:bg-gray-700 border-b-2 border-gray-300 dark:border-gray-600"
                              style="position:sticky;top:0;z-index:10;height:36px;min-height:36px">
+                            {{-- Today marker behind column cells --}}
+                            <div x-show="todayLeft>=0"
+                                 class="absolute top-0 bottom-0 bg-red-400/60 pointer-events-none"
+                                 style="width:2px;z-index:1"
+                                 :style="{ left: todayLeft + 'px' }"></div>
                             <template x-for="col in cols" :key="col.key">
-                                <div class="absolute top-0 bottom-0 flex items-center justify-center text-xs text-gray-600 dark:text-gray-300 font-medium border-r border-gray-200 dark:border-gray-600 select-none overflow-hidden"
-                                     :class="col.weekend ? 'bg-gray-200 dark:bg-gray-600/60' : ''"
-                                     :style="`left:${col.left}px;width:${col.width}px`"
+                                <div class="absolute top-0 bottom-0 flex items-center justify-center text-xs text-gray-600 dark:text-gray-300 font-medium border-r border-gray-200 dark:border-gray-600 select-none overflow-hidden whitespace-nowrap px-1"
+                                     :class="col.weekend ? 'bg-gray-200 dark:bg-gray-600/60' : 'bg-gray-100 dark:bg-gray-700'"
+                                     :style="`left:${col.left}px;width:${col.width}px;z-index:2`"
                                      x-text="col.label"></div>
                             </template>
-                            <div x-show="todayLeft>=0"
-                                 class="absolute top-0 bottom-0 bg-red-500 pointer-events-none"
-                                 style="width:2px;z-index:20"
-                                 :style="{ left: todayLeft + 'px' }"></div>
                         </div>
 
                         {{-- Bar rows --}}
