@@ -21,14 +21,22 @@
         </div>
     </div>
 
-    {{-- Project Header (compact) --}}
-    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm"
-         style="border-left: 4px solid {{ $project->color }}">
+    {{-- Project Header (compact, white + priority border-bottom) --}}
+    @php
+        $priorityBorderColor = match($project->priority) {
+            'critical' => '#ef4444',
+            'high'     => '#f97316',
+            'medium'   => '#3b82f6',
+            default    => '#9ca3af',
+        };
+    @endphp
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-md"
+         style="border-bottom: 4px solid {{ $priorityBorderColor }}">
         <div class="px-4 py-2.5">
             {{-- Row 1: dot + name + badges + edit --}}
             <div class="flex items-center gap-2 flex-wrap min-w-0">
                 <div class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: {{ $project->color }}"></div>
-                <h1 class="text-sm font-bold text-gray-900 dark:text-white mr-1">{{ $project->name }}</h1>
+                <h1 class="text-sm font-bold text-gray-900 dark:text-white mr-1 truncate">{{ $project->name }}</h1>
                 <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium flex-shrink-0
                              bg-{{ $project->status_badge_color }}-100 text-{{ $project->status_badge_color }}-700
                              dark:bg-{{ $project->status_badge_color }}-900/30 dark:text-{{ $project->status_badge_color }}-400">
