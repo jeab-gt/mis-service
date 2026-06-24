@@ -6,6 +6,7 @@ use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectAttachmentController;
+use App\Http\Controllers\ProjectBlockerController;
 use App\Http\Controllers\ProjectCommentController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProjectReportController;
@@ -85,6 +86,10 @@ Route::middleware(['auth', 'setlocale'])->group(function () {
         Route::post('/{task}/comments',                           [ProjectCommentController::class, 'store'])->name('comments.store');
         Route::post('/reorder',                                   [ProjectTaskController::class, 'reorder'])->name('reorder');
     });
+
+    // Project blockers
+    Route::post('/projects/tasks/{task}/blockers',    [ProjectBlockerController::class, 'store'])->name('project-blockers.store');
+    Route::patch('/projects/blockers/{blocker}/resolve', [ProjectBlockerController::class, 'resolve'])->name('project-blockers.resolve');
 
     // Project comments + attachments
     Route::delete('/project-comments/{comment}',                  [ProjectCommentController::class, 'destroy'])->name('project-comments.destroy');

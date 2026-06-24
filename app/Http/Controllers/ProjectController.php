@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Master;
 use App\Models\Project;
 use App\Models\ProjectMember;
+use App\Models\ProjectTaskBlocker;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -104,7 +105,7 @@ class ProjectController extends Controller
             'manager', 'factory', 'submission',
             'members.user.factory',
             'milestones',
-            'tasks' => fn($q) => $q->whereNull('parent_task_id')->with(['assignee', 'checklists', 'subtasks', 'comments']),
+            'tasks' => fn($q) => $q->whereNull('parent_task_id')->with(['assignee', 'checklists', 'subtasks', 'comments', 'activeBlocker.reportedBy']),
             'comments.user',
             'attachments.uploader',
         ]);
@@ -133,9 +134,15 @@ class ProjectController extends Controller
 
         $allUsers = User::where('is_active', true)->orderBy('name')->get();
 
+        $activeBlockers = ProjectTaskBlocker::whereHas('task', fn($q) => $q->where('project_id', $project->id))
+            ->whereNull('resolved_at')
+            ->with(['task', 'reportedBy'])
+            ->latest()
+            ->get();
+
         return view('projects.show', compact(
             'project', 'kpi', 'upcomingMilestones',
-            'kanbanGroups', 'memberUsers', 'allUsers'
+            'kanbanGroups', 'memberUsers', 'allUsers', 'activeBlockers'
         ));
     }
 

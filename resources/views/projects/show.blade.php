@@ -98,8 +98,8 @@
         <div x-show="activeTab === 'overview'" class="p-5 space-y-5">
 
             {{-- KPI Cards --}}
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                @foreach([['Total Tasks', $kpi['total'], 'ti-list', 'blue'], ['Done', $kpi['done'], 'ti-circle-check', 'green'], ['In Progress', $kpi['in_progress'], 'ti-loader-2', 'yellow'], ['Overdue', $kpi['overdue'], 'ti-alarm', 'red']] as [$label, $val, $icon, $color])
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                @foreach([['Total Tasks', $kpi['total'], 'ti-list', 'blue'], ['Done', $kpi['done'], 'ti-circle-check', 'green'], ['In Progress', $kpi['in_progress'], 'ti-loader-2', 'yellow'], ['Overdue', $kpi['overdue'], 'ti-alarm', 'red'], ['Blockers', $activeBlockers->count(), 'ti-flag-3', 'red']] as [$label, $val, $icon, $color])
                 <div class="bg-{{ $color }}-50 dark:bg-{{ $color }}-900/20 rounded-xl p-4 border border-{{ $color }}-100 dark:border-{{ $color }}-800/30">
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-xs font-medium text-{{ $color }}-600 dark:text-{{ $color }}-400">{{ $label }}</span>
@@ -164,6 +164,30 @@
             <div>
                 <h3 class="text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">Objective</h3>
                 <p class="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-line">{{ $project->objective }}</p>
+            </div>
+            @endif
+
+            {{-- Active Blockers --}}
+            @if($activeBlockers->count() > 0)
+            <div class="rounded-xl p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40">
+                <h3 class="font-semibold text-red-700 dark:text-red-400 flex items-center gap-2 mb-3 text-sm">
+                    <span class="animate-pulse">🚨</span>
+                    Active Blockers ({{ $activeBlockers->count() }})
+                </h3>
+                @foreach($activeBlockers as $blocker)
+                <div class="flex items-start gap-3 py-2.5 border-b border-red-100 dark:border-red-800/30 last:border-0">
+                    <div class="flex-1 min-w-0">
+                        <p class="font-medium text-gray-800 dark:text-gray-200 text-sm truncate">{{ $blocker->task->title }}</p>
+                        <p class="text-red-600 dark:text-red-400 text-xs mt-0.5">{{ $blocker->description }}</p>
+                        <p class="text-gray-400 text-xs mt-1">
+                            Reported by {{ $blocker->reportedBy->name }} · {{ $blocker->created_at->diffForHumans() }}
+                        </p>
+                    </div>
+                    <span class="text-xs px-2 py-0.5 bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 rounded-full flex-shrink-0">
+                        {{ ucfirst($blocker->type) }}
+                    </span>
+                </div>
+                @endforeach
             </div>
             @endif
         </div>
@@ -231,11 +255,19 @@
                     <div class="space-y-2 min-h-[4rem] kanban-list" id="list-{{ $status }}">
                         @foreach($kanbanGroups[$status] as $task)
                         <div x-data="taskCard({{ $task->id }})"
-                             class="bg-white dark:bg-gray-800 rounded-xl border border-gray-300 dark:border-gray-600 p-3 shadow-sm cursor-pointer hover:shadow-md transition-shadow task-card"
+                             class="relative bg-white dark:bg-gray-800 rounded-xl border p-3 shadow-sm cursor-pointer hover:shadow-md transition-shadow task-card"
+                             :class="hasBlocker ? 'border-red-400 border-dashed' : 'border-gray-300 dark:border-gray-600'"
                              :style="{ borderLeft: '4px solid ' + statusColor }"
                              data-task-id="{{ $task->id }}"
                              @task-saved.window="onSaved($event.detail)"
+                             @task-updated.window="onBlockerUpdated($event.detail)"
                              @click="!isDragging && openDrawer(taskId)">
+
+                            {{-- Blocker badge --}}
+                            <div x-show="hasBlocker"
+                                 class="animate-pulse absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs z-10 shadow-sm">
+                                🚨
+                            </div>
 
                             <p class="text-sm font-medium leading-snug line-clamp-2" x-text="title"></p>
 
@@ -267,7 +299,8 @@
         <div x-show="activeTab === 'gantt'">
         <div x-data="ganttChart()" class="select-none"
              x-effect="if(activeTab==='gantt') $nextTick(()=>fitAll())"
-             @task-saved.window="updateGanttRow($event.detail)">
+             @task-saved.window="updateGanttRow($event.detail)"
+             @task-updated.window="updateGanttRow($event.detail)">
 
             {{-- Controls --}}
             <div class="flex items-center gap-2 p-3 border-b border-gray-200 dark:border-gray-600">
@@ -420,12 +453,14 @@
                                 <template x-if="!row.isMilestone && row.status!=='todo' && row.barLeft!==null">
                                     <div class="absolute rounded group cursor-grab active:cursor-grabbing"
                                          style="top:9px;bottom:9px;z-index:4;overflow:hidden"
-                                         :style="{ left: row.barLeft + 'px', width: Math.max(row.barWidth, 8) + 'px', background: barBg(row).base }"
+                                         :style="{ left: row.barLeft + 'px', width: Math.max(row.barWidth, 8) + 'px', background: barBg(row).base, outline: row.hasBlocker ? '2px dashed #ef4444' : 'none', outlineOffset: '1px' }"
                                          @click.prevent="!_barDragging && openDrawer(row.taskId)"
                                          @mousedown.prevent="startDrag($event,row)"
-                                         :title="`${row.name} | ${fmtDate(row.startDate)} – ${fmtDate(row.endDate)} | ${row.pct}%`">
+                                         :title="`${row.hasBlocker ? '🚨 BLOCKER | ' : ''}${row.name} | ${fmtDate(row.startDate)} – ${fmtDate(row.endDate)} | ${row.pct}%`">
                                         <div class="absolute top-0 left-0 bottom-0 pointer-events-none"
                                              :style="{ width: row.pct + '%', background: barBg(row).fill }"></div>
+                                        <div x-show="row.hasBlocker"
+                                             class="absolute left-1 top-0 bottom-0 flex items-center pointer-events-none text-xs leading-none">🚨</div>
                                         <div class="absolute right-0 top-0 bottom-0 w-2.5 cursor-ew-resize flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
                                              style="background:rgba(0,0,0,0.1)"
                                              @mousedown.stop.prevent="startResize($event,row)">
@@ -437,11 +472,11 @@
                                 {{-- TASK bar (todo: dashed outline only) --}}
                                 <template x-if="!row.isMilestone && row.status==='todo' && row.barLeft!==null">
                                     <div class="absolute rounded cursor-grab active:cursor-grabbing"
-                                         style="top:9px;bottom:9px;z-index:4;border:1.5px dashed #9ca3af;background:rgba(156,163,175,0.08)"
-                                         :style="{ left: row.barLeft + 'px', width: Math.max(row.barWidth, 8) + 'px' }"
+                                         style="top:9px;bottom:9px;z-index:4;background:rgba(156,163,175,0.08)"
+                                         :style="{ left: row.barLeft + 'px', width: Math.max(row.barWidth, 8) + 'px', border: row.hasBlocker ? '1.5px dashed #ef4444' : '1.5px dashed #9ca3af', outline: row.hasBlocker ? '2px dashed #ef4444' : 'none', outlineOffset: '1px' }"
                                          @click.prevent="!_barDragging && openDrawer(row.taskId)"
                                          @mousedown.prevent="startDrag($event,row)"
-                                         :title="`${row.name} | ${fmtDate(row.startDate)} – ${fmtDate(row.endDate)} | ยังไม่เริ่ม`">
+                                         :title="`${row.hasBlocker ? '🚨 BLOCKER | ' : ''}${row.name} | ${fmtDate(row.startDate)} – ${fmtDate(row.endDate)} | ยังไม่เริ่ม`">
                                     </div>
                                 </template>
                             </div>
@@ -599,6 +634,13 @@ const TASK_DATA = {!! json_encode(
         'milestone_id' => $t->milestone_id,
         'checklists'   => $t->checklists->map(fn($c) => ['id' => $c->id, 'title' => $c->title, 'is_completed' => $c->is_completed])->toArray(),
         'subtasks'     => $t->subtasks->map(fn($s) => ['id' => $s->id, 'title' => $s->title, 'status' => $s->status])->toArray(),
+        'has_blocker'  => (bool) $t->has_blocker,
+        'blocker'      => $t->activeBlocker ? [
+            'id'               => $t->activeBlocker->id,
+            'type'             => $t->activeBlocker->type,
+            'description'      => $t->activeBlocker->description,
+            'reported_by_name' => $t->activeBlocker->reportedBy?->name,
+        ] : null,
     ])
 ) !!};
 
@@ -614,16 +656,19 @@ const MEMBER_USERS = {!! json_encode($memberUsers->map(fn($u) => ['id' => $u->id
 
 function projectShow() {
     return {
-        activeTab:     'overview',
-        showAddTask:   false,
-        showAddMember: false,
-        drawerOpen:    false,
-        drawerTask:    null,
-        isDragging:    false,
-        savedFlash:    false,
-        saveError:     false,
-        saveBtn:       'idle',
-        newTask: { title: '', status: 'todo', priority: 'medium', assignee_id: '', due_date: '' },
+        activeTab:          'overview',
+        showAddTask:        false,
+        showAddMember:      false,
+        drawerOpen:         false,
+        drawerTask:         null,
+        isDragging:         false,
+        savedFlash:         false,
+        saveError:          false,
+        saveBtn:            'idle',
+        newTask:            { title: '', status: 'todo', priority: 'medium', assignee_id: '', due_date: '' },
+        blockerType:        'technical',
+        blockerDescription: '',
+        resolutionNote:     '',
 
         async addTask() {
             const res = await fetch(`/projects/${PROJECT_ID}/tasks`, {
@@ -699,6 +744,51 @@ function projectShow() {
                 this.saveBtn   = 'error';
                 this.saveError = true;
                 setTimeout(() => { this.saveBtn = 'idle'; this.saveError = false; }, 2500);
+            }
+        },
+
+        async flagBlocker() {
+            if (!this.blockerDescription.trim()) {
+                alert('กรุณาอธิบายปัญหาก่อน');
+                return;
+            }
+            const res = await fetch(`/projects/tasks/${this.drawerTask.id}/blockers`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
+                body: JSON.stringify({ type: this.blockerType, description: this.blockerDescription }),
+            });
+            if (res.ok) {
+                const data = await res.json();
+                this.drawerTask.has_blocker = true;
+                this.drawerTask.blocker     = data.blocker;
+                this.blockerDescription     = '';
+                const t = TASK_DATA.find(t => t.id === this.drawerTask.id);
+                if (t) { t.has_blocker = true; t.blocker = data.blocker; }
+                window.dispatchEvent(new CustomEvent('task-updated', {
+                    detail: { id: this.drawerTask.id, has_blocker: true },
+                }));
+            }
+        },
+
+        async resolveBlocker() {
+            if (!this.resolutionNote.trim()) {
+                alert('กรุณาอธิบายวิธีแก้ไขก่อน');
+                return;
+            }
+            const res = await fetch(`/projects/blockers/${this.drawerTask.blocker.id}/resolve`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
+                body: JSON.stringify({ resolution_note: this.resolutionNote }),
+            });
+            if (res.ok) {
+                this.drawerTask.has_blocker = false;
+                this.drawerTask.blocker     = null;
+                this.resolutionNote         = '';
+                const t = TASK_DATA.find(t => t.id === this.drawerTask.id);
+                if (t) { t.has_blocker = false; t.blocker = null; }
+                window.dispatchEvent(new CustomEvent('task-updated', {
+                    detail: { id: this.drawerTask.id, has_blocker: false },
+                }));
             }
         },
 
@@ -960,6 +1050,7 @@ function ganttChart() {
                 name: t.title, startDate: t.start_date, endDate: t.due_date,
                 duration: Math.ceil((e - s) / 86400000) + 1,
                 pct: t.progress_pct ?? 0, status: t.status,
+                hasBlocker: t.has_blocker || false,
                 barLeft:  Math.floor((s - minD) / 86400000) * ppd,
                 barWidth: Math.max(Math.ceil((e - s) / 86400000) * ppd, ppd),
             };
@@ -1019,6 +1110,7 @@ function ganttChart() {
                 row.barWidth  = Math.max(Math.ceil((e - s) / 86400000) * this.ppd, this.ppd);
                 row.duration  = Math.ceil((e - s) / 86400000) + 1;
             }
+            if (detail.has_blocker !== undefined) row.hasBlocker = detail.has_blocker;
         },
 
         startDrag(e, row) {
@@ -1081,6 +1173,7 @@ function taskCard(id) {
         dueDate:    t.due_date   || null,
         assignee:   t.assignee   || null,
         checklists: t.checklists || [],
+        hasBlocker: t.has_blocker || false,
 
         get statusColor()  { return STATUS_COLORS[this.status] ?? '#9ca3af'; },
         get priorityClass(){ return PRIORITY_CLASSES[this.priority] ?? PRIORITY_CLASSES.medium; },
@@ -1103,6 +1196,11 @@ function taskCard(id) {
             if (detail.priority !== undefined) this.priority = detail.priority;
             if (detail.due_date !== undefined) this.dueDate  = detail.due_date;
             if (detail.assignee !== undefined) this.assignee = detail.assignee;
+        },
+
+        onBlockerUpdated(detail) {
+            if (detail.id !== this.taskId) return;
+            if (detail.has_blocker !== undefined) this.hasBlocker = detail.has_blocker;
         },
     };
 }

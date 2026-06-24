@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class ProjectTask extends Model
 {
@@ -14,7 +15,7 @@ class ProjectTask extends Model
         'title', 'description', 'assignee_id', 'created_by',
         'start_date', 'due_date', 'completed_at',
         'estimated_hours', 'actual_hours',
-        'priority', 'status', 'progress_pct', 'sort_order', 'labels',
+        'priority', 'status', 'progress_pct', 'sort_order', 'labels', 'has_blocker',
     ];
 
     protected $casts = [
@@ -26,6 +27,7 @@ class ProjectTask extends Model
         'actual_hours'    => 'decimal:2',
         'progress_pct'    => 'integer',
         'sort_order'      => 'integer',
+        'has_blocker'     => 'boolean',
     ];
 
     public function project(): BelongsTo
@@ -81,6 +83,18 @@ class ProjectTask extends Model
     public function dailyLogs(): HasMany
     {
         return $this->hasMany(ProjectDailyLog::class, 'task_id')->latest('log_date');
+    }
+
+    public function blockers(): HasMany
+    {
+        return $this->hasMany(ProjectTaskBlocker::class, 'task_id');
+    }
+
+    public function activeBlocker(): HasOne
+    {
+        return $this->hasOne(ProjectTaskBlocker::class, 'task_id')
+            ->whereNull('resolved_at')
+            ->latest();
     }
 
     public function dependencies(): BelongsToMany

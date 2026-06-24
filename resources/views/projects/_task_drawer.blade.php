@@ -207,6 +207,85 @@
                         </div>
                     </div>
 
+                    {{-- Blocker Section --}}
+                    <div class="border-t border-gray-200 dark:border-gray-600 pt-3" x-data="{ showBlockerForm: false, showResolveForm: false }">
+
+                        {{-- No active blocker → show Flag button --}}
+                        <template x-if="!drawerTask.has_blocker">
+                            <div>
+                                <button @click="showBlockerForm = !showBlockerForm"
+                                        class="w-full flex items-center justify-center gap-2 px-4 py-2 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-sm font-medium">
+                                    <i class="ti ti-flag-3"></i>
+                                    🚨 Flag as Blocker
+                                </button>
+
+                                <div x-show="showBlockerForm" x-transition class="mt-3 space-y-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800/40">
+                                    <select x-model="blockerType"
+                                            class="w-full border border-red-200 dark:border-red-700 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-red-400">
+                                        <option value="technical">🔧 Technical Issue</option>
+                                        <option value="resource">👥 Resource Problem</option>
+                                        <option value="dependency">🔗 Dependency Blocked</option>
+                                        <option value="other">❓ Other</option>
+                                    </select>
+                                    <textarea x-model="blockerDescription"
+                                              placeholder="อธิบายปัญหาที่ติดขัด..."
+                                              rows="3"
+                                              class="w-full border border-red-200 dark:border-red-700 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-red-400 placeholder:text-gray-400"></textarea>
+                                    <div class="flex gap-2">
+                                        <button @click="flagBlocker(); showBlockerForm = false"
+                                                class="flex-1 bg-red-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-red-700 transition-colors">
+                                            🚨 Confirm Flag
+                                        </button>
+                                        <button @click="showBlockerForm = false"
+                                                class="px-4 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                            ยกเลิก
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                        {{-- Active blocker → show info + Resolve button --}}
+                        <template x-if="drawerTask.has_blocker">
+                            <div class="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-300 dark:border-red-700/60">
+                                <div class="flex items-start gap-2 mb-3">
+                                    <span class="text-red-500 text-lg flex-shrink-0">🚨</span>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-red-700 dark:text-red-400 font-semibold text-sm">BLOCKER ACTIVE</p>
+                                        <p class="text-red-600 dark:text-red-400 text-xs mt-0.5" x-text="drawerTask.blocker?.description"></p>
+                                        <p class="text-red-400 text-xs mt-1">
+                                            Reported by <span class="font-medium" x-text="drawerTask.blocker?.reported_by_name"></span>
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div x-show="!showResolveForm">
+                                    <button @click="showResolveForm = true"
+                                            class="w-full bg-green-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
+                                        <i class="ti ti-circle-check"></i> ✅ Resolve Blocker
+                                    </button>
+                                </div>
+
+                                <div x-show="showResolveForm" x-transition class="space-y-2">
+                                    <textarea x-model="resolutionNote"
+                                              placeholder="อธิบายวิธีแก้ไขปัญหา..."
+                                              rows="2"
+                                              class="w-full border border-green-300 dark:border-green-700 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-green-400 placeholder:text-gray-400"></textarea>
+                                    <div class="flex gap-2">
+                                        <button @click="resolveBlocker(); showResolveForm = false"
+                                                class="flex-1 bg-green-600 text-white rounded-lg py-1.5 text-sm font-medium hover:bg-green-700 transition-colors">
+                                            ✅ Confirm Resolve
+                                        </button>
+                                        <button @click="showResolveForm = false"
+                                                class="px-3 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                            ยกเลิก
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
                     {{-- Comments --}}
                     <div x-data="taskComments(drawerTask?.id)">
                         <label class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 block">
