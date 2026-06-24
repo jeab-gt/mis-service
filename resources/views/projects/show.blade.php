@@ -314,11 +314,11 @@
                 </div>
                 <button @click="scrollToday()"
                         class="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                    <i class="ti ti-calendar-event mr-1"></i>Today
+                    <i class="ti ti-calendar-event mr-1"></i>{{ __('project.today') }}
                 </button>
                 <button @click="fitAll()"
                         class="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                    <i class="ti ti-arrows-maximize mr-1"></i>Fit All
+                    <i class="ti ti-arrows-maximize mr-1"></i>{{ __('project.fit_all') }}
                 </button>
                 <span class="ml-auto text-xs text-gray-400" x-show="rows.length"
                       x-text="`${rows.filter(r=>!r.isMilestone).length} tasks`"></span>
@@ -327,7 +327,7 @@
             {{-- Empty state --}}
             <div x-show="!rows.length" class="py-16 text-center text-gray-400">
                 <i class="ti ti-chart-gantt text-4xl mb-3 block"></i>
-                <p class="text-sm">ไม่มีงานที่มีกำหนดวันที่</p>
+                <p class="text-sm">{{ __('project.no_tasks_with_dates') }}</p>
             </div>
 
             {{-- Excel-like layout: LEFT TABLE + RIGHT TIMELINE --}}
@@ -343,16 +343,16 @@
                     <div class="flex items-stretch bg-gray-100 dark:bg-gray-700 border-b-2 border-gray-300 dark:border-gray-600"
                          style="position:sticky;top:0;z-index:10;height:36px;min-height:36px">
                         <div class="flex items-center px-2 text-xs font-semibold text-gray-600 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600"
-                             style="width:180px;min-width:180px">งานที่ต้องทำ</div>
+                             style="width:180px;min-width:180px">{{ __('project.task_name') }}</div>
                         <div class="flex items-center justify-center text-xs font-semibold text-gray-600 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600"
-                             style="width:50px;min-width:50px">เริ่ม</div>
+                             style="width:50px;min-width:50px">{{ __('project.start') }}</div>
                         <div class="flex items-center justify-center text-xs font-semibold text-gray-600 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600"
-                             style="width:35px;min-width:35px">วัน</div>
+                             style="width:35px;min-width:35px">{{ __('project.days') }}</div>
                         <div class="flex items-center justify-center text-xs font-semibold text-gray-600 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600"
-                             style="width:50px;min-width:50px">สิ้นสุด</div>
+                             style="width:50px;min-width:50px">{{ __('project.end') }}</div>
                         <div class="flex items-center justify-center text-xs font-semibold text-gray-600 dark:text-gray-300 border-r border-gray-200 dark:border-gray-600"
                              style="width:70px;min-width:70px">%</div>
-                        <div class="flex items-center justify-center text-xs font-semibold text-gray-600 dark:text-gray-300 flex-1">สถานะ</div>
+                        <div class="flex items-center justify-center text-xs font-semibold text-gray-600 dark:text-gray-300 flex-1">{{ __('project.status') }}</div>
                     </div>
 
                     {{-- Left rows --}}
@@ -476,7 +476,7 @@
                                          :style="{ left: row.barLeft + 'px', width: Math.max(row.barWidth, 8) + 'px', border: row.hasBlocker ? '1.5px dashed #ef4444' : '1.5px dashed #9ca3af', outline: row.hasBlocker ? '2px dashed #ef4444' : 'none', outlineOffset: '1px' }"
                                          @click.prevent="!_barDragging && openDrawer(row.taskId)"
                                          @mousedown.prevent="startDrag($event,row)"
-                                         :title="`${row.hasBlocker ? '🚨 BLOCKER | ' : ''}${row.name} | ${fmtDate(row.startDate)} – ${fmtDate(row.endDate)} | ยังไม่เริ่ม`">
+                                         :title="`${row.hasBlocker ? '🚨 BLOCKER | ' : ''}${row.name} | ${fmtDate(row.startDate)} – ${fmtDate(row.endDate)} | ${__ganttLabels.status_todo}`">
                                     </div>
                                 </template>
                             </div>
@@ -613,6 +613,23 @@
 
 @push('scripts')
 <script>
+window.__ganttLabels = {
+    task_name:          @json(__('project.task_name')),
+    start:              @json(__('project.start')),
+    days:               @json(__('project.days')),
+    end:                @json(__('project.end')),
+    status:             @json(__('project.status')),
+    status_todo:        @json(__('project.status_todo')),
+    status_in_progress: @json(__('project.status_in_progress')),
+    status_review:      @json(__('project.status_review')),
+    status_done:        @json(__('project.status_done')),
+    status_cancelled:   @json(__('project.status_cancelled')),
+    no_phase:           @json(__('project.no_phase')),
+    today:              @json(__('project.today')),
+    fit_all:            @json(__('project.fit_all')),
+};
+const __ganttLabels = window.__ganttLabels;
+
 const PROJECT_ID = {{ $project->id }};
 const PROJECT_COLOR = '{{ $project->color }}';
 const CSRF = document.querySelector('meta[name="csrf-token"]').content;
@@ -968,7 +985,13 @@ function ganttChart() {
         },
 
         statusTh(s) {
-            return { done:'เสร็จแล้ว', in_progress:'กำลังทำ', review:'Review', todo:'ยังไม่เริ่ม', cancelled:'ยกเลิก' }[s] ?? s;
+            return {
+                done:        __ganttLabels.status_done,
+                in_progress: __ganttLabels.status_in_progress,
+                review:      __ganttLabels.status_review,
+                todo:        __ganttLabels.status_todo,
+                cancelled:   __ganttLabels.status_cancelled,
+            }[s] ?? s;
         },
 
         dotColor(s) {
@@ -1034,7 +1057,7 @@ function ganttChart() {
             const knownMsIds = new Set((MILESTONE_DATA || []).map(m => m.id));
             const free = all.filter(t => !t.milestone_id || !knownMsIds.has(t.milestone_id));
             if (free.length) {
-                rows.push({ id:'ms-none', isMilestone:true, name:'ไม่มี Phase',
+                rows.push({ id:'ms-none', isMilestone:true, name:__ganttLabels.no_phase,
                     startDate:null, endDate:null, duration:0, pct:0, status:'todo',
                     barLeft:null, barWidth:null, taskId:null });
                 free.forEach(t => rows.push(this.mkRow(t, minD, ppd)));
