@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', app()->getLocale() === 'th' ? 'การแจ้งเตือน' : 'Notifications')
 @section('breadcrumb')
 <span>{{ app()->getLocale() === 'th' ? 'การแจ้งเตือน' : 'Notifications' }}</span>
@@ -16,7 +16,7 @@
         </form>
     </div>
 
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 divide-y divide-gray-100 dark:divide-gray-700">
         @forelse($notifications as $n)
         <div class="flex items-start p-4 {{ is_null($n->read_at) ? 'bg-indigo-50/50 dark:bg-indigo-900/10' : '' }}">
             <div class="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center flex-shrink-0">

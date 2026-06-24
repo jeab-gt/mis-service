@@ -1,4 +1,4 @@
-@php $app = (isset($app) && $app instanceof \App\Models\App) ? $app : null; @endphp
+﻿@php $app = (isset($app) && $app instanceof \App\Models\App) ? $app : null; @endphp
 @extends('layouts.app')
 @section('title', $app ? 'Edit App' : 'Create App')
 @section('breadcrumb')
@@ -8,8 +8,8 @@
 @endsection
 @section('content')
 <div class="max-w-2xl mx-auto">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-        <div class="p-6 border-b border-gray-100 dark:border-gray-700">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden">
+        <div class="p-6 border-b border-gray-200 dark:border-gray-600">
             <h1 class="text-xl font-bold">{{ $app ? 'แก้ไข App' : 'สร้าง App' }}</h1>
         </div>
         <form method="POST" action="{{ $app ? route('admin.apps.update', $app) : route('admin.apps.store') }}" class="p-6 space-y-4">
@@ -53,7 +53,7 @@
                 <label for="is_active" class="text-sm">Active</label>
             </div>
 
-            <div class="flex items-center space-x-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <div class="flex items-center space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
                 <button type="submit" class="btn-primary">{{ __('common.save') }}</button>
                 <a href="{{ route('admin.apps.index') }}" class="btn-secondary">{{ __('common.cancel') }}</a>
                 @if($app)

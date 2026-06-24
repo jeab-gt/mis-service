@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', __('menu.masters'))
 
 @section('breadcrumb')
@@ -16,7 +16,7 @@
         @endcan
     </div>
 
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6"
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-6"
          x-data="{ tree: {} }">
         @forelse($roots as $root)
         <div x-data="{ open: true }" class="mb-2">

@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', isset($user) ? __('common.edit') . ' User' : __('common.create') . ' User')
 
 @section('breadcrumb')
@@ -22,8 +22,8 @@
          }
      }"
      x-init="if(factoryId) loadSections(factoryId)">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-        <div class="p-6 border-b border-gray-100 dark:border-gray-700">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden">
+        <div class="p-6 border-b border-gray-200 dark:border-gray-600">
             <h1 class="text-xl font-bold">{{ isset($user) ? 'แก้ไขผู้ใช้งาน' : 'สร้างผู้ใช้งาน' }}</h1>
         </div>
         <form method="POST" action="{{ isset($user) ? route('admin.users.update', $user) : route('admin.users.store') }}" class="p-6 space-y-5">
@@ -126,7 +126,7 @@
                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-1">
                     @foreach($roles as $r)
                     @php $userRoles = isset($user) ? $user->roles->pluck('name')->toArray() : []; @endphp
-                    <label class="flex items-center space-x-2 p-2 rounded-lg border border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <label class="flex items-center space-x-2 p-2 rounded-lg border border-gray-300 dark:border-gray-600 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
                         <input type="checkbox" name="roles[]" value="{{ $r->name }}"
                                {{ in_array($r->name, old('roles', $userRoles)) ? 'checked' : '' }}
                                class="rounded text-indigo-600">
@@ -165,7 +165,7 @@
             </div>
             @endif
 
-            <div class="flex items-center space-x-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <div class="flex items-center space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
                 <button type="submit" class="btn-primary">{{ __('common.save') }}</button>
                 <a href="{{ route('admin.users.index') }}" class="btn-secondary">{{ __('common.cancel') }}</a>
             </div>

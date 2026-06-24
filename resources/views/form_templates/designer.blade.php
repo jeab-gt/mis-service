@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', 'Form Designer — ' . $formTemplate->name)
 @section('breadcrumb')
 <a href="{{ route('admin.form-templates.index') }}" class="hover:text-indigo-600">Form Library</a>
@@ -14,8 +14,8 @@
 )" class="flex gap-4 h-[calc(100vh-10rem)]">
 
     <!-- Left: field palette -->
-    <div class="w-64 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 overflow-y-auto flex-shrink-0">
-        <div class="mb-4 pb-3 border-b border-gray-100 dark:border-gray-700">
+    <div class="w-64 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4 overflow-y-auto flex-shrink-0">
+        <div class="mb-4 pb-3 border-b border-gray-200 dark:border-gray-600">
             <h3 class="font-bold text-sm truncate">{{ $formTemplate->name }}</h3>
             <span class="text-xs text-gray-400">{{ $formTemplate->category }}</span>
         </div>
@@ -41,7 +41,7 @@
     </div>
 
     <!-- Center: canvas -->
-    <div class="flex-1 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 overflow-y-auto">
+    <div class="flex-1 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4 overflow-y-auto">
         <div class="flex items-center justify-between mb-4">
             <h3 class="font-semibold">Form Canvas</h3>
             <div class="flex items-center space-x-2">
@@ -55,10 +55,10 @@
         </div>
 
         <div id="field-canvas" x-ref="canvas"
-             class="grid grid-cols-2 gap-3 min-h-[200px] p-2 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl">
+             class="grid grid-cols-2 gap-3 min-h-[200px] p-2 border-2 border-dashed border-gray-200 dark:border-gray-600 rounded-xl">
             <template x-for="(field, idx) in schema.fields" :key="field.id">
                 <div :class="field.width === 'full' ? 'col-span-2' : 'col-span-1'"
-                     class="relative p-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-750 group cursor-pointer">
+                     class="relative p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-750 group cursor-pointer">
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-xs font-semibold text-indigo-600 uppercase" x-text="field.type"></span>
                         <div class="flex space-x-1 opacity-0 group-hover:opacity-100">
@@ -79,7 +79,7 @@
     </div>
 
     <!-- Right: field editor -->
-    <div class="w-72 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 overflow-y-auto flex-shrink-0"
+    <div class="w-72 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4 overflow-y-auto flex-shrink-0"
          x-show="editingIdx !== null" x-cloak>
         <h3 class="font-semibold text-sm mb-3">แก้ไขฟิลด์</h3>
         <template x-if="editingIdx !== null && schema.fields[editingIdx]">

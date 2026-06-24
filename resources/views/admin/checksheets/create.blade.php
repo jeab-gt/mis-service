@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', __('checksheet.create_title'))
 @section('breadcrumb')
 <span>Admin</span>
@@ -12,7 +12,7 @@
 <div class="max-w-2xl mx-auto space-y-4">
     <h1 class="text-xl font-bold">{{ __('checksheet.create_title') }}</h1>
 
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-6">
         <form method="POST" action="{{ route('admin.checksheets.store') }}" class="space-y-5">
             @csrf
 
@@ -80,7 +80,7 @@
                 <label for="is_active" class="form-label mb-0 cursor-pointer">{{ __('checksheet.active_label') }}</label>
             </div>
 
-            <div class="flex space-x-3 pt-2 border-t border-gray-100 dark:border-gray-700">
+            <div class="flex space-x-3 pt-2 border-t border-gray-200 dark:border-gray-600">
                 <button type="submit" class="btn-primary flex items-center space-x-2">
                     <i class="ti ti-arrow-right"></i><span>{{ __('checksheet.save_and_builder') }}</span>
                 </button>

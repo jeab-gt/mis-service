@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', __('menu.settings'))
 @section('breadcrumb')
 <span>{{ __('menu.settings') }}</span>
@@ -9,8 +9,8 @@
     <form method="POST" action="{{ route('admin.settings.update') }}">
         @csrf
         @foreach($settings as $group => $items)
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden mb-4">
-            <div class="px-5 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-100 dark:border-gray-600">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden mb-4">
+            <div class="px-5 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
                 <h3 class="font-semibold text-sm uppercase text-gray-500 dark:text-gray-400">{{ $group }}</h3>
             </div>
             <div class="p-5 space-y-4">

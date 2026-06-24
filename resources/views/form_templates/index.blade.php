@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', 'Form Library')
 @section('breadcrumb')
 <span>Form Library</span>
@@ -23,7 +23,7 @@
     <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">{{ $errors->first('error') }}</div>
     @endif
 
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden">
         <table class="w-full text-sm">
             <thead class="bg-gray-50 dark:bg-gray-700">
                 <tr>

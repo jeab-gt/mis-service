@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', __('menu.all_requests'))
 
 @section('breadcrumb')
@@ -18,7 +18,7 @@
                 <i class="ti ti-chevron-down text-xs"></i>
             </button>
             <div x-show="open" @click.away="open = false" x-transition
-                 class="absolute right-0 mt-1 w-56 bg-white dark:bg-gray-700 rounded-xl shadow-lg border border-gray-200 dark:border-gray-600 z-50 py-1">
+                 class="absolute right-0 mt-1 w-56 bg-white dark:bg-gray-700 rounded-xl shadow-lg border border-gray-300 dark:border-gray-600 z-50 py-1">
                 @foreach($apps as $app)
                 <a href="{{ route('submissions.create', $app) }}" class="flex items-center px-4 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-600">
                     <i class="ti {{ $app->icon }} mr-3 text-indigo-500"></i>
@@ -31,7 +31,7 @@
     </div>
 
     <!-- Filters -->
-    <form method="GET" class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
+    <form method="GET" class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-300 dark:border-gray-600">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <select name="status" class="form-select">
                 <option value="">{{ __('common.all_status') }}</option>
@@ -55,7 +55,7 @@
     </form>
 
     <!-- Table -->
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead class="bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
@@ -101,7 +101,7 @@
                 </tbody>
             </table>
         </div>
-        <div class="p-4 border-t border-gray-100 dark:border-gray-700">
+        <div class="p-4 border-t border-gray-200 dark:border-gray-600">
             {{ $submissions->links() }}
         </div>
     </div>

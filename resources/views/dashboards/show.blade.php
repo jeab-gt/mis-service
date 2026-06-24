@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', $dashboard->name)
 @section('breadcrumb')
 <a href="{{ route('dashboards.index') }}" class="hover:text-indigo-500">Dashboards</a>
@@ -31,7 +31,7 @@
 
     {{-- Date Range Filter Bar --}}
     @if(!$dashboard->widgets->isEmpty())
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 px-4 py-2.5 flex flex-wrap items-center gap-3">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 px-4 py-2.5 flex flex-wrap items-center gap-3">
 
         {{-- Label --}}
         <span class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider shrink-0">ช่วงเวลา</span>
@@ -78,7 +78,7 @@
                  x-transition:leave="transition ease-in duration-100"
                  x-transition:leave-start="opacity-100 translate-y-0"
                  x-transition:leave-end="opacity-0 translate-y-1"
-                 class="absolute left-0 top-full mt-2 z-50 w-72 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 p-4"
+                 class="absolute left-0 top-full mt-2 z-50 w-72 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-300 dark:border-gray-600 p-4"
                  style="display:none;">
                 <div class="flex items-center justify-between mb-3">
                     <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">เลือกช่วงวันที่</span>
@@ -91,17 +91,17 @@
                     <div>
                         <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">จาก</label>
                         <input type="date" x-model="customFrom"
-                               class="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
+                               class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">ถึง</label>
                         <input type="date" x-model="customTo"
-                               class="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
+                               class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
                     </div>
                 </div>
-                <div class="flex items-center justify-end gap-2 mt-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+                <div class="flex items-center justify-end gap-2 mt-4 pt-3 border-t border-gray-200 dark:border-gray-600">
                     <button type="button" @click="showPanel = false"
-                            class="text-xs px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium">
+                            class="text-xs px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium">
                         ยกเลิก
                     </button>
                     <button type="button" @click="applyCustom()"
@@ -127,7 +127,7 @@
 
     {{-- Widgets --}}
     @if($dashboard->widgets->isEmpty())
-    <div class="text-center py-16 text-gray-400 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700">
+    <div class="text-center py-16 text-gray-400 bg-white dark:bg-gray-800 rounded-2xl border border-gray-300 dark:border-gray-600">
         <i class="ti ti-layout-dashboard text-6xl block mb-4"></i>
         <p>ยังไม่มี Widget ใน Dashboard นี้</p>
         <a href="{{ route('dashboards.edit', $dashboard) }}" class="mt-4 inline-block btn-primary text-sm">
@@ -173,13 +173,13 @@
     @endphp
 
     {{-- Canvas — outer clips to scaled visual height, inner is fixed logical size --}}
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-3">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-3">
         <div id="view-canvas-outer" style="overflow:hidden; width:100%; height:{{ $canvasH }}px;">
         <div id="view-canvas-inner" style="position:relative; width:{{ $canvasW }}px; height:{{ $canvasH }}px; transform-origin:top left;">
             @foreach($pixelWidgets as $pw)
             @php $widget = $pw['model']; @endphp
             <div x-data="widgetComponent({{ $widget->id }}, '{{ $widget->widget_type }}', {!! htmlspecialchars(json_encode($widget->title), ENT_QUOTES, 'UTF-8') !!})"
-                 class="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden"
+                 class="bg-white dark:bg-gray-800 rounded-xl border border-gray-300 dark:border-gray-600 shadow-sm overflow-hidden"
                  style="position:absolute; left:{{ $pw['x'] }}px; top:{{ $pw['y'] }}px; width:{{ $pw['pw'] }}px; height:{{ $pw['ph'] }}px;">
 
                 <div class="flex flex-col h-full p-3">
@@ -358,7 +358,7 @@
 
                             {{-- Pagination controls --}}
                             <div x-show="totalPages > 1"
-                                 class="flex-shrink-0 flex items-center justify-between px-2 py-1.5 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+                                 class="flex-shrink-0 flex items-center justify-between px-2 py-1.5 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800">
                                 <span class="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">
                                     <span x-text="tableFrom"></span>–<span x-text="tableTo"></span>
                                     / <span x-text="totalRows"></span>
@@ -411,7 +411,7 @@
      class="fixed inset-0 z-[999] bg-white dark:bg-gray-900 flex flex-col">
 
     {{-- Header bar --}}
-    <div class="flex items-center h-14 px-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+    <div class="flex items-center h-14 px-6 border-b border-gray-200 dark:border-gray-600 flex-shrink-0">
         <i class="ti ti-arrows-maximize mr-3 text-primary text-lg flex-shrink-0"></i>
         <h2 class="font-semibold text-lg flex-1 truncate" x-text="widgetTitle"></h2>
         <button @click="close()"

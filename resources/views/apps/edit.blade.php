@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', isset($app) ? __('appbuilder.edit_title', ['name' => $app->name]) : __('appbuilder.create_title'))
 @section('breadcrumb')
 <a href="{{ route('admin.apps.index') }}" class="hover:text-indigo-600">{{ __('menu.app_builder') }}</a>
@@ -8,7 +8,7 @@
 
 @section('content')
 <div class="max-w-2xl mx-auto">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-6">
         <h1 class="text-xl font-bold mb-6">{{ isset($app) ? __('appbuilder.edit_title', ['name' => $app->name]) : __('appbuilder.create_title') }}</h1>
 
         @if($errors->any())
@@ -75,7 +75,7 @@
             </div>
 
             <!-- Form Templates -->
-            <div class="border-t border-gray-100 dark:border-gray-700 pt-5">
+            <div class="border-t border-gray-200 dark:border-gray-600 pt-5">
                 <h3 class="font-semibold text-sm mb-3 flex items-center space-x-2">
                     <i class="ti ti-forms text-indigo-500"></i><span>Form Templates</span>
                 </h3>
@@ -118,7 +118,7 @@
             </div>
 
             <!-- Flow -->
-            <div class="border-t border-gray-100 dark:border-gray-700 pt-5">
+            <div class="border-t border-gray-200 dark:border-gray-600 pt-5">
                 <h3 class="font-semibold text-sm mb-3 flex items-center space-x-2">
                     <i class="ti ti-git-branch text-blue-500"></i><span>Approval Flow</span>
                 </h3>
@@ -144,7 +144,7 @@
             </div>
 
             <!-- Portal Settings -->
-            <div class="border-t border-gray-100 dark:border-gray-700 pt-5">
+            <div class="border-t border-gray-200 dark:border-gray-600 pt-5">
                 <h3 class="font-semibold text-sm mb-3 flex items-center space-x-2">
                     <i class="ti ti-layout-grid text-purple-500"></i><span>Portal Settings</span>
                 </h3>
@@ -190,7 +190,7 @@
                 </div>
             </div>
 
-            <div class="flex items-center space-x-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <div class="flex items-center space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
                 <button type="submit" class="btn-primary">
                     <i class="ti ti-device-floppy mr-2"></i>{{ __('common.save') }}
                 </button>

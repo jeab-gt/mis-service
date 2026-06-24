@@ -1,4 +1,4 @@
-@php
+﻿@php
     $isForm       = $type === 'form';
     $icon         = $entry->icon ?? ($isForm ? 'ti-forms' : 'ti-clipboard-list');
     $hasDashboard = !empty($entry->dashboard_id) && $entry->dashboard;
@@ -10,7 +10,7 @@
     }
 @endphp
 
-<div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow flex flex-col">
+<div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-300 dark:border-gray-600 shadow-sm hover:shadow-md transition-shadow flex flex-col">
     <div class="p-5 flex-1">
         <div class="flex items-start justify-between mb-3">
             <div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0">

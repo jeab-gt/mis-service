@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', 'Weekly Report')
 @section('breadcrumb')
 <a href="{{ route('reports.index') }}" class="hover:text-indigo-600">{{ __('menu.reports') }}</a>
@@ -36,15 +36,15 @@
 
     <!-- Stats row -->
     <div class="grid grid-cols-3 gap-4">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 text-center">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-300 dark:border-gray-600 text-center">
             <p class="text-3xl font-bold text-indigo-600">{{ $submissions->count() }}</p>
             <p class="text-sm text-gray-500 mt-1">Total Submissions</p>
         </div>
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 text-center">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-300 dark:border-gray-600 text-center">
             <p class="text-3xl font-bold text-green-600">{{ $submissions->whereIn('status',['approved','closed'])->count() }}</p>
             <p class="text-sm text-gray-500 mt-1">Completed</p>
         </div>
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 text-center">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-300 dark:border-gray-600 text-center">
             <p class="text-3xl font-bold text-purple-600">{{ $avgHrs ? round($avgHrs, 1) : '-' }}</p>
             <p class="text-sm text-gray-500 mt-1">Avg Resolution (hrs)</p>
         </div>
@@ -53,19 +53,19 @@
     <!-- Charts row -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <!-- Bar chart: created vs completed per day -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-300 dark:border-gray-600">
             <h3 class="font-semibold mb-4">{{ app()->getLocale() === 'th' ? 'คำร้องรายวัน' : 'Daily Submissions' }}</h3>
             <canvas id="weeklyChart" height="160"></canvas>
         </div>
         <!-- Line chart: avg resolution time per day -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-300 dark:border-gray-600">
             <h3 class="font-semibold mb-4">{{ app()->getLocale() === 'th' ? 'เวลาดำเนินการเฉลี่ย (ชม.)' : 'Avg Resolution Time (hrs)' }}</h3>
             <canvas id="resolutionChart" height="160"></canvas>
         </div>
     </div>
 
     <!-- Submissions table -->
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden">
         <table class="w-full text-sm">
             <thead class="bg-gray-50 dark:bg-gray-700">
                 <tr>
@@ -96,8 +96,8 @@
 
     <!-- Assignee summary table -->
     @if($assigneeStats->count())
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-        <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">
             <h3 class="font-semibold">{{ app()->getLocale() === 'th' ? 'สรุปตามผู้รับผิดชอบ' : 'Summary by Assignee' }}</h3>
         </div>
         <table class="w-full text-sm">

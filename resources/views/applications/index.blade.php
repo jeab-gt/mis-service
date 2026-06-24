@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', 'Applications')
 @section('breadcrumb')
 <span>Applications</span>
@@ -28,7 +28,7 @@
         @if($total > 0)
         @php $anyVisible = true; @endphp
         <div x-data="{ open: true }"
-             class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
+             class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-300 dark:border-gray-600 shadow-sm overflow-hidden">
 
             {{-- Category header --}}
             <button @click="open = !open"
@@ -51,7 +51,7 @@
                  x-transition:enter="transition-all duration-200 ease-out"
                  x-transition:enter-start="opacity-0 -translate-y-1"
                  x-transition:enter-end="opacity-100 translate-y-0"
-                 class="border-t border-gray-50 dark:border-gray-700 divide-y divide-gray-50 dark:divide-gray-700/50">
+                 class="border-t border-gray-50 dark:border-gray-600 divide-y divide-gray-50 dark:divide-gray-700/50">
                 @foreach($item['apps'] as $entry)
                     @include('applications._row', ['entry' => $entry, 'type' => 'form'])
                 @endforeach
@@ -67,7 +67,7 @@
     @if($uncatApps->isNotEmpty() || $uncatChecksheets->isNotEmpty())
     @php $anyVisible = true; @endphp
     <div x-data="{ open: true }"
-         class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
+         class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-300 dark:border-gray-600 shadow-sm overflow-hidden">
         <button @click="open = !open"
                 class="w-full flex items-center gap-3 px-5 py-3.5 text-left hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
             <i class="ti ti-chevron-right text-gray-400 transition-transform duration-200"
@@ -79,7 +79,7 @@
             <span class="ml-auto text-xs text-gray-400">{{ __('applications.items', ['count' => $uncatApps->count() + $uncatChecksheets->count()]) }}</span>
         </button>
         <div x-show="open"
-             class="border-t border-gray-50 dark:border-gray-700 divide-y divide-gray-50 dark:divide-gray-700/50">
+             class="border-t border-gray-50 dark:border-gray-600 divide-y divide-gray-50 dark:divide-gray-700/50">
             @foreach($uncatApps as $entry)
                 @include('applications._row', ['entry' => $entry, 'type' => 'form'])
             @endforeach

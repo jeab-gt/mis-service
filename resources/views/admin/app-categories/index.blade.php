@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', 'App Categories')
 @section('breadcrumb')
 <span>Admin</span>
@@ -24,7 +24,7 @@
     @endif
 
     {{-- Add Category --}}
-    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-300 dark:border-gray-600 p-6">
         <h2 class="font-semibold mb-4">{{ __('category.add_new') }}</h2>
         <form method="POST" action="{{ route('admin.app-categories.store') }}" class="grid grid-cols-2 md:grid-cols-4 gap-3 items-end">
             @csrf
@@ -61,7 +61,7 @@
     </div>
 
     {{-- Category List --}}
-    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-300 dark:border-gray-600 overflow-hidden">
         @if($categories->isEmpty())
         <div class="p-10 text-center text-gray-400">
             <i class="ti ti-category-2 text-4xl block mb-2"></i>
@@ -69,7 +69,7 @@
         </div>
         @else
         <table class="w-full text-sm">
-            <thead class="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700">
+            <thead class="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-600">
                 <tr>
                     <th class="text-left px-4 py-3 font-medium text-gray-500 dark:text-gray-400">{{ __('category.category') }}</th>
                     <th class="text-left px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Icon / Color</th>

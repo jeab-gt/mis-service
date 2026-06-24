@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', 'App Builder')
 @section('breadcrumb')
 <span>App Builder</span>
@@ -55,13 +55,13 @@ window.__appMeta = @json($groupedMeta);
     @endif
 
     {{-- Search + Filter bar --}}
-    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm px-3 py-2.5 flex flex-wrap gap-2.5 items-center">
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-300 dark:border-gray-600 shadow-sm px-3 py-2.5 flex flex-wrap gap-2.5 items-center">
 
         {{-- Search --}}
         <div class="relative flex-1 min-w-48">
             <i class="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none"></i>
             <input type="text" x-model="search" placeholder="ค้นหาชื่อ App / Checksheet..."
-                   class="w-full pl-8 pr-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:focus:ring-indigo-700 dark:text-white placeholder-gray-400">
+                   class="w-full pl-8 pr-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:focus:ring-indigo-700 dark:text-white placeholder-gray-400">
         </div>
 
         {{-- Type filter pills --}}
@@ -112,7 +112,7 @@ window.__appMeta = @json($groupedMeta);
         @php $catIdx = $loop->index; @endphp
 
         <div x-show="hasVisible({{ $catIdx }})"
-             class="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
+             class="bg-white dark:bg-gray-800 rounded-xl border border-gray-300 dark:border-gray-600 shadow-sm overflow-hidden">
 
             {{-- Category header --}}
             <button @click="openCats[{{ $catIdx }}] = !(openCats[{{ $catIdx }}] ?? true)"
@@ -131,7 +131,7 @@ window.__appMeta = @json($groupedMeta);
                  x-transition:enter="transition ease-out duration-150"
                  x-transition:enter-start="opacity-0"
                  x-transition:enter-end="opacity-100"
-                 class="border-t border-gray-50 dark:border-gray-700 divide-y divide-gray-50 dark:divide-gray-700/50">
+                 class="border-t border-gray-50 dark:border-gray-600 divide-y divide-gray-50 dark:divide-gray-700/50">
 
                 @foreach($items as $item)
                 <div x-show="matchesFilter($el.dataset.n, $el.dataset.t)"
@@ -212,7 +212,7 @@ window.__appMeta = @json($groupedMeta);
                                 <i class="ti ti-layout-grid-add text-xs"></i><span>Builder</span>
                             </a>
                             <a href="{{ $item['records_url'] }}"
-                               class="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1 hover:border-gray-400 transition-colors">
+                               class="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1 hover:border-gray-400 transition-colors">
                                 <i class="ti ti-table text-xs"></i><span>Records</span>
                             </a>
                             @if($canDelete)

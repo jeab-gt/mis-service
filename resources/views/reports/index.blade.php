@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', __('menu.reports'))
 @section('breadcrumb')
 <span>{{ __('menu.reports') }}</span>
@@ -33,7 +33,7 @@
     </div>
 
     <!-- Date Filter -->
-    <form method="GET" class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-wrap items-center gap-3">
+    <form method="GET" class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-300 dark:border-gray-600 flex flex-wrap items-center gap-3">
         <label class="text-sm text-gray-500">{{ app()->getLocale() === 'th' ? 'ช่วงวันที่' : 'Date Range' }}:</label>
         <input type="date" name="from" value="{{ $from }}" class="form-input w-auto text-sm">
         <span class="text-gray-400">—</span>
@@ -50,7 +50,7 @@
             ['label_th' => 'รอดำเนินการ', 'label_en' => 'Pending', 'value' => $totalPending, 'icon' => 'ti-clock', 'color' => 'amber'],
             ['label_th' => 'เวลาเฉลี่ย (ชม.)', 'label_en' => 'Avg Resolution (hrs)', 'value' => $avgResolution ? round($avgResolution, 1) : '-', 'icon' => 'ti-timer', 'color' => 'purple'],
         ] as $kpi)
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center space-x-4">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-300 dark:border-gray-600 flex items-center space-x-4">
             <div class="w-12 h-12 rounded-xl bg-{{ $kpi['color'] }}-100 dark:bg-{{ $kpi['color'] }}-900/40 flex items-center justify-center flex-shrink-0">
                 <i class="ti {{ $kpi['icon'] }} text-xl text-{{ $kpi['color'] }}-600 dark:text-{{ $kpi['color'] }}-400"></i>
             </div>
@@ -64,7 +64,7 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <!-- By Status -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-300 dark:border-gray-600">
             <h3 class="font-semibold mb-4">{{ app()->getLocale() === 'th' ? 'สรุปตามสถานะ' : 'By Status' }}</h3>
             @php $totalSum = $summary->sum() ?: 1; @endphp
             <div class="space-y-3">
@@ -91,7 +91,7 @@
         </div>
 
         <!-- By App (Chart) -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-300 dark:border-gray-600">
             <h3 class="font-semibold mb-4">{{ app()->getLocale() === 'th' ? 'สรุปตาม App' : 'By App Type' }}</h3>
             <canvas id="byAppChart" height="200"></canvas>
         </div>

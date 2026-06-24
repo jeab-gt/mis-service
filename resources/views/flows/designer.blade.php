@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', 'Flow Designer — ' . $flow->name)
 @section('breadcrumb')
 <a href="{{ route('admin.flows.index') }}" class="hover:text-indigo-600">Flow Library</a>
@@ -104,7 +104,7 @@
     <div class="flex gap-3 flex-1 min-h-0">
 
         <!-- Left: Node Palette -->
-        <div class="w-44 flex-shrink-0 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-3 flex flex-col space-y-2 overflow-y-auto">
+        <div class="w-44 flex-shrink-0 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-3 flex flex-col space-y-2 overflow-y-auto">
             <p class="text-xs font-semibold text-gray-500 uppercase">Node Types</p>
             <p class="text-xs text-gray-400 -mt-1 mb-1">ลากหรือคลิกเพื่อเพิ่ม</p>
             @foreach([
@@ -127,14 +127,14 @@
         </div>
 
         <!-- Center: Drawflow Canvas -->
-        <div class="flex-1 min-w-0 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden"
+        <div class="flex-1 min-w-0 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden"
              @dragover.prevent
              @drop="dropOnCanvas($event)">
             <div id="drawflow" class="w-full h-full"></div>
         </div>
 
         <!-- Right: Node Properties -->
-        <div class="w-64 flex-shrink-0 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 overflow-y-auto"
+        <div class="w-64 flex-shrink-0 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4 overflow-y-auto"
              x-show="selectedNodeId !== null" x-cloak>
             <div class="flex items-center justify-between mb-3">
                 <h3 class="font-semibold text-sm">Node Properties</h3>
@@ -239,7 +239,7 @@
                         </div>
                     </template>
 
-                    <div class="pt-2 border-t border-gray-100 dark:border-gray-700">
+                    <div class="pt-2 border-t border-gray-200 dark:border-gray-600">
                         <button @click="removeSelectedNode()"
                                 class="w-full text-xs px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors">
                             <i class="ti ti-trash mr-1"></i>ลบ Node นี้

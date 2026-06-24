@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', 'Edit: ' . $project->name)
 @section('breadcrumb')
 <a href="{{ route('projects.index') }}" class="hover:text-indigo-500">Projects</a>
@@ -12,7 +12,7 @@
 <div class="max-w-2xl mx-auto space-y-4">
     <h1 class="text-xl font-bold">Edit Project</h1>
 
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-6">
         <form method="POST" action="{{ route('projects.update', $project) }}" class="space-y-5">
             @csrf @method('PUT')
 

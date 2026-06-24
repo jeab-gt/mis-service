@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', __('checksheet.edit_title', ['name' => $template->name]))
 @section('breadcrumb')
 <span>Admin</span>
@@ -17,7 +17,7 @@
         </a>
     </div>
 
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-6">
         <form method="POST" action="{{ route('admin.checksheets.save', $template) }}" class="space-y-5">
             @csrf
 
@@ -76,7 +76,7 @@
             </div>
 
             {{-- Portal Settings --}}
-            <div class="border-t border-gray-100 dark:border-gray-700 pt-5">
+            <div class="border-t border-gray-200 dark:border-gray-600 pt-5">
                 <h3 class="font-semibold text-sm mb-3 flex items-center space-x-2">
                     <i class="ti ti-layout-grid text-purple-500"></i><span>Portal Settings</span>
                 </h3>
@@ -134,7 +134,7 @@
                 </div>
             </div>
 
-            <div class="flex space-x-3 pt-2 border-t border-gray-100 dark:border-gray-700">
+            <div class="flex space-x-3 pt-2 border-t border-gray-200 dark:border-gray-600">
                 <button type="submit" class="btn-primary flex items-center space-x-2">
                     <i class="ti ti-device-floppy"></i><span>{{ __('common.save') }}</span>
                 </button>

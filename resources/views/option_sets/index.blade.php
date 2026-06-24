@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', 'Option Sets')
 @section('breadcrumb')
 <span>Option Sets</span>
@@ -18,9 +18,9 @@
     </div>
     @endif
 
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden">
         <table class="w-full text-sm">
-            <thead class="bg-gray-50 dark:bg-gray-750 border-b border-gray-100 dark:border-gray-700">
+            <thead class="bg-gray-50 dark:bg-gray-750 border-b border-gray-200 dark:border-gray-600">
                 <tr>
                     <th class="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Code</th>
                     <th class="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Name (TH / EN)</th>
@@ -74,7 +74,7 @@
             </tbody>
         </table>
         @if($optionSets->hasPages())
-        <div class="px-4 py-3 border-t border-gray-100 dark:border-gray-700">
+        <div class="px-4 py-3 border-t border-gray-200 dark:border-gray-600">
             {{ $optionSets->links() }}
         </div>
         @endif

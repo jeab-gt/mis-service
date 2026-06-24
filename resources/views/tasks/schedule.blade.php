@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', 'Team Schedule')
 @section('breadcrumb')
 <a href="{{ route('tasks.index') }}" class="hover:text-indigo-600">{{ __('menu.my_tasks') }}</a>
@@ -25,7 +25,7 @@
 
         <form method="GET" action="{{ route('tasks.schedule') }}" class="flex flex-wrap items-center gap-2">
             <!-- View toggle -->
-            <div class="flex rounded-xl overflow-hidden border border-gray-200 dark:border-gray-600">
+            <div class="flex rounded-xl overflow-hidden border border-gray-300 dark:border-gray-600">
                 <a href="{{ route('tasks.schedule', array_merge(request()->except('view'), ['view'=>'week'])) }}"
                    class="px-3 py-1.5 text-sm {{ $view === 'week' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700' }}">
                     Week
@@ -75,17 +75,17 @@
     </div>
 
     <!-- Gantt Chart -->
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden">
         <div class="overflow-x-auto">
             <div style="min-width: {{ max(800, 160 + $totalDays * 36) }}px">
                 <!-- Day headers -->
-                <div class="flex border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750 sticky top-0 z-10">
-                    <div class="w-40 flex-shrink-0 px-3 py-2 text-xs font-semibold text-gray-500 border-r border-gray-200 dark:border-gray-700">
+                <div class="flex border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-750 sticky top-0 z-10">
+                    <div class="w-40 flex-shrink-0 px-3 py-2 text-xs font-semibold text-gray-500 border-r border-gray-200 dark:border-gray-600">
                         {{ app()->getLocale() === 'th' ? 'ผู้รับผิดชอบ' : 'Assignee' }}
                     </div>
                     <div class="flex flex-1">
                         @foreach($days as $day)
-                        <div class="flex-1 text-center px-1 py-2 border-r border-gray-100 dark:border-gray-700 last:border-r-0"
+                        <div class="flex-1 text-center px-1 py-2 border-r border-gray-200 dark:border-gray-600 last:border-r-0"
                              style="min-width: 32px">
                             <div class="text-xs font-medium {{ $day->isToday() ? 'text-indigo-600' : 'text-gray-400' }}">
                                 {{ $day->format($view === 'week' ? 'D' : 'd') }}
@@ -100,9 +100,9 @@
 
                 @forelse($byAssignee as $userId => $userAssignments)
                 @php $assignee = $userAssignments->first()->assignee; @endphp
-                <div class="flex border-b border-gray-100 dark:border-gray-700 last:border-b-0 hover:bg-gray-50/50 dark:hover:bg-gray-750/50">
+                <div class="flex border-b border-gray-200 dark:border-gray-600 last:border-b-0 hover:bg-gray-50/50 dark:hover:bg-gray-750/50">
                     <!-- Assignee name column -->
-                    <div class="w-40 flex-shrink-0 px-3 py-3 border-r border-gray-100 dark:border-gray-700 flex items-start">
+                    <div class="w-40 flex-shrink-0 px-3 py-3 border-r border-gray-200 dark:border-gray-600 flex items-start">
                         <div>
                             <div class="w-7 h-7 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center flex-shrink-0 mb-1">
                                 <span class="text-xs font-bold text-indigo-600">{{ strtoupper(substr($assignee?->name ?? '?', 0, 2)) }}</span>

@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', 'Form Designer — ' . $app->name)
 @section('breadcrumb')
 <a href="{{ route('admin.apps.index') }}" class="hover:text-indigo-600">Apps</a>
@@ -8,7 +8,7 @@
 @section('content')
 <div x-data="formDesigner({!! htmlspecialchars(json_encode($app->form_schema ?? ['fields'=>[]]), ENT_QUOTES, 'UTF-8') !!}, {!! htmlspecialchars(json_encode($optionSets->map(fn($o)=>['id'=>$o->id,'code'=>$o->code,'name_th'=>$o->name_th,'name_en'=>$o->name_en])->values()->toArray()), ENT_QUOTES, 'UTF-8') !!})" class="flex gap-4 h-[calc(100vh-10rem)]">
     <!-- Left: field palette -->
-    <div class="w-64 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 overflow-y-auto flex-shrink-0">
+    <div class="w-64 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4 overflow-y-auto flex-shrink-0">
         <h3 class="font-semibold text-sm mb-3">{{ app()->getLocale() === 'th' ? 'ประเภทฟิลด์' : 'Field Types' }}</h3>
         <div class="space-y-2">
             @foreach([['type'=>'text','icon'=>'ti-text-size','label'=>'Text'],['type'=>'textarea','icon'=>'ti-text-wrap','label'=>'Textarea'],['type'=>'select','icon'=>'ti-selector','label'=>'Select'],['type'=>'radio','icon'=>'ti-circle-dot','label'=>'Radio'],['type'=>'checkbox','icon'=>'ti-checkbox','label'=>'Checkbox'],['type'=>'date','icon'=>'ti-calendar','label'=>'Date'],['type'=>'number','icon'=>'ti-number','label'=>'Number'],['type'=>'file','icon'=>'ti-paperclip','label'=>'File Upload']] as $ft)
@@ -22,7 +22,7 @@
     </div>
 
     <!-- Center: canvas -->
-    <div class="flex-1 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 overflow-y-auto">
+    <div class="flex-1 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4 overflow-y-auto">
         <div class="flex items-center justify-between mb-4">
             <h3 class="font-semibold">{{ app()->getLocale() === 'th' ? 'ออกแบบฟอร์ม' : 'Form Canvas' }}</h3>
             <button @click="saveForm" class="btn-primary text-sm">
@@ -30,10 +30,10 @@
             </button>
         </div>
 
-        <div id="field-canvas" x-ref="canvas" class="grid grid-cols-2 gap-3 min-h-[200px] p-2 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl">
+        <div id="field-canvas" x-ref="canvas" class="grid grid-cols-2 gap-3 min-h-[200px] p-2 border-2 border-dashed border-gray-200 dark:border-gray-600 rounded-xl">
             <template x-for="(field, idx) in schema.fields" :key="field.id">
                 <div :class="field.width === 'full' ? 'col-span-2' : 'col-span-1'"
-                     class="relative p-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-750 group cursor-move">
+                     class="relative p-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-750 group cursor-move">
                     <div class="flex items-center justify-between mb-2">
                         <span class="text-xs font-semibold text-indigo-600 uppercase" x-text="field.type"></span>
                         <div class="flex space-x-1 opacity-0 group-hover:opacity-100">
@@ -54,7 +54,7 @@
     </div>
 
     <!-- Right: field editor -->
-    <div class="w-72 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 overflow-y-auto flex-shrink-0" x-show="editingIdx !== null">
+    <div class="w-72 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4 overflow-y-auto flex-shrink-0" x-show="editingIdx !== null">
         <h3 class="font-semibold text-sm mb-3">{{ app()->getLocale() === 'th' ? 'แก้ไขฟิลด์' : 'Edit Field' }}</h3>
         <template x-if="editingIdx !== null && schema.fields[editingIdx]">
             <div class="space-y-3">

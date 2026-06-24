@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', 'Projects')
 @section('breadcrumb')
 <span>Projects</span>
@@ -20,7 +20,7 @@
     </div>
 
     {{-- Filter bar --}}
-    <form method="GET" class="flex flex-wrap items-center gap-2 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 px-4 py-3 shadow-sm">
+    <form method="GET" class="flex flex-wrap items-center gap-2 bg-white dark:bg-gray-800 rounded-2xl border border-gray-300 dark:border-gray-600 px-4 py-3 shadow-sm">
 
         {{-- Status tabs --}}
         <div class="flex gap-1 flex-wrap">
@@ -69,7 +69,7 @@
 
     {{-- Project Cards --}}
     @forelse($projects as $project)
-    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-5 hover:shadow-md transition-shadow">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-300 dark:border-gray-600 shadow-sm p-5 hover:shadow-md transition-shadow">
         <div class="flex items-start gap-4">
             {{-- Color dot --}}
             <div class="w-3 h-3 rounded-full mt-1.5 flex-shrink-0"

@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', 'กรอกข้อมูล: ' . $template->name)
 @section('breadcrumb')
 <a href="{{ route('checksheets.index') }}" class="hover:text-indigo-500">Checksheet</a>
@@ -19,7 +19,7 @@
         <input type="hidden" name="action" id="form-action" value="draft">
 
         {{-- Header Form --}}
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 mb-4">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-5 mb-4">
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                     <label class="form-label">วันที่ <span class="text-red-500">*</span></label>
@@ -51,7 +51,7 @@
         </div>
 
         {{-- Data Grid --}}
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden mb-4">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden mb-4">
             <div class="overflow-x-auto">
                 <table class="w-full text-sm min-w-max">
                     <thead>
@@ -105,7 +105,7 @@
                                 @if($param->type === 'number')
                                 <input type="number" step="0.01"
                                        name="{{ $inputName }}"
-                                       class="w-full text-center text-sm rounded border border-gray-200 dark:border-gray-600 bg-transparent focus:outline-none focus:ring-1 focus:ring-indigo-400 px-2 py-1"
+                                       class="w-full text-center text-sm rounded border border-gray-300 dark:border-gray-600 bg-transparent focus:outline-none focus:ring-1 focus:ring-indigo-400 px-2 py-1"
                                        placeholder="0"
                                        x-model="values['{{ $inputKey }}']"
                                        @input="checkSpec('{{ $inputKey }}', $event.target.value, {{ $param->spec_min ?? 'null' }}, {{ $param->spec_max ?? 'null' }}, '{{ $param->alert_on }}')">
@@ -113,7 +113,7 @@
                                 @elseif($param->type === 'text')
                                 <input type="text"
                                        name="{{ $inputName }}"
-                                       class="w-full text-sm rounded border border-gray-200 dark:border-gray-600 bg-transparent focus:outline-none focus:ring-1 focus:ring-indigo-400 px-2 py-1"
+                                       class="w-full text-sm rounded border border-gray-300 dark:border-gray-600 bg-transparent focus:outline-none focus:ring-1 focus:ring-indigo-400 px-2 py-1"
                                        placeholder="—">
 
                                 @elseif($param->type === 'boolean')
@@ -124,7 +124,7 @@
 
                                 @elseif($param->type === 'enum')
                                 <select name="{{ $inputName }}"
-                                        class="w-full text-sm rounded border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 px-2 py-1">
+                                        class="w-full text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-400 px-2 py-1">
                                     <option value="">—</option>
                                     @foreach($param->options ?? [] as $opt)
                                     <option value="{{ $opt }}">{{ $opt }}</option>

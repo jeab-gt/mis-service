@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', 'Monthly Report')
 @section('breadcrumb')
 <a href="{{ route('reports.index') }}" class="hover:text-indigo-600">{{ __('menu.reports') }}</a>
@@ -51,15 +51,15 @@
 
     <!-- Stats row -->
     <div class="grid grid-cols-3 gap-4">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 text-center">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-300 dark:border-gray-600 text-center">
             <p class="text-3xl font-bold text-indigo-600">{{ $submissions->count() }}</p>
             <p class="text-sm text-gray-500 mt-1">Total Submissions</p>
         </div>
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 text-center">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-300 dark:border-gray-600 text-center">
             <p class="text-3xl font-bold text-green-600">{{ $submissions->whereIn('status',['approved','closed'])->count() }}</p>
             <p class="text-sm text-gray-500 mt-1">Completed</p>
         </div>
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 text-center">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-300 dark:border-gray-600 text-center">
             <p class="text-3xl font-bold text-amber-600">{{ $submissions->whereNotIn('status',['approved','rejected','closed'])->count() }}</p>
             <p class="text-sm text-gray-500 mt-1">Pending</p>
         </div>
@@ -67,13 +67,13 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <!-- Weekly trend chart -->
-        <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
+        <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-300 dark:border-gray-600">
             <h3 class="font-semibold mb-4">{{ app()->getLocale() === 'th' ? 'แนวโน้มรายสัปดาห์' : 'Weekly Trend' }}</h3>
             <canvas id="monthlyChart" height="120"></canvas>
         </div>
 
         <!-- By App pie chart -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-300 dark:border-gray-600">
             <h3 class="font-semibold mb-4">{{ app()->getLocale() === 'th' ? 'ตาม App' : 'By App' }}</h3>
             <canvas id="byAppPie" height="200"></canvas>
         </div>
@@ -81,7 +81,7 @@
 
     <!-- Top 5 Assignees -->
     @if($topAssignees->count())
-    <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-300 dark:border-gray-600">
         <h3 class="font-semibold mb-4">
             <i class="ti ti-trophy text-amber-500 mr-2"></i>
             {{ app()->getLocale() === 'th' ? 'Top 5 ผู้ดำเนินการ' : 'Top 5 Assignees by Completed Tasks' }}
@@ -108,8 +108,8 @@
     @endif
 
     <!-- Submissions table -->
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-        <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-600 flex items-center justify-between">
             <h3 class="font-semibold">{{ app()->getLocale() === 'th' ? 'รายการทั้งหมด' : 'All Submissions' }}</h3>
             <span class="text-sm text-gray-500">{{ $submissions->count() }} records</span>
         </div>

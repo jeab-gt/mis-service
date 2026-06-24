@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', 'Dashboards')
 @section('breadcrumb')
 <span>Dashboards</span>
@@ -19,7 +19,7 @@
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         @forelse($dashboards as $dashboard)
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden flex flex-col">
             <div class="p-5 flex-1">
                 <div class="flex items-start space-x-3">
                     <div class="w-12 h-12 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center flex-shrink-0">
@@ -42,7 +42,7 @@
                 </div>
             </div>
 
-            <div class="p-4 border-t border-gray-100 dark:border-gray-700 flex gap-2">
+            <div class="p-4 border-t border-gray-200 dark:border-gray-600 flex gap-2">
                 <a href="{{ route('dashboards.show', $dashboard) }}"
                    class="flex-1 text-center text-xs btn-primary flex items-center justify-center space-x-1">
                     <i class="ti ti-eye"></i><span>View</span>

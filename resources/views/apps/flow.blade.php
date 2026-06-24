@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', 'Flow Designer — ' . $app->name)
 @section('breadcrumb')
 <a href="{{ route('admin.apps.index') }}" class="hover:text-indigo-600">Apps</a>
@@ -33,7 +33,7 @@
 
     <div class="flex gap-3 flex-1 min-h-0">
         <!-- Left: Node Palette -->
-        <div class="w-44 flex-shrink-0 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-3 flex flex-col space-y-2 overflow-y-auto">
+        <div class="w-44 flex-shrink-0 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-3 flex flex-col space-y-2 overflow-y-auto">
             <p class="text-xs font-semibold text-gray-500 uppercase mb-1">Node Types</p>
             <p class="text-xs text-gray-400">Drag to canvas</p>
 
@@ -54,7 +54,7 @@
             </div>
             @endforeach
 
-            <div class="pt-2 border-t border-gray-100 dark:border-gray-700 mt-2">
+            <div class="pt-2 border-t border-gray-200 dark:border-gray-600 mt-2">
                 <p class="text-xs text-gray-400 leading-relaxed">
                     Connect nodes by dragging output ports to input ports.<br><br>
                     <span class="text-green-600 font-medium">Top output</span> = Approve path<br>
@@ -64,7 +64,7 @@
         </div>
 
         <!-- Center: Drawflow Canvas -->
-        <div class="flex-1 min-w-0 relative bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div class="flex-1 min-w-0 relative bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden">
             <div id="drawflow-canvas" x-ref="dfCanvas"
                  @drop="onDrop($event)"
                  @dragover.prevent
@@ -73,7 +73,7 @@
         </div>
 
         <!-- Right: Node Properties -->
-        <div class="w-64 flex-shrink-0 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 overflow-y-auto"
+        <div class="w-64 flex-shrink-0 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4 overflow-y-auto"
              x-show="selectedNode" x-cloak>
             <div class="flex items-center justify-between mb-3">
                 <h3 class="font-semibold text-sm">Node Properties</h3>

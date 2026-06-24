@@ -1,4 +1,4 @@
-{{-- Task Detail Drawer --}}
+﻿{{-- Task Detail Drawer --}}
 <div x-show="drawerOpen"
      @keydown.escape.window="closeDrawer()"
      @open-drawer.window="openDrawer($event.detail.taskId)"
@@ -29,7 +29,7 @@
             <div class="flex flex-col h-full">
 
                 {{-- Header --}}
-                <div class="flex items-start gap-3 p-4 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
+                <div class="flex items-start gap-3 p-4 border-b border-gray-200 dark:border-gray-600 flex-shrink-0">
                     <div class="flex-1 min-w-0">
                         <p class="text-xs text-gray-400 mb-1">Task #<span x-text="drawerTask.id"></span></p>
                         <input type="text"
@@ -239,7 +239,7 @@
                 </div>
 
                 {{-- ── Sticky footer with SAVE button ── --}}
-                <div class="border-t border-gray-100 dark:border-gray-700 p-4 flex gap-3 flex-shrink-0 bg-white dark:bg-gray-800">
+                <div class="border-t border-gray-200 dark:border-gray-600 p-4 flex gap-3 flex-shrink-0 bg-white dark:bg-gray-800">
                     <button @click="saveTask()"
                             :disabled="saveBtn === 'saving'"
                             :class="{
@@ -255,7 +255,7 @@
                         <span x-show="saveBtn === 'error'"   class="flex items-center gap-2"><i class="ti ti-alert-circle text-base"></i> เกิดข้อผิดพลาด</span>
                     </button>
                     <button @click="closeDrawer()"
-                            class="px-4 py-2.5 rounded-xl text-sm font-medium border border-gray-200 dark:border-gray-600
+                            class="px-4 py-2.5 rounded-xl text-sm font-medium border border-gray-300 dark:border-gray-600
                                    text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
                         ปิด
                     </button>

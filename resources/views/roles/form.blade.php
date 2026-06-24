@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', isset($role) ? 'Edit Role' : 'Create Role')
 @section('breadcrumb')
 <a href="{{ route('admin.roles.index') }}" class="hover:text-indigo-600">{{ __('menu.roles') }}</a>
@@ -7,8 +7,8 @@
 @endsection
 @section('content')
 <div class="max-w-3xl mx-auto">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-        <div class="p-6 border-b border-gray-100 dark:border-gray-700">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden">
+        <div class="p-6 border-b border-gray-200 dark:border-gray-600">
             <h1 class="text-xl font-bold">{{ isset($role) ? 'แก้ไข Role' : 'สร้าง Role' }}</h1>
         </div>
         <form method="POST" action="{{ isset($role) ? route('admin.roles.update', $role) : route('admin.roles.store') }}" class="p-6 space-y-5">
@@ -24,7 +24,7 @@
                 <h3 class="form-label mb-3">Permissions</h3>
                 <div class="space-y-4">
                     @foreach($permissions as $module => $perms)
-                    <div class="border border-gray-200 dark:border-gray-600 rounded-xl overflow-hidden">
+                    <div class="border border-gray-300 dark:border-gray-600 rounded-xl overflow-hidden">
                         <div class="bg-gray-50 dark:bg-gray-700 px-4 py-2.5 flex items-center justify-between">
                             <h4 class="font-semibold text-sm uppercase tracking-wide text-gray-600 dark:text-gray-300">{{ $module }}</h4>
                             <button type="button" onclick="toggleGroup('{{ $module }}')" class="text-xs text-indigo-500 hover:underline">
@@ -47,7 +47,7 @@
                 </div>
             </div>
 
-            <div class="flex items-center space-x-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <div class="flex items-center space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
                 <button type="submit" class="btn-primary">{{ __('common.save') }}</button>
                 <a href="{{ route('admin.roles.index') }}" class="btn-secondary">{{ __('common.cancel') }}</a>
             </div>

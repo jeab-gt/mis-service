@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', __('menu.users'))
 
 @section('breadcrumb')
@@ -16,7 +16,7 @@
         @endcan
     </div>
 
-    <form method="GET" class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
+    <form method="GET" class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-300 dark:border-gray-600">
         <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <input type="text" name="search" value="{{ request('search') }}" class="form-input"
                    placeholder="{{ app()->getLocale() === 'th' ? 'ค้นหาชื่อ อีเมล รหัสพนักงาน...' : 'Search name, email, employee code...' }}">
@@ -44,7 +44,7 @@
         </div>
     </form>
 
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead class="bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
@@ -122,7 +122,7 @@
                 </tbody>
             </table>
         </div>
-        <div class="p-4 border-t border-gray-100 dark:border-gray-700">
+        <div class="p-4 border-t border-gray-200 dark:border-gray-600">
             {{ $users->links() }}
         </div>
     </div>

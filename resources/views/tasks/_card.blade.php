@@ -1,4 +1,4 @@
-@php
+﻿@php
     $progress = $assignment->_progress ?? $assignment->submission->progress ?? 0;
     $title    = $assignment->submission->title ?? '#' . $assignment->submission_id;
     $appName  = $assignment->submission->app->name ?? '-';
@@ -6,7 +6,7 @@
     $isOverdue = $assignment->due_date && $assignment->due_date->isPast()
         && !in_array($assignment->submission->status, ['approved','closed','rejected']);
 @endphp
-<div class="kanban-card group relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl p-3 hover:border-indigo-300 hover:shadow-sm transition-all cursor-pointer"
+<div class="kanban-card group relative bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl p-3 hover:border-indigo-300 hover:shadow-sm transition-all cursor-pointer"
      data-assignment-id="{{ $assignment->id }}"
      data-submission-id="{{ $assignment->submission_id }}"
      data-progress="{{ $progress }}"

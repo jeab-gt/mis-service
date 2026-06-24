@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', $project->name)
 @section('breadcrumb')
 <a href="{{ route('projects.index') }}" class="hover:text-indigo-500">Projects</a>
@@ -30,7 +30,7 @@
             default    => '#9ca3af',
         };
     @endphp
-    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-md"
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-300 dark:border-gray-600 shadow-md"
          style="border-bottom: 4px solid {{ $priorityBorderColor }}">
         <div class="px-4 py-2.5">
             {{-- Row 1: dot + name + badges + edit --}}
@@ -81,10 +81,10 @@
     </div>
 
     {{-- Tabs --}}
-    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden"
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-300 dark:border-gray-600 shadow-sm overflow-hidden"
          style="border-top: 3px solid {{ $project->color }}">
         {{-- Tab Nav --}}
-        <div class="flex border-b border-gray-100 dark:border-gray-700 overflow-x-auto">
+        <div class="flex border-b border-gray-200 dark:border-gray-600 overflow-x-auto">
             @foreach(['overview' => ['ti-dashboard', 'Overview'], 'tasks' => ['ti-layout-kanban', 'Tasks'], 'gantt' => ['ti-chart-gantt', 'Gantt'], 'calendar' => ['ti-calendar', 'Calendar'], 'members' => ['ti-users', 'Members'], 'reports' => ['ti-chart-bar', 'Reports']] as $tab => [$icon, $label])
             <button @click="activeTab = '{{ $tab }}'"
                     :class="activeTab === '{{ $tab }}' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'"
@@ -231,7 +231,7 @@
                     <div class="space-y-2 min-h-[4rem] kanban-list" id="list-{{ $status }}">
                         @foreach($kanbanGroups[$status] as $task)
                         <div x-data="taskCard({{ $task->id }})"
-                             class="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-3 shadow-sm cursor-pointer hover:shadow-md transition-shadow task-card"
+                             class="bg-white dark:bg-gray-800 rounded-xl border border-gray-300 dark:border-gray-600 p-3 shadow-sm cursor-pointer hover:shadow-md transition-shadow task-card"
                              :style="{ borderLeft: '4px solid ' + statusColor }"
                              data-task-id="{{ $task->id }}"
                              @task-saved.window="onSaved($event.detail)"
@@ -270,8 +270,8 @@
              @task-saved.window="updateGanttRow($event.detail)">
 
             {{-- Controls --}}
-            <div class="flex items-center gap-2 p-3 border-b border-gray-100 dark:border-gray-700">
-                <div class="flex rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600">
+            <div class="flex items-center gap-2 p-3 border-b border-gray-200 dark:border-gray-600">
+                <div class="flex rounded-lg overflow-hidden border border-gray-300 dark:border-gray-600">
                     <template x-for="m in ['Day','Week','Month']" :key="m">
                         <button @click="setView(m)"
                                 :class="viewMode===m ? 'bg-primary text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'"
@@ -280,11 +280,11 @@
                     </template>
                 </div>
                 <button @click="scrollToday()"
-                        class="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                        class="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                     <i class="ti ti-calendar-event mr-1"></i>Today
                 </button>
                 <button @click="fitAll()"
-                        class="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                        class="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                     <i class="ti ti-arrows-maximize mr-1"></i>Fit All
                 </button>
                 <span class="ml-auto text-xs text-gray-400" x-show="rows.length"
@@ -299,7 +299,7 @@
 
             {{-- Excel-like layout: LEFT TABLE + RIGHT TIMELINE --}}
             {{-- height: 100vh - topbar(64) - main-padding(48) - compact-header(66) - space-y-4(16) - tab-nav(44) - gantt-controls(44) - buffer(18) --}}
-            <div x-show="rows.length" class="flex overflow-hidden border-t border-gray-200 dark:border-gray-700" style="height:calc(100vh - 300px);min-height:340px">
+            <div x-show="rows.length" class="flex overflow-hidden border-t border-gray-200 dark:border-gray-600" style="height:calc(100vh - 300px);min-height:340px">
 
                 {{-- LEFT TABLE (fixed, no horizontal scroll) --}}
                 <div x-ref="ganttLeft" @scroll.passive="syncScroll('left')"
@@ -324,7 +324,7 @@
 
                     {{-- Left rows --}}
                     <template x-for="row in rows" :key="row.id">
-                        <div class="flex items-stretch border-b border-gray-100 dark:border-gray-700"
+                        <div class="flex items-stretch border-b border-gray-200 dark:border-gray-600"
                              style="height:36px;min-height:36px"
                              :class="!row.isMilestone ? 'hover:bg-indigo-50/50 dark:hover:bg-gray-700/30' : ''">
 
@@ -341,19 +341,19 @@
                             {{-- Task row --}}
                             <template x-if="!row.isMilestone">
                                 <div class="flex items-stretch w-full bg-white dark:bg-gray-800">
-                                    <div class="flex items-center gap-1.5 overflow-hidden border-r border-gray-100 dark:border-gray-700"
+                                    <div class="flex items-center gap-1.5 overflow-hidden border-r border-gray-200 dark:border-gray-600"
                                          style="width:180px;min-width:180px;padding:0 6px 0 20px">
                                         <div class="w-2 h-2 rounded-full flex-shrink-0" :style="{ background: barBg(row).fill }"></div>
                                         <span class="text-xs text-gray-700 dark:text-gray-300 truncate cursor-pointer hover:underline"
                                               @click="openDrawer(row.taskId)" x-text="row.name" :title="row.name"></span>
                                     </div>
-                                    <div class="flex items-center justify-center text-xs text-gray-500 dark:text-gray-400 tabular-nums border-r border-gray-100 dark:border-gray-700"
+                                    <div class="flex items-center justify-center text-xs text-gray-500 dark:text-gray-400 tabular-nums border-r border-gray-200 dark:border-gray-600"
                                          style="width:50px;min-width:50px" x-text="fmtDate(row.startDate)"></div>
-                                    <div class="flex items-center justify-center text-xs text-gray-500 dark:text-gray-400 tabular-nums border-r border-gray-100 dark:border-gray-700"
+                                    <div class="flex items-center justify-center text-xs text-gray-500 dark:text-gray-400 tabular-nums border-r border-gray-200 dark:border-gray-600"
                                          style="width:35px;min-width:35px" x-text="row.duration+'d'"></div>
-                                    <div class="flex items-center justify-center text-xs text-gray-500 dark:text-gray-400 tabular-nums border-r border-gray-100 dark:border-gray-700"
+                                    <div class="flex items-center justify-center text-xs text-gray-500 dark:text-gray-400 tabular-nums border-r border-gray-200 dark:border-gray-600"
                                          style="width:50px;min-width:50px" x-text="fmtDate(row.endDate)"></div>
-                                    <div class="flex flex-col items-center justify-center gap-0.5 border-r border-gray-100 dark:border-gray-700 px-1"
+                                    <div class="flex flex-col items-center justify-center gap-0.5 border-r border-gray-200 dark:border-gray-600 px-1"
                                          style="width:70px;min-width:70px">
                                         <span class="text-xs font-semibold tabular-nums leading-none"
                                               :style="{ color: barBg(row).fill }" x-text="row.pct+'%'"></span>
@@ -391,13 +391,13 @@
 
                         {{-- Bar rows --}}
                         <template x-for="row in rows" :key="row.id">
-                            <div class="relative border-b border-gray-100 dark:border-gray-700/50"
+                            <div class="relative border-b border-gray-200 dark:border-gray-600/50"
                                  style="height:36px;min-height:36px"
                                  :class="row.isMilestone ? 'bg-blue-900/5 dark:bg-blue-900/15' : 'bg-white dark:bg-gray-800'">
 
                                 {{-- Column grid lines --}}
                                 <template x-for="col in cols" :key="col.key">
-                                    <div class="absolute top-0 bottom-0 border-r border-gray-100 dark:border-gray-700/30 pointer-events-none"
+                                    <div class="absolute top-0 bottom-0 border-r border-gray-200 dark:border-gray-600/30 pointer-events-none"
                                          :class="col.weekend ? 'bg-gray-50 dark:bg-gray-700/20' : ''"
                                          :style="`left:${col.left}px;width:${col.width}px`"></div>
                                 </template>

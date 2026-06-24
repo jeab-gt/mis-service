@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', __('menu.my_tasks'))
 @section('breadcrumb')
 <span>{{ __('menu.my_tasks') }}</span>
@@ -19,7 +19,7 @@
     <!-- Kanban Columns -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <!-- Todo -->
-        <div class="flex flex-col bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div class="flex flex-col bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden">
             <div class="px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-100 dark:border-blue-800 flex items-center justify-between">
                 <h3 class="font-semibold text-blue-700 dark:text-blue-300 flex items-center space-x-2">
                     <i class="ti ti-inbox"></i>
@@ -41,7 +41,7 @@
         </div>
 
         <!-- In Progress -->
-        <div class="flex flex-col bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div class="flex flex-col bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden">
             <div class="px-4 py-3 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-100 dark:border-amber-800 flex items-center justify-between">
                 <h3 class="font-semibold text-amber-700 dark:text-amber-300 flex items-center space-x-2">
                     <i class="ti ti-loader"></i>
@@ -63,7 +63,7 @@
         </div>
 
         <!-- Done -->
-        <div class="flex flex-col bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div class="flex flex-col bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden">
             <div class="px-4 py-3 bg-green-50 dark:bg-green-900/20 border-b border-green-100 dark:border-green-800 flex items-center justify-between">
                 <h3 class="font-semibold text-green-700 dark:text-green-300 flex items-center space-x-2">
                     <i class="ti ti-circle-check"></i>
@@ -92,7 +92,7 @@
         <div class="absolute inset-0 bg-black/50" @click="closeModal"></div>
         <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg mx-4 max-h-[90vh] flex flex-col z-10">
             <!-- Modal Header -->
-            <div class="flex items-center justify-between p-5 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
+            <div class="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-600 flex-shrink-0">
                 <div>
                     <h2 class="font-bold text-lg" x-text="modalTitle"></h2>
                     <p class="text-xs text-gray-400 mt-0.5" x-text="modalApp"></p>
@@ -187,7 +187,7 @@
             </div>
 
             <!-- Modal Footer -->
-            <div class="border-t border-gray-100 dark:border-gray-700 p-4 flex items-center justify-between flex-shrink-0">
+            <div class="border-t border-gray-200 dark:border-gray-600 p-4 flex items-center justify-between flex-shrink-0">
                 <a :href="'/submissions/' + submissionId" target="_blank"
                    class="text-sm text-indigo-500 hover:text-indigo-700 flex items-center space-x-1">
                     <i class="ti ti-external-link text-xs"></i>

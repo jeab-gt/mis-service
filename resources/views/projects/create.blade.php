@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', 'New Project')
 @section('breadcrumb')
 <a href="{{ route('projects.index') }}" class="hover:text-indigo-500">Projects</a>
@@ -10,7 +10,7 @@
 <div class="max-w-2xl mx-auto space-y-4">
     <h1 class="text-xl font-bold">Create New Project</h1>
 
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-6">
         <form method="POST" action="{{ route('projects.store') }}" class="space-y-5">
             @csrf
 

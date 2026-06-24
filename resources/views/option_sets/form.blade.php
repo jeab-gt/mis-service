@@ -1,4 +1,4 @@
-@php $optionSet = isset($optionSet) && $optionSet instanceof \App\Models\OptionSet ? $optionSet : null; @endphp
+﻿@php $optionSet = isset($optionSet) && $optionSet instanceof \App\Models\OptionSet ? $optionSet : null; @endphp
 @extends('layouts.app')
 @section('title', $optionSet ? 'Edit Option Set' : 'Create Option Set')
 @section('breadcrumb')
@@ -13,8 +13,8 @@
         ? $optionSet->items->map(fn($i) => ['value'=>$i->value,'label_th'=>$i->label_th,'label_en'=>$i->label_en])->toArray()
         : [],
 ]), ENT_QUOTES, 'UTF-8') !!})">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-        <div class="p-6 border-b border-gray-100 dark:border-gray-700">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden">
+        <div class="p-6 border-b border-gray-200 dark:border-gray-600">
             <h1 class="text-xl font-bold">{{ $optionSet ? 'แก้ไข Option Set' : 'สร้าง Option Set' }}</h1>
         </div>
         <form method="POST"
@@ -93,7 +93,7 @@
                         <i class="ti ti-plus mr-1"></i>Add Item
                     </button>
                 </div>
-                <div class="border border-gray-200 dark:border-gray-600 rounded-xl overflow-hidden">
+                <div class="border border-gray-300 dark:border-gray-600 rounded-xl overflow-hidden">
                     <table class="w-full text-sm">
                         <thead class="bg-gray-50 dark:bg-gray-750">
                             <tr>
@@ -136,7 +136,7 @@
                 </div>
             </div>
 
-            <div class="flex items-center space-x-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <div class="flex items-center space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
                 <button type="submit" class="btn-primary">{{ __('common.save') }}</button>
                 <a href="{{ route('admin.option-sets.index') }}" class="btn-secondary">{{ __('common.cancel') }}</a>
             </div>

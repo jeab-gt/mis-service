@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', isset($master) ? __('common.edit') : __('common.create'))
 
 @section('breadcrumb')
@@ -9,8 +9,8 @@
 
 @section('content')
 <div class="max-w-2xl mx-auto">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-        <div class="p-6 border-b border-gray-100 dark:border-gray-700">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden">
+        <div class="p-6 border-b border-gray-200 dark:border-gray-600">
             <h1 class="text-xl font-bold">{{ isset($master) ? __('common.edit') . ' Master' : __('common.create') . ' Master' }}</h1>
         </div>
 
@@ -121,7 +121,7 @@
                 <label for="is_active" class="text-sm">{{ app()->getLocale() === 'th' ? 'เปิดใช้งาน' : 'Active' }}</label>
             </div>
 
-            <div class="flex items-center space-x-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <div class="flex items-center space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
                 <button type="submit" class="btn-primary" :disabled="!selectedType"
                         :class="!selectedType ? 'opacity-50 cursor-not-allowed' : ''">
                     {{ __('common.save') }}

@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', 'สร้าง Dashboard')
 @section('breadcrumb')
 <a href="{{ route('dashboards.index') }}" class="hover:text-indigo-500">Dashboards</a>
@@ -10,7 +10,7 @@
 <div class="max-w-xl mx-auto space-y-4">
     <h1 class="text-xl font-bold">สร้าง Dashboard ใหม่</h1>
 
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-6">
         <form method="POST" action="{{ route('dashboards.store') }}" class="space-y-5">
             @csrf
 
@@ -39,7 +39,7 @@
                 </label>
             </div>
 
-            <div class="border-t border-gray-100 dark:border-gray-700 pt-4">
+            <div class="border-t border-gray-200 dark:border-gray-600 pt-4">
                 <label class="form-label">Primary App (ถ้ามี)</label>
                 <select name="primary_app_id" class="form-select">
                     <option value="">— ไม่ผูกกับ App ใด —</option>
@@ -52,7 +52,7 @@
                 <p class="text-xs text-gray-400 mt-1">ผูก Dashboard นี้กับ Form App — Checksheet ผูก Dashboard จากหน้าแก้ไข Checksheet Template</p>
             </div>
 
-            <div class="flex space-x-3 pt-2 border-t border-gray-100 dark:border-gray-700">
+            <div class="flex space-x-3 pt-2 border-t border-gray-200 dark:border-gray-600">
                 <button type="submit" class="btn-primary flex items-center space-x-2">
                     <i class="ti ti-arrow-right"></i><span>สร้างและแก้ไข Layout</span>
                 </button>

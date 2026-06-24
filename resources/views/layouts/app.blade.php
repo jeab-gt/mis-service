@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="{{ app()->getLocale() }}"
       x-data="appLayout()"
       :class="{ 'dark': darkMode }"
@@ -29,7 +29,7 @@
         <div class="flex flex-col h-full sidebar-bg-theme dark:bg-gray-800 text-white">
 
             {{-- Logo row --}}
-            <div class="flex items-center h-16 px-4 border-b border-white/10 dark:border-gray-700 flex-shrink-0">
+            <div class="flex items-center h-16 px-4 border-b border-white/10 dark:border-gray-600 flex-shrink-0">
                 <i class="ti ti-activity-heartbeat text-2xl text-white/60 flex-shrink-0"></i>
                 <span class="ml-3 font-bold text-lg whitespace-nowrap"
                       x-show="sidebarOpen && !isFullscreen" x-transition>IT MIS</span>
@@ -100,7 +100,7 @@
                 {{-- ─── ADMIN (collapsible) ────────────────────── --}}
                 @canany(['user.view', 'master.view', 'app.view', 'setting.view'])
                 @php $inAdmin = request()->is('admin*'); @endphp
-                <div class="border-t border-white/10 dark:border-gray-700 mx-1 mt-2 mb-1"></div>
+                <div class="border-t border-white/10 dark:border-gray-600 mx-1 mt-2 mb-1"></div>
                 <div x-data="{
                          open: {{ $inAdmin ? 'true' : "(localStorage.getItem('sidebar_admin') === 'true')" }},
                          toggle() { this.open = !this.open; localStorage.setItem('sidebar_admin', this.open); }
@@ -186,7 +186,7 @@
             </nav>
 
             {{-- Fullscreen exit button — always accessible, visible only in fullscreen --}}
-            <div class="flex-shrink-0 border-t border-white/10 dark:border-gray-700 p-2"
+            <div class="flex-shrink-0 border-t border-white/10 dark:border-gray-600 p-2"
                  x-show="isFullscreen">
                 <button @click="toggleFullscreen()"
                         title="{{ __('ui.exit_fullscreen') }}"
@@ -201,7 +201,7 @@
     <!-- Main -->
     <div class="flex flex-col flex-1 min-w-0 overflow-hidden">
         <!-- Topbar (hidden in fullscreen) -->
-        <header class="flex items-center h-16 px-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm flex-shrink-0"
+        <header class="flex items-center h-16 px-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-600 shadow-sm flex-shrink-0"
                 x-show="!isFullscreen"
                 x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="opacity-0 -translate-y-2"
@@ -239,10 +239,10 @@
                          x-transition:leave="transition ease-in duration-75"
                          x-transition:leave-start="opacity-100 scale-100"
                          x-transition:leave-end="opacity-0 scale-95"
-                         class="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden origin-top-right">
+                         class="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-300 dark:border-gray-600 z-50 overflow-hidden origin-top-right">
 
                         <!-- Header -->
-                        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-600">
                             <div class="flex items-center gap-2">
                                 <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-100">
                                     {{ __('menu.notifications') }}
@@ -305,7 +305,7 @@
                         </div>
 
                         <!-- Footer -->
-                        <div class="px-4 py-2.5 bg-gray-50 dark:bg-gray-750 border-t border-gray-100 dark:border-gray-700 text-center">
+                        <div class="px-4 py-2.5 bg-gray-50 dark:bg-gray-750 border-t border-gray-200 dark:border-gray-600 text-center">
                             <a href="{{ route('notifications.index') }}"
                                class="text-xs text-primary hover:opacity-75 font-medium">
                                 {{ __('ui.view_all_notif') }}
@@ -322,7 +322,7 @@
                         <span class="hidden sm:inline uppercase text-xs font-medium">{{ app()->getLocale() }}</span>
                     </button>
                     <div x-show="open" @click.away="open = false" x-transition
-                         class="absolute right-0 mt-1 bg-white dark:bg-gray-700 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 z-50 py-1 min-w-[6rem]">
+                         class="absolute right-0 mt-1 bg-white dark:bg-gray-700 rounded-lg shadow-lg border border-gray-300 dark:border-gray-600 z-50 py-1 min-w-[6rem]">
                         <a href="{{ route('locale.switch', 'th') }}" class="block px-4 py-1.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-600 {{ app()->getLocale() === 'th' ? 'text-primary font-semibold' : '' }}">ไทย</a>
                         <a href="{{ route('locale.switch', 'en') }}" class="block px-4 py-1.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-600 {{ app()->getLocale() === 'en' ? 'text-primary font-semibold' : '' }}">English</a>
                     </div>
@@ -342,14 +342,14 @@
                          x-transition:leave="transition ease-in duration-75"
                          x-transition:leave-start="opacity-100 scale-100"
                          x-transition:leave-end="opacity-0 scale-95"
-                         class="absolute right-0 mt-2 p-3 bg-white dark:bg-gray-700 rounded-xl shadow-xl border border-gray-200 dark:border-gray-600 z-50 origin-top-right"
+                         class="absolute right-0 mt-2 p-3 bg-white dark:bg-gray-700 rounded-xl shadow-xl border border-gray-300 dark:border-gray-600 z-50 origin-top-right"
                          style="display:none;">
                         <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2.5 whitespace-nowrap">{{ __('ui.select_theme') }}</p>
                         <div class="grid grid-cols-3 gap-2">
                             <template x-for="t in themes" :key="t.key">
                                 <button @click="setTheme(t.key); open = false"
                                         :title="t.name"
-                                        class="w-8 h-8 rounded-full transition-all duration-150 hover:scale-110 border-2 border-white dark:border-gray-700 shadow-sm"
+                                        class="w-8 h-8 rounded-full transition-all duration-150 hover:scale-110 border-2 border-white dark:border-gray-600 shadow-sm"
                                         :class="theme === t.key ? 'ring-2 ring-offset-2 ring-gray-400 dark:ring-offset-gray-700' : ''"
                                         :style="{ backgroundColor: t.color }">
                                 </button>
@@ -393,9 +393,9 @@
                         <i class="ti ti-chevron-down text-xs text-gray-400"></i>
                     </button>
                     <div x-show="open" @click.away="open = false" x-transition
-                         class="absolute right-0 mt-1 w-52 bg-white dark:bg-gray-700 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 z-50 py-1">
+                         class="absolute right-0 mt-1 w-52 bg-white dark:bg-gray-700 rounded-lg shadow-lg border border-gray-300 dark:border-gray-600 z-50 py-1">
                         @if(auth()->user()->factory)
-                        <div class="px-4 py-2 border-b border-gray-100 dark:border-gray-600">
+                        <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-600">
                             <p class="text-xs text-gray-400">{{ __('ui.factory_label') }}</p>
                             <p class="text-sm font-medium text-primary">{{ auth()->user()->factory->name_th }}</p>
                             @if(auth()->user()->is_parent_factory)

@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', 'Request #' . $submission->id)
 
 @section('breadcrumb')
@@ -46,7 +46,7 @@
     <div class="lg:col-span-2 space-y-4">
 
         <!-- Submission info -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-6">
             <div class="flex items-start justify-between mb-4">
                 <div>
                     <h1 class="text-xl font-bold">{{ $submission->app->name }}
@@ -146,7 +146,7 @@
         @endif
 
         <!-- Approval timeline -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-6">
             <h3 class="font-semibold mb-4">{{ app()->getLocale() === 'th' ? 'ขั้นตอนอนุมัติ' : 'Approval Timeline' }}</h3>
             <div class="space-y-4">
                 @forelse($approvalNodes as $i => $node)
@@ -208,10 +208,10 @@
         </div>
 
         <!-- Daily Logs -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-6">
             <h3 class="font-semibold mb-4">{{ app()->getLocale() === 'th' ? 'บันทึกประจำวัน' : 'Daily Logs' }}</h3>
             @forelse($submission->dailyLogs->sortByDesc('log_date') as $log)
-            <div class="flex items-start space-x-3 py-3 border-b border-gray-100 dark:border-gray-700 last:border-0">
+            <div class="flex items-start space-x-3 py-3 border-b border-gray-200 dark:border-gray-600 last:border-0">
                 <div class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
                     <span class="text-xs font-bold text-gray-500">{{ $log->progress_pct }}%</span>
                 </div>
@@ -231,7 +231,7 @@
             @endforelse
 
             @if(!in_array($submission->status, ['approved','rejected','closed']) && $submission->latestAssignment?->assignee_id == auth()->id())
-            <form method="POST" action="{{ route('submissions.log', $submission) }}" class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <form method="POST" action="{{ route('submissions.log', $submission) }}" class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
                 @csrf
                 <h4 class="text-sm font-semibold mb-3">{{ app()->getLocale() === 'th' ? 'เพิ่มบันทึก' : 'Add Log' }}</h4>
                 <div class="grid grid-cols-2 gap-3 mb-3">
@@ -256,7 +256,7 @@
     <div class="space-y-4">
         <!-- Approve (simple, no step form) -->
         @if($canApprove && !$currentNode?->stepFormTemplate)
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-5">
             <h3 class="font-semibold mb-3">{{ app()->getLocale() === 'th' ? 'ดำเนินการ' : 'Action' }}</h3>
             <p class="text-xs text-gray-500 mb-3">
                 {{ $currentNode?->name_th ?? '' }}
@@ -291,7 +291,7 @@
         <!-- Assign -->
         @if(!in_array($submission->status, ['approved','rejected','closed']))
         @can('submission.assign')
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-5">
             <h3 class="font-semibold mb-3">{{ app()->getLocale() === 'th' ? 'มอบหมายงาน' : 'Assign' }}</h3>
             <form method="POST" action="{{ route('submissions.assign', $submission) }}">
                 @csrf
@@ -351,7 +351,7 @@
         @endif
 
         <!-- Info card -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-5">
             <h3 class="font-semibold mb-3 text-sm">{{ app()->getLocale() === 'th' ? 'ข้อมูลงาน' : 'Info' }}</h3>
             <dl class="space-y-2 text-sm">
                 <div class="flex justify-between">

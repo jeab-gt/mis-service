@@ -1,8 +1,8 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', 'Preview — ' . $app->name)
 @section('content')
 <div class="max-w-2xl mx-auto">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-6">
         <h1 class="text-xl font-bold mb-6">{{ $app->name }} — Preview</h1>
         <div class="grid grid-cols-2 gap-4">
             @foreach($app->initialFormTemplate?->schema['fields'] ?? [] as $field)

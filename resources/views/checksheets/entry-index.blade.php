@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', 'Checksheet')
 @section('breadcrumb')
 <span>Checksheet</span>
@@ -16,7 +16,7 @@
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         @forelse($templates as $template)
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 flex flex-col space-y-3">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-5 flex flex-col space-y-3">
             <div class="flex items-start justify-between">
                 <div class="flex-1 min-w-0">
                     <h3 class="font-bold">{{ $template->name }}</h3>
@@ -42,7 +42,7 @@
                 </span>
             </div>
 
-            <div class="flex items-center space-x-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+            <div class="flex items-center space-x-2 pt-2 border-t border-gray-200 dark:border-gray-600">
                 <a href="{{ route('checksheets.fill', $template) }}"
                    class="flex-1 text-center btn-primary flex items-center justify-center space-x-1 text-sm">
                     <i class="ti ti-edit"></i><span>กรอกข้อมูล</span>

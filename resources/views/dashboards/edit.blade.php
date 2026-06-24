@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', 'Edit Dashboard: ' . $dashboard->name)
 @section('breadcrumb')
 <a href="{{ route('dashboards.index') }}" class="hover:text-indigo-500">Dashboards</a>
@@ -19,7 +19,7 @@
      class="space-y-4">
 
     {{-- ① STICKY TOOLBAR --}}
-    <div class="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700
+    <div class="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-600
                 px-4 py-3 -mx-4 -mt-4 mb-4 flex items-center gap-3 shadow-sm">
         <h1 class="text-lg font-bold flex-1 truncate">{{ $dashboard->name }}</h1>
         <span x-show="saveStatus" x-text="saveStatus" class="text-sm text-green-600 whitespace-nowrap" x-cloak></span>
@@ -37,7 +37,7 @@
 
         {{-- ② LEFT: Widget Palette --}}
         <div class="w-44 flex-shrink-0 space-y-3">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-3">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-3">
                 <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Widget Types</p>
                 <div class="space-y-1">
                     @php
@@ -52,7 +52,7 @@
                     @endphp
                     @foreach($widgetTypes as $wt)
                     <button type="button" @click="addWidget('{{ $wt['type'] }}')"
-                            class="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl border border-gray-100 dark:border-gray-700
+                            class="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl border border-gray-300 dark:border-gray-600
                                    hover:border-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors text-left">
                         <i class="ti {{ $wt['icon'] }} text-lg {{ $wt['color'] }} flex-shrink-0"></i>
                         <span class="text-xs font-medium truncate">{{ $wt['label'] }}</span>
@@ -60,7 +60,7 @@
                     @endforeach
                 </div>
             </div>
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-3 text-xs text-gray-400 space-y-1">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-3 text-xs text-gray-400 space-y-1">
                 <p class="font-medium text-gray-500">Tips</p>
                 <p>• ลากเพื่อย้าย widget</p>
                 <p>• ลาก edge ขวา/ล่างเพื่อ resize</p>
@@ -71,7 +71,7 @@
 
         {{-- ③ CENTER: Free-form Canvas --}}
         <div class="flex-1 min-w-0">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-3">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-3">
                 <div class="flex items-center justify-between mb-2">
                     <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                         Canvas — <span x-text="widgets.length"></span> widgets
@@ -110,7 +110,7 @@
                              @click.stop="selectedIndex = idx">
 
                             {{-- Header bar --}}
-                            <div class="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
+                            <div class="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-600">
                                 <i class="ti text-sm text-indigo-500 flex-shrink-0"
                                    :class="{
                                        'ti-chart-line':     widget.widget_type === 'line_chart',
@@ -163,7 +163,7 @@
 
         {{-- ④ RIGHT: Widget Config --}}
         <div class="w-56 flex-shrink-0">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sticky top-16 space-y-3">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4 sticky top-16 space-y-3">
                 <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Widget Config</p>
 
                 <div x-show="selectedIndex === null" class="text-center py-8 text-gray-400">
@@ -234,7 +234,7 @@
                         </template>
 
                         {{-- Position & size (read-only display, updated by drag/resize) --}}
-                        <div class="grid grid-cols-2 gap-2 pt-1 border-t border-gray-100 dark:border-gray-700">
+                        <div class="grid grid-cols-2 gap-2 pt-1 border-t border-gray-200 dark:border-gray-600">
                             <div>
                                 <label class="form-label text-xs text-gray-400">X (px)</label>
                                 <input type="number" x-model.number="widgets[selectedIndex].x"

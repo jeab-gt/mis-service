@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 @section('title', 'Builder: ' . $template->name)
 @section('breadcrumb')
 <span>Admin</span>
@@ -17,7 +17,7 @@
 )" class="space-y-4">
 
     {{-- Top Toolbar --}}
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 flex items-center space-x-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4 flex items-center space-x-4">
         <div class="flex-1 min-w-0">
             <input type="text" x-model="templateName"
                    class="form-input text-lg font-bold w-full max-w-md"
@@ -40,7 +40,7 @@
     <div class="grid grid-cols-12 gap-4">
         {{-- LEFT PANEL: Parameters --}}
         <div class="col-span-12 lg:col-span-4 space-y-3">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4">
                 <div class="flex items-center justify-between mb-3">
                     <h3 class="font-semibold text-sm flex items-center space-x-2">
                         <i class="ti ti-sliders text-indigo-500"></i>
@@ -53,7 +53,7 @@
 
                 <div id="param-list" class="space-y-2">
                     <template x-for="(param, index) in parameters" :key="index">
-                        <div class="flex items-center space-x-2 p-2 rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-750 cursor-move group">
+                        <div class="flex items-center space-x-2 p-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-750 cursor-move group">
                             <i class="ti ti-grip-vertical text-gray-300 cursor-move flex-shrink-0"></i>
                             <div class="flex-1 min-w-0">
                                 <p class="text-sm font-medium truncate" x-text="param.name"></p>
@@ -89,7 +89,7 @@
 
         {{-- CENTER PANEL: Preview --}}
         <div class="col-span-12 lg:col-span-5">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4">
                 <h3 class="font-semibold text-sm flex items-center space-x-2 mb-3">
                     <i class="ti ti-eye text-indigo-500"></i>
                     <span>Preview</span>
@@ -98,25 +98,25 @@
                     <table class="w-full text-xs border-collapse">
                         <thead>
                             <tr class="bg-gray-50 dark:bg-gray-700">
-                                <th class="border border-gray-200 dark:border-gray-600 px-2 py-1.5 text-left font-semibold min-w-[120px]">Parameter</th>
-                                <th class="border border-gray-200 dark:border-gray-600 px-2 py-1.5 text-center w-12">Unit</th>
+                                <th class="border border-gray-300 dark:border-gray-600 px-2 py-1.5 text-left font-semibold min-w-[120px]">Parameter</th>
+                                <th class="border border-gray-300 dark:border-gray-600 px-2 py-1.5 text-center w-12">Unit</th>
                                 <template x-for="slot in timeSlots" :key="slot.id || slot.label">
-                                    <th class="border border-gray-200 dark:border-gray-600 px-2 py-1.5 text-center min-w-[80px]" x-text="slot.label"></th>
+                                    <th class="border border-gray-300 dark:border-gray-600 px-2 py-1.5 text-center min-w-[80px]" x-text="slot.label"></th>
                                 </template>
                                 <template x-if="timeSlots.length === 0">
-                                    <th class="border border-gray-200 dark:border-gray-600 px-2 py-1.5 text-center">Value</th>
+                                    <th class="border border-gray-300 dark:border-gray-600 px-2 py-1.5 text-center">Value</th>
                                 </template>
                             </tr>
                         </thead>
                         <tbody>
                             <template x-for="param in parameters" :key="param.id || param.name">
                                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-750">
-                                    <td class="border border-gray-200 dark:border-gray-600 px-2 py-1.5">
+                                    <td class="border border-gray-300 dark:border-gray-600 px-2 py-1.5">
                                         <div x-text="param.name" class="font-medium"></div>
                                     </td>
-                                    <td class="border border-gray-200 dark:border-gray-600 px-2 py-1.5 text-center text-gray-400" x-text="param.unit || '-'"></td>
+                                    <td class="border border-gray-300 dark:border-gray-600 px-2 py-1.5 text-center text-gray-400" x-text="param.unit || '-'"></td>
                                     <template x-for="slot in (timeSlots.length > 0 ? timeSlots : [{}])" :key="slot.id || '_'">
-                                        <td class="border border-gray-200 dark:border-gray-600 px-2 py-1.5 text-center">
+                                        <td class="border border-gray-300 dark:border-gray-600 px-2 py-1.5 text-center">
                                             <template x-if="param.type === 'number'">
                                                 <div class="w-full h-5 rounded bg-gray-100 dark:bg-gray-600"></div>
                                             </template>
@@ -137,7 +137,7 @@
                                 </tr>
                             </template>
                             <tr x-show="parameters.length === 0">
-                                <td colspan="10" class="border border-gray-200 dark:border-gray-600 px-4 py-8 text-center text-gray-400">
+                                <td colspan="10" class="border border-gray-300 dark:border-gray-600 px-4 py-8 text-center text-gray-400">
                                     <i class="ti ti-table text-3xl block mb-2"></i>Preview จะแสดงหลังเพิ่ม Parameter
                                 </td>
                             </tr>
@@ -150,7 +150,7 @@
         {{-- RIGHT PANEL: Time Slots + Settings --}}
         <div class="col-span-12 lg:col-span-3 space-y-3">
             {{-- Time Slots --}}
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4">
                 <div class="flex items-center justify-between mb-3">
                     <h3 class="font-semibold text-sm flex items-center space-x-2">
                         <i class="ti ti-clock text-indigo-500"></i>
@@ -178,7 +178,7 @@
             </div>
 
             {{-- Template Settings --}}
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-600 p-4">
                 <h3 class="font-semibold text-sm flex items-center space-x-2 mb-3">
                     <i class="ti ti-settings text-indigo-500"></i>
                     <span>Settings</span>
@@ -316,7 +316,7 @@
                 </div>
             </div>
 
-            <div class="flex space-x-3 mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <div class="flex space-x-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-600">
                 <button type="button" @click="saveParam()" class="btn-primary flex-1">
                     <i class="ti ti-check mr-1"></i>บันทึก Parameter
                 </button>
