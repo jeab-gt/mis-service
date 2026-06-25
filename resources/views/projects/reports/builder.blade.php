@@ -3,6 +3,7 @@
 @section('title', $report->title . ' — Builder')
 
 @push('styles')
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&family=Prompt:wght@300;400;600;700&family=Noto+Sans+Thai:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
 [x-cloak] { display: none !important; }
 
@@ -114,6 +115,21 @@ main { padding:0 !important; overflow:hidden !important; }
             <option value="h4">H4</option>
             <option value="blockquote">Quote</option>
             <option value="pre">Code</option>
+        </select>
+
+        <select class="rb-select" @change="setCanvasFont($event.target.value);$event.target.value=''" title="Font Family" style="max-width:110px">
+            <option value="">Font</option>
+            <option value="Arial, sans-serif">Arial</option>
+            <option value="'Times New Roman', serif">Times New Roman</option>
+            <option value="Georgia, serif">Georgia</option>
+            <option value="Verdana, sans-serif">Verdana</option>
+            <option value="Tahoma, sans-serif">Tahoma</option>
+            <option value="'Trebuchet MS', sans-serif">Trebuchet MS</option>
+            <option value="'Courier New', monospace">Courier New</option>
+            <option value="Impact, sans-serif">Impact</option>
+            <option value="'Sarabun', sans-serif">Sarabun</option>
+            <option value="'Prompt', sans-serif">Prompt</option>
+            <option value="'Noto Sans Thai', sans-serif">Noto Sans Thai</option>
         </select>
 
         <div class="rb-sep"></div>
@@ -456,6 +472,18 @@ main { padding:0 !important; overflow:hidden !important; }
         <select @change="execCmd('formatBlock',$event.target.value)" class="ftb-sel ml-0.5" title="Style">
             <option value="p">Normal</option><option value="h1">H1</option><option value="h2">H2</option><option value="h3">H3</option>
         </select>
+        <select @change="execCmd('fontName',$event.target.value)" class="ftb-sel ml-0.5" title="Font" style="max-width:100px">
+            <option value="Arial, sans-serif">Arial</option>
+            <option value="'Times New Roman', serif">Times NR</option>
+            <option value="Georgia, serif">Georgia</option>
+            <option value="Verdana, sans-serif">Verdana</option>
+            <option value="Tahoma, sans-serif">Tahoma</option>
+            <option value="'Courier New', monospace">Courier</option>
+            <option value="Impact, sans-serif">Impact</option>
+            <option value="'Sarabun', sans-serif">Sarabun</option>
+            <option value="'Prompt', sans-serif">Prompt</option>
+            <option value="'Noto Sans Thai', sans-serif">Noto Thai</option>
+        </select>
         <div class="w-px h-4 bg-gray-700 mx-0.5"></div>
         <div class="relative" title="Text Color">
             <button class="ftb-btn text-xs">A</button>
@@ -751,6 +779,17 @@ function reportBuilder() {
             if (url?.trim()) { document.execCommand('createLink', false, url.trim()); this.onSlideInput(); }
         },
 
+        setCanvasFont(font) {
+            if (!font) return;
+            const sel = window.getSelection();
+            if (sel && !sel.isCollapsed && this.$refs.slideCanvas?.contains(sel.anchorNode)) {
+                document.execCommand('fontName', false, font);
+            } else {
+                this.$refs.slideCanvas.style.fontFamily = font;
+            }
+            this.onSlideInput();
+        },
+
         // ── DOM-based range insertion helper ──
         _getInsertRange() {
             const canvas = this.$refs.slideCanvas;
@@ -844,53 +883,29 @@ function reportBuilder() {
         },
 
         // ── Insert Table ──
-        insertTable(rows = 3, cols = 3) {
+        insertTable(rows, cols) {
+            rows = parseInt(rows) || 3;
+            cols = parseInt(cols) || 3;
+
+            let html = '<br><table style="width:100%;border-collapse:collapse;margin:8px 0;">';
+            for (let r = 0; r < rows; r++) {
+                html += '<tr>';
+                for (let c = 0; c < cols; c++) {
+                    if (r === 0) {
+                        html += `<th style="border:1px solid #d1d5db;padding:8px;background:#f3f4f6;font-weight:600;min-width:60px;">Header ${c+1}</th>`;
+                    } else {
+                        html += `<td style="border:1px solid #d1d5db;padding:8px;min-width:60px;">Cell</td>`;
+                    }
+                }
+                html += '</tr>';
+            }
+            html += '</table><br>';
+
             const canvas = this.$refs.slideCanvas;
             canvas.focus();
 
-            const table = document.createElement('table');
-            table.style.cssText = 'width:100%;border-collapse:collapse;margin:12px 0;';
-            for (let r = 0; r < rows; r++) {
-                const tr = document.createElement('tr');
-                for (let c = 0; c < cols; c++) {
-                    const isH = r === 0;
-                    const cell = document.createElement(isH ? 'th' : 'td');
-                    cell.style.cssText = 'border:1px solid #d1d5db;padding:8px 12px;text-align:left;min-width:80px;'
-                        + (isH ? 'background:#f3f4f6;font-weight:600;' : '');
-                    cell.textContent = isH ? 'Header ' + (c + 1) : 'Cell';
-                    tr.appendChild(cell);
-                }
-                table.appendChild(tr);
-            }
-            const after = document.createElement('p');
-            after.innerHTML = '<br>';
-
-            // Insert table + trailing paragraph as one fragment
-            const frag = document.createDocumentFragment();
-            frag.appendChild(table);
-            frag.appendChild(after);
-
-            const sel = window.getSelection();
-            if (sel && sel.rangeCount > 0 && canvas.contains(sel.anchorNode)) {
-                const range = sel.getRangeAt(0);
-                range.deleteContents();
-                range.insertNode(frag);
-                range.collapse(false);
-                sel.removeAllRanges();
-                sel.addRange(range);
-            } else {
-                canvas.appendChild(frag);
-            }
-
-            // Move cursor into first data cell
-            const firstCell = table.querySelector('td') || table.querySelector('th');
-            if (firstCell) {
-                const r = document.createRange();
-                r.selectNodeContents(firstCell);
-                r.collapse(true);
-                sel?.removeAllRanges();
-                sel?.addRange(r);
-            }
+            const ok = document.execCommand('insertHTML', false, html);
+            if (!ok) canvas.innerHTML += html;
 
             this.onSlideInput();
         },
