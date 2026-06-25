@@ -6,9 +6,12 @@ use App\Models\Project;
 use App\Models\ProjectReport;
 use App\Models\ProjectReportSlide;
 use App\Models\ProjectReportElement;
+use App\Models\ProjectTaskBlocker;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ProjectReportController extends Controller
 {
@@ -116,10 +119,11 @@ class ProjectReportController extends Controller
     public function builder(Project $project, ProjectReport $report)
     {
         $report->load(['slides.elements', 'attachments']);
-        $kpi      = $this->buildKpi($project);
-        $chartData = $this->buildChartData($project);
+        $kpi         = $this->buildKpi($project);
+        $chartData   = $this->buildChartData($project);
+        $projectData = $this->buildProjectData($project);
 
-        return view('projects.reports.builder', compact('project', 'report', 'kpi', 'chartData'));
+        return view('projects.reports.builder', compact('project', 'report', 'kpi', 'chartData', 'projectData'));
     }
 
     public function save(Request $request, Project $project, ProjectReport $report)
@@ -133,7 +137,7 @@ class ProjectReportController extends Controller
             'slides.*.notes'              => 'nullable|string',
             'slides.*.elements'           => 'nullable|array',
             'slides.*.elements.*.id'      => 'nullable',
-            'slides.*.elements.*.type'    => 'required|in:text,image,chart,kpi,shape',
+            'slides.*.elements.*.type'    => 'required|in:text,image,chart,kpi,shape,gantt_mini,milestone_list,team_list,blocker_list,table,divider',
             'slides.*.elements.*.x'       => 'required|numeric',
             'slides.*.elements.*.y'       => 'required|numeric',
             'slides.*.elements.*.w'       => 'required|numeric|min:10',
@@ -240,19 +244,32 @@ class ProjectReportController extends Controller
     public function preview(Project $project, ProjectReport $report)
     {
         $report->load(['slides.elements']);
-        $kpi      = $this->buildKpi($project);
-        $chartData = $this->buildChartData($project);
+        $kpi         = $this->buildKpi($project);
+        $chartData   = $this->buildChartData($project);
+        $projectData = $this->buildProjectData($project);
 
-        return view('projects.reports.preview', compact('project', 'report', 'kpi', 'chartData'));
+        return view('projects.reports.preview', compact('project', 'report', 'kpi', 'chartData', 'projectData'));
     }
 
     public function export(Project $project, ProjectReport $report)
     {
         $report->load(['slides.elements']);
-        $kpi      = $this->buildKpi($project);
-        $chartData = $this->buildChartData($project);
+        $kpi         = $this->buildKpi($project);
+        $chartData   = $this->buildChartData($project);
+        $projectData = $this->buildProjectData($project);
 
-        return view('projects.reports.export', compact('project', 'report', 'kpi', 'chartData'));
+        return view('projects.reports.export', compact('project', 'report', 'kpi', 'chartData', 'projectData'));
+    }
+
+    public function uploadImage(Request $request, Project $project, ProjectReport $report)
+    {
+        $request->validate(['image' => 'required|file|max:10240|mimes:jpg,jpeg,png,gif,webp,svg']);
+
+        $file     = $request->file('image');
+        $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+        $file->storeAs('report-images', $filename, 'public');
+
+        return response()->json(['url' => asset('storage/report-images/' . $filename)]);
     }
 
     public function destroy(Project $project, ProjectReport $report)
@@ -324,6 +341,48 @@ class ProjectReportController extends Controller
                 ]);
             }
         }
+    }
+
+    private function buildProjectData(Project $project): array
+    {
+        $milestones = $project->milestones()->orderBy('due_date')->get();
+        $members    = $project->members()->with('user:id,name')->get();
+        $tasks      = $project->tasks()->whereNull('parent_task_id')
+            ->select(['id', 'title', 'start_date', 'due_date', 'status', 'progress_pct'])
+            ->get();
+        $blockers   = ProjectTaskBlocker::whereHas('task', fn($q) => $q->where('project_id', $project->id))
+            ->whereNull('resolved_at')
+            ->with(['task:id,title', 'reportedBy:id,name'])
+            ->latest()
+            ->get();
+
+        return [
+            'milestones' => $milestones->map(fn($m) => [
+                'id'           => $m->id,
+                'name'         => $m->name,
+                'due_date'     => $m->due_date?->format('Y-m-d'),
+                'is_completed' => (bool) $m->is_completed,
+            ])->values()->toArray(),
+            'members' => $members->map(fn($m) => [
+                'id'          => $m->user_id,
+                'name'        => $m->user->name ?? '—',
+                'role'        => $m->role,
+                'tasks_count' => $project->tasks()->whereNull('parent_task_id')->where('assignee_id', $m->user_id)->count(),
+            ])->values()->toArray(),
+            'tasks' => $tasks->map(fn($t) => [
+                'id'           => $t->id,
+                'title'        => $t->title,
+                'start_date'   => $t->start_date instanceof \Carbon\Carbon ? $t->start_date->format('Y-m-d') : $t->start_date,
+                'due_date'     => $t->due_date instanceof \Carbon\Carbon ? $t->due_date->format('Y-m-d') : $t->due_date,
+                'status'       => $t->status,
+                'progress_pct' => (int) ($t->progress_pct ?? 0),
+            ])->values()->toArray(),
+            'active_blockers_list' => $blockers->map(fn($b) => [
+                'task_title'  => $b->task->title,
+                'description' => $b->description,
+                'reporter'    => $b->reportedBy?->name ?? '—',
+            ])->values()->toArray(),
+        ];
     }
 
     private function buildKpi(Project $project): array

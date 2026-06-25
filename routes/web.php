@@ -84,6 +84,7 @@ Route::middleware(['auth', 'setlocale'])->group(function () {
         Route::get('/{project}/reports/{report}/preview',           [ProjectReportController::class, 'preview'])->name('reports.preview');
         Route::get('/{project}/reports/{report}/export',            [ProjectReportController::class, 'export'])->name('reports.export');
         Route::post('/{project}/reports/{report}/save-as-template', [ProjectReportController::class, 'saveAsTemplate'])->name('reports.save-as-template');
+        Route::post('/{project}/reports/{report}/upload-image',    [ProjectReportController::class, 'uploadImage'])->name('reports.upload-image');
         Route::delete('/{project}/reports/{report}',                [ProjectReportController::class, 'destroy'])->name('reports.destroy');
 
         // Report Attachments
