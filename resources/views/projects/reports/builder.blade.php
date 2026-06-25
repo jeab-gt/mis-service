@@ -855,7 +855,8 @@ function reportBuilder() {
                 for (let c = 0; c < cols; c++) {
                     const isH = r === 0;
                     const cell = document.createElement(isH ? 'th' : 'td');
-                    cell.style.cssText = 'border:1px solid #d1d5db;padding:8px 12px;text-align:left;min-width:80px;' + (isH ? 'background:#f3f4f6;font-weight:600;' : '');
+                    cell.style.cssText = 'border:1px solid #d1d5db;padding:8px 12px;text-align:left;min-width:80px;'
+                        + (isH ? 'background:#f3f4f6;font-weight:600;' : '');
                     cell.textContent = isH ? 'Header ' + (c + 1) : 'Cell';
                     tr.appendChild(cell);
                 }
@@ -864,22 +865,31 @@ function reportBuilder() {
             const after = document.createElement('p');
             after.innerHTML = '<br>';
 
+            // Insert table + trailing paragraph as one fragment
+            const frag = document.createDocumentFragment();
+            frag.appendChild(table);
+            frag.appendChild(after);
+
             const sel = window.getSelection();
-            const range = (sel && sel.rangeCount > 0 && canvas.contains(sel.anchorNode))
-                ? sel.getRangeAt(0) : null;
-            if (range) {
+            if (sel && sel.rangeCount > 0 && canvas.contains(sel.anchorNode)) {
+                const range = sel.getRangeAt(0);
                 range.deleteContents();
-                range.insertNode(after);
-                range.insertNode(table);
-                const newRange = document.createRange();
-                newRange.setStart(after, 0); newRange.collapse(true);
-                sel.removeAllRanges(); sel.addRange(newRange);
+                range.insertNode(frag);
+                range.collapse(false);
+                sel.removeAllRanges();
+                sel.addRange(range);
             } else {
-                canvas.appendChild(table);
-                canvas.appendChild(after);
-                const newRange = document.createRange();
-                newRange.setStart(after, 0); newRange.collapse(true);
-                sel?.removeAllRanges(); sel?.addRange(newRange);
+                canvas.appendChild(frag);
+            }
+
+            // Move cursor into first data cell
+            const firstCell = table.querySelector('td') || table.querySelector('th');
+            if (firstCell) {
+                const r = document.createRange();
+                r.selectNodeContents(firstCell);
+                r.collapse(true);
+                sel?.removeAllRanges();
+                sel?.addRange(r);
             }
 
             this.onSlideInput();
