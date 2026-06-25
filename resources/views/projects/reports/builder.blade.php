@@ -6,7 +6,6 @@
 <style>
 [x-cloak] { display: none !important; }
 
-/* Remove main layout padding so builder is truly full-screen */
 main { padding:0 !important; overflow:hidden !important; }
 
 /* ── Layout ── */
@@ -30,16 +29,17 @@ main { padding:0 !important; overflow:hidden !important; }
     justify-content:center; padding:32px 32px 80px; }
 .canvas-wrap { flex-shrink:0; }
 
-/* ── Slide Canvas ── */
-.slide-canvas {
-    background:#fff; outline:none; cursor:text;
-    box-shadow:0 8px 40px rgba(0,0,0,.55);
+/* ── Canvas Wrapper (position context for widget overlay) ── */
+.slide-canvas-wrapper {
     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
     font-size:14px; line-height:1.65; color:#1a1a1a;
-    word-wrap:break-word; overflow-wrap:break-word;
-    transition:box-shadow .2s;
 }
-.slide-canvas:focus { box-shadow:0 8px 40px rgba(99,102,241,.45), 0 0 0 2px rgba(99,102,241,.25); }
+
+/* ── Slide Canvas (text layer) ── */
+.slide-canvas {
+    background:#fff; outline:none; cursor:text;
+    word-wrap:break-word; overflow-wrap:break-word;
+}
 .slide-canvas p  { margin:0 0 6px; min-height:1.5em; }
 .slide-canvas h1 { font-size:2em; font-weight:700; margin:16px 0 10px; line-height:1.25; }
 .slide-canvas h2 { font-size:1.5em; font-weight:600; margin:14px 0 8px; line-height:1.3; }
@@ -55,20 +55,10 @@ main { padding:0 !important; overflow:hidden !important; }
 .slide-canvas blockquote { border-left:4px solid #6366f1; margin:10px 0; padding:6px 16px; background:#f5f3ff; border-radius:0 6px 6px 0; }
 .slide-canvas a { color:#6366f1; text-decoration:underline; }
 
-/* ── Widget ── */
-.report-widget { display:block; border:2px dashed #6366f1; border-radius:8px; margin:10px 0;
-    background:#fff; position:relative; cursor:pointer; }
-.report-widget.selected { border-color:#2563eb; border-style:solid; }
-.report-widget:hover { border-color:#4f46e5; }
-.widget-toolbar { display:none; position:absolute; top:-36px; left:0; z-index:200;
-    background:#1f2937; border-radius:6px; padding:4px 8px; align-items:center; gap:6px;
-    white-space:nowrap; box-shadow:0 2px 10px rgba(0,0,0,.5); }
-.widget-toolbar.show { display:flex !important; }
-.widget-tb-btn { background:#374151; border:none; color:#e5e7eb; padding:3px 10px;
-    border-radius:4px; font-size:11px; cursor:pointer; }
-.widget-tb-btn:hover { background:#4b5563; }
-.widget-tb-del { background:#dc2626; }
-.widget-tb-del:hover { background:#b91c1c; }
+/* ── Props Panel ── */
+.props-panel { width:220px; flex-shrink:0; overflow-y:auto; background:#fff;
+    border-left:1px solid #e5e7eb; display:flex; flex-direction:column; }
+.props-panel-header { padding:10px 12px; border-bottom:1px solid #e5e7eb; background:#f9fafb; flex-shrink:0; }
 
 /* ── Ribbon Buttons ── */
 .rb-btn { display:inline-flex; align-items:center; gap:2px; padding:3px 7px; border-radius:5px;
@@ -253,22 +243,175 @@ main { padding:0 !important; overflow:hidden !important; }
         {{-- Canvas Area --}}
         <div class="canvas-area" @click.self="$refs.slideCanvas&&$refs.slideCanvas.focus()">
             <div class="canvas-wrap">
-                <div class="slide-canvas"
-                     contenteditable="true"
-                     spellcheck="false"
-                     x-ref="slideCanvas"
-                     @input="onSlideInput()"
-                     @blur="saveSelection()"
-                     @mouseup="onSelectionChange()"
-                     @keyup="onSelectionChange()"
-                     @keydown="onCanvasKeydown($event)"
-                     @click.stop="onSelectionChange();deselectAllWidgets()"
-                     @dragover.prevent
-                     @drop.prevent="handleDrop($event)"
-                     :style="canvasStyle">
+                {{-- Wrapper: position context for widget overlay --}}
+                <div class="slide-canvas-wrapper" :style="canvasWrapperStyle" @click="selectedWidget=null">
+
+                    {{-- Text layer --}}
+                    <div class="slide-canvas"
+                         contenteditable="true"
+                         spellcheck="false"
+                         x-ref="slideCanvas"
+                         @input="onSlideInput()"
+                         @blur="saveSelection()"
+                         @mouseup="onSelectionChange()"
+                         @keyup="onSelectionChange()"
+                         @keydown="onCanvasKeydown($event)"
+                         @click.stop="onSelectionChange()"
+                         @dragover.prevent
+                         @drop.prevent="handleDrop($event)"
+                         :style="canvasInnerStyle">
+                    </div>
+
+                    {{-- Widget overlay layer --}}
+                    <div style="position:absolute;inset:0;pointer-events:none;z-index:2">
+                        <template x-for="widget in (slides[currentSlideIndex]?.widgets ?? [])" :key="widget.id">
+                            <div :style="{
+                                     position:'absolute',
+                                     left:widget.x+'px', top:widget.y+'px',
+                                     width:widget.w+'px', height:widget.h+'px',
+                                     pointerEvents:'all',
+                                     border:selectedWidget&&selectedWidget.id===widget.id?'2px solid #2563eb':'2px dashed #6366f1',
+                                     borderRadius:'8px',
+                                     background:'white',
+                                     cursor:'move',
+                                     boxShadow:selectedWidget&&selectedWidget.id===widget.id?'0 0 0 3px rgba(37,99,235,0.15)':'none',
+                                     zIndex:selectedWidget&&selectedWidget.id===widget.id?10:1
+                                 }"
+                                 @click.stop="selectWidget(widget)"
+                                 @mousedown.stop="startWidgetDrag($event, widget)">
+
+                                {{-- Widget toolbar (visible when selected) --}}
+                                <div x-show="selectedWidget&&selectedWidget.id===widget.id"
+                                     style="position:absolute;top:-34px;left:0;background:#1f2937;color:white;
+                                            border-radius:6px;padding:3px 8px;display:flex;align-items:center;
+                                            gap:8px;z-index:10;white-space:nowrap;font-size:11px;
+                                            box-shadow:0 2px 8px rgba(0,0,0,.4)">
+                                    <span x-text="widget.type.toUpperCase()" style="color:#9ca3af;font-size:10px;letter-spacing:.5px"></span>
+                                    <button @click.stop="deleteWidget(widget)"
+                                            style="background:#dc2626;border:none;color:white;padding:2px 8px;
+                                                   border-radius:4px;cursor:pointer;font-size:11px">✕ Delete</button>
+                                </div>
+
+                                {{-- Widget content --}}
+                                <div :id="'wc-'+widget.id" style="width:100%;height:100%;overflow:hidden;padding:8px">
+                                    <p style="color:#9ca3af;text-align:center;padding:20px;font-size:12px">⏳ Loading...</p>
+                                </div>
+
+                                {{-- Resize handle --}}
+                                <div x-show="selectedWidget&&selectedWidget.id===widget.id"
+                                     style="position:absolute;bottom:-5px;right:-5px;width:12px;height:12px;
+                                            background:#2563eb;border-radius:2px;cursor:se-resize;z-index:11"
+                                     @mousedown.stop="startWidgetResize($event, widget)">
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
                 </div>
             </div>
         </div>
+
+        {{-- ══ Right Properties Panel ══ --}}
+        <div class="props-panel">
+            <div class="props-panel-header">
+                <h3 class="text-xs font-semibold text-gray-600">
+                    <span x-show="!selectedWidget">Properties</span>
+                    <span x-show="selectedWidget" x-text="selectedWidget ? selectedWidget.type.toUpperCase()+' Widget' : ''"></span>
+                </h3>
+            </div>
+
+            <template x-if="!selectedWidget">
+                <div class="flex flex-col items-center justify-center p-4 text-center text-gray-400" style="min-height:120px">
+                    <div style="font-size:24px;margin-bottom:6px">🖱️</div>
+                    <div class="text-xs">Click a widget to configure</div>
+                </div>
+            </template>
+
+            <template x-if="selectedWidget">
+                <div class="p-3 space-y-3">
+
+                    {{-- Position & Size --}}
+                    <div>
+                        <p class="text-xs font-medium text-gray-500 mb-1.5">Position & Size</p>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-xs text-gray-400 block mb-0.5">X</label>
+                                <input type="number" x-model.number="selectedWidget.x"
+                                       class="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-indigo-400">
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-400 block mb-0.5">Y</label>
+                                <input type="number" x-model.number="selectedWidget.y"
+                                       class="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-indigo-400">
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-400 block mb-0.5">Width</label>
+                                <input type="number" x-model.number="selectedWidget.w"
+                                       @change="$nextTick(()=>renderWidget(selectedWidget.id,selectedWidget.type))"
+                                       class="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-indigo-400">
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-400 block mb-0.5">Height</label>
+                                <input type="number" x-model.number="selectedWidget.h"
+                                       @change="$nextTick(()=>renderWidget(selectedWidget.id,selectedWidget.type))"
+                                       class="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-indigo-400">
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Data Mode --}}
+                    <div>
+                        <label class="text-xs text-gray-500 block mb-0.5">Data Mode</label>
+                        <select x-model="selectedWidget.data_mode"
+                                @change="$nextTick(()=>renderWidget(selectedWidget.id,selectedWidget.type))"
+                                class="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-indigo-400">
+                            <option value="live">🔄 Live (real-time)</option>
+                            <option value="snapshot">📸 Snapshot</option>
+                        </select>
+                    </div>
+
+                    {{-- KPI metric selector --}}
+                    <template x-if="selectedWidget.type==='kpi'">
+                        <div>
+                            <label class="text-xs text-gray-500 block mb-0.5">Metric</label>
+                            <select x-model="selectedWidget.config.metric"
+                                    @change="$nextTick(()=>renderWidget(selectedWidget.id,'kpi'))"
+                                    class="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-indigo-400">
+                                <option value="">All KPIs</option>
+                                <option value="total_tasks">Total Tasks</option>
+                                <option value="done_tasks">Done Tasks</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="overdue">Overdue</option>
+                                <option value="progress_pct">Progress %</option>
+                                <option value="blockers">Active Blockers</option>
+                            </select>
+                        </div>
+                    </template>
+
+                    {{-- Chart type selector --}}
+                    <template x-if="selectedWidget.type==='chart'">
+                        <div>
+                            <label class="text-xs text-gray-500 block mb-0.5">Chart Type</label>
+                            <select x-model="selectedWidget.config.chart_type"
+                                    @change="$nextTick(()=>renderWidget(selectedWidget.id,'chart'))"
+                                    class="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-indigo-400">
+                                <option value="tasks_by_status">Tasks by Status (Donut)</option>
+                                <option value="burndown">Burndown Chart</option>
+                                <option value="workload">Workload per Member</option>
+                            </select>
+                        </div>
+                    </template>
+
+                    {{-- Delete widget --}}
+                    <button @click="deleteWidget(selectedWidget)"
+                            class="w-full bg-red-50 text-red-600 border border-red-200 rounded-lg py-1.5 text-xs hover:bg-red-100 transition-colors">
+                        🗑 Delete Widget
+                    </button>
+
+                </div>
+            </template>
+        </div>
+
     </div>
 
     {{-- ══ Floating Toolbar ══ --}}
@@ -351,6 +494,7 @@ $reportJson = [
             'bg_color'     => $s->bg_color,
             'notes'        => $s->notes ?? '',
             'html_content' => $s->html_content ?? '',
+            'widgets_data' => $s->widgets_data ?? [],
         ];
     })->values(),
 ];
@@ -363,57 +507,11 @@ const PROJECT_DATA = @json($projectData);
 const SAVE_URL     = '{{ route('projects.reports.save', [$project, $report]) }}';
 const TEMPLATE_URL = '{{ route('projects.reports.save-as-template', [$project, $report]) }}';
 
-/* ── Global widget helpers (available to onclick attributes in saved HTML) ── */
-window.__selectWidget = function(el) {
-    document.querySelectorAll('.report-widget').forEach(w => {
-        w.classList.remove('selected');
-        const tb = w.querySelector('.widget-toolbar');
-        if (tb) tb.classList.remove('show');
-    });
-    el.classList.add('selected');
-    const tb = el.querySelector('.widget-toolbar');
-    if (tb) tb.classList.add('show');
-};
-
-window.__deleteWidget = function(btn) {
-    const widget = btn.closest('.report-widget');
-    if (!widget) return;
-    if (confirm('Delete this widget?')) {
-        const next = widget.nextElementSibling;
-        widget.remove();
-        if (next) {
-            const range = document.createRange();
-            range.setStart(next, 0);
-            range.collapse(true);
-            const sel = window.getSelection();
-            sel.removeAllRanges();
-            sel.addRange(range);
-        }
-        window.__reportBuilder && window.__reportBuilder.onSlideInput();
-    }
-};
-
-window.__refreshWidget = function(btn) {
-    const widget = btn.closest('.report-widget');
-    if (!widget || !window.__reportBuilder) return;
-    window.__reportBuilder.renderWidget(widget.dataset.widgetId, widget.dataset.widgetType);
-};
-
-/* ── Click outside → deselect widgets ── */
-document.addEventListener('click', function(e) {
-    if (!e.target.closest('.report-widget')) {
-        document.querySelectorAll('.report-widget').forEach(w => {
-            w.classList.remove('selected');
-            const tb = w.querySelector('.widget-toolbar');
-            if (tb) tb.classList.remove('show');
-        });
-    }
-});
-
 function reportBuilder() {
     return {
         slides: [],
         currentSlideIndex: 0,
+        selectedWidget: null,
         isDirty: false,
         isSaving: false,
         slideLayout: 'slide',
@@ -428,13 +526,27 @@ function reportBuilder() {
         _savedRange: null,
         tableCells: Array.from({length:36}, (_,i) => ({ r:Math.floor(i/6)+1, c:(i%6)+1, key:i })),
 
-        get canvasStyle() {
-            const base = { background:'#fff', outline:'none' };
+        get canvasWrapperStyle() {
+            const base = {
+                position: 'relative',
+                background: '#fff',
+                boxShadow: '0 8px 40px rgba(0,0,0,.55)',
+            };
             return {
-                a4:    { ...base, width:'794px',  minHeight:'1123px', padding:'60px 72px' },
-                slide: { ...base, width:'960px',  height:'540px',     padding:'48px 56px', overflow:'hidden' },
-                wide:  { ...base, width:'1122px', minHeight:'794px',  padding:'56px 72px' },
-            }[this.slideLayout] || { ...base, width:'794px', minHeight:'1123px', padding:'60px 72px' };
+                a4:    { ...base, width:'794px',  minHeight:'1123px' },
+                slide: { ...base, width:'960px',  height:'540px' },
+                wide:  { ...base, width:'1122px', minHeight:'794px' },
+            }[this.slideLayout] || { ...base, width:'794px', minHeight:'1123px' };
+        },
+
+        get canvasInnerStyle() {
+            const base = { outline:'none', wordWrap:'break-word', overflowWrap:'break-word',
+                           boxSizing:'border-box', width:'100%' };
+            return {
+                a4:    { ...base, padding:'60px 72px', minHeight:'1123px' },
+                slide: { ...base, padding:'48px 56px', height:'540px', overflow:'hidden' },
+                wide:  { ...base, padding:'56px 72px', minHeight:'794px' },
+            }[this.slideLayout] || { ...base, padding:'60px 72px', minHeight:'1123px' };
         },
 
         get currentSlide() { return this.slides[this.currentSlideIndex] || null; },
@@ -442,7 +554,12 @@ function reportBuilder() {
         // ── Init ──
         init() {
             window.__reportBuilder = this;
-            this.slides = (REPORT_DATA.slides || []).map(s => ({ ...s }));
+            this.slides = (REPORT_DATA.slides || []).map(s => ({
+                ...s,
+                widgets: Array.isArray(s.widgets_data)
+                    ? s.widgets_data.map(w => ({ config:{}, data_mode:'live', ...w }))
+                    : [],
+            }));
             if (!this.slides.length) this.addSlide();
             this.$nextTick(() => this.loadSlideToCanvas());
             window.addEventListener('keydown', e => {
@@ -471,15 +588,13 @@ function reportBuilder() {
                 window.getSelection()?.removeAllRanges();
                 window.getSelection()?.addRange(r);
             }
-            this.$nextTick(() => this.renderWidgets());
+            // Let Alpine.js x-for render widgets first, then populate their content
+            this.$nextTick(() => setTimeout(() => this.renderWidgets(), 50));
         },
 
         saveCurrentCanvas() {
             const c = this.$refs.slideCanvas;
             if (!c || !this.currentSlide) return;
-            // Hide all widget toolbars before saving
-            c.querySelectorAll('.widget-toolbar').forEach(tb => tb.classList.remove('show'));
-            c.querySelectorAll('.report-widget').forEach(w => w.classList.remove('selected'));
             this.currentSlide.html_content = c.innerHTML;
         },
 
@@ -506,8 +621,6 @@ function reportBuilder() {
         restoreSelection() {
             const canvas = this.$refs.slideCanvas;
             if (!canvas) return;
-            // If selection is already inside canvas (e.g. @mousedown.prevent kept focus),
-            // don't disturb it — just ensure canvas has focus
             const sel = window.getSelection();
             if (sel && sel.rangeCount > 0 && canvas.contains(sel.anchorNode)) {
                 canvas.focus();
@@ -540,6 +653,7 @@ function reportBuilder() {
             if (idx === this.currentSlideIndex) return;
             this.saveCurrentCanvas();
             this.currentSlideIndex = idx;
+            this.selectedWidget = null;
             this.showToolbar = false;
             this._savedRange = null;
             this.$nextTick(() => this.loadSlideToCanvas());
@@ -547,9 +661,10 @@ function reportBuilder() {
 
         addSlide() {
             this.saveCurrentCanvas();
-            const slide = { id:'new_'+Date.now(), slide_order:this.slides.length, bg_color:'#ffffff', notes:'', html_content:'' };
+            const slide = { id:'new_'+Date.now(), slide_order:this.slides.length, bg_color:'#ffffff', notes:'', html_content:'', widgets:[] };
             this.slides.push(slide);
             this.currentSlideIndex = this.slides.length - 1;
+            this.selectedWidget = null;
             this.isDirty = true;
             this._savedRange = null;
             this.$nextTick(() => this.loadSlideToCanvas());
@@ -559,6 +674,7 @@ function reportBuilder() {
             if (this.slides.length <= 1) return;
             this.slides.splice(idx, 1);
             if (this.currentSlideIndex >= this.slides.length) this.currentSlideIndex = this.slides.length - 1;
+            this.selectedWidget = null;
             this.isDirty = true;
             this._savedRange = null;
             this.$nextTick(() => this.loadSlideToCanvas());
@@ -569,16 +685,10 @@ function reportBuilder() {
             const dup = { ...JSON.parse(JSON.stringify(this.slides[idx])), id:'new_'+Date.now() };
             this.slides.splice(idx+1, 0, dup);
             this.currentSlideIndex = idx + 1;
+            this.selectedWidget = null;
             this.isDirty = true;
             this._savedRange = null;
             this.$nextTick(() => this.loadSlideToCanvas());
-        },
-
-        deselectAllWidgets() {
-            document.querySelectorAll('.report-widget').forEach(w => {
-                w.classList.remove('selected');
-                w.querySelector('.widget-toolbar')?.classList.remove('show');
-            });
         },
 
         // ── Selection / Floating Toolbar ──
@@ -623,7 +733,6 @@ function reportBuilder() {
             if (sel && sel.rangeCount > 0 && canvas.contains(sel.anchorNode)) {
                 return sel.getRangeAt(0);
             }
-            // Fallback: restore saved or place at end
             if (this._savedRange) {
                 try {
                     sel.removeAllRanges();
@@ -693,38 +802,38 @@ function reportBuilder() {
             for (const f of files) await this.insertImageFile(f);
         },
 
-        // ── Insert Table (DOM API) ──
+        // ── Insert Table ──
         insertTable(rows = 3, cols = 3) {
-            this.restoreSelection();
-            const range = this._getInsertRange();
+            const canvas = this.$refs.slideCanvas;
+            canvas.focus();
 
-            const table = document.createElement('table');
-            table.style.cssText = 'width:100%;border-collapse:collapse;margin:10px 0';
-
+            let tableHTML = '<table style="width:100%;border-collapse:collapse;margin:12px 0;">';
             for (let r = 0; r < rows; r++) {
-                const tr = document.createElement('tr');
+                tableHTML += '<tr>';
                 for (let c = 0; c < cols; c++) {
-                    const isHead = r === 0;
-                    const cell = document.createElement(isHead ? 'th' : 'td');
-                    cell.style.cssText = 'border:1px solid #d1d5db;padding:8px 12px;text-align:left;min-width:60px;' +
-                        (isHead ? 'background:#f3f4f6;font-weight:600;' : '');
-                    cell.innerHTML = isHead ? 'Header ' + (c + 1) : '';
-                    tr.appendChild(cell);
+                    const isH = r === 0;
+                    tableHTML += `<${isH?'th':'td'} contenteditable="true" style="border:1px solid #d1d5db;padding:8px 12px;text-align:left;min-width:80px;${isH?'background:#f3f4f6;font-weight:600;':''}">${isH?'Header '+(c+1):'Cell'}</${isH?'th':'td'}>`;
                 }
-                table.appendChild(tr);
+                tableHTML += '</tr>';
             }
+            tableHTML += '</table>';
 
-            range.deleteContents();
-            range.insertNode(table);
-
-            const p = document.createElement('p');
-            p.innerHTML = '<br>';
-            table.after(p);
-
-            const newRange = document.createRange();
-            newRange.setStart(p, 0); newRange.collapse(true);
-            window.getSelection().removeAllRanges();
-            window.getSelection().addRange(newRange);
+            const sel = window.getSelection();
+            if (sel && sel.rangeCount > 0 && canvas.contains(sel.anchorNode)) {
+                const range = sel.getRangeAt(0);
+                range.deleteContents();
+                const div = document.createElement('div');
+                div.innerHTML = tableHTML + '<p><br></p>';
+                const frag = document.createDocumentFragment();
+                let child;
+                while ((child = div.firstChild)) frag.appendChild(child);
+                range.insertNode(frag);
+                range.collapse(false);
+                sel.removeAllRanges();
+                sel.addRange(range);
+            } else {
+                canvas.innerHTML += tableHTML + '<p><br></p>';
+            }
 
             this.onSlideInput();
         },
@@ -747,62 +856,89 @@ function reportBuilder() {
             this.onSlideInput();
         },
 
-        // ── Widgets (DOM API) ──
+        // ── Widgets ──
         insertWidget(type) {
-            const id = 'w_' + Date.now();
-            const labels = { kpi:'KPI Dashboard', chart:'Task Status Chart', gantt:'Gantt Timeline',
-                             milestone:'Milestones', team:'Team Members', blocker:'Active Blockers' };
+            if (!this.currentSlide) return;
+            const dims = {
+                kpi:       { w:320, h:160 },
+                chart:     { w:380, h:250 },
+                gantt:     { w:650, h:220 },
+                milestone: { w:300, h:200 },
+                team:      { w:360, h:220 },
+                blocker:   { w:320, h:180 },
+            };
+            const d = dims[type] || { w:300, h:200 };
+            const widget = {
+                id: 'w_' + Date.now(),
+                type,
+                x: 40, y: 40,
+                w: d.w, h: d.h,
+                config: {},
+                data_mode: 'live',
+                snapshot_data: null,
+            };
+            this.currentSlide.widgets.push(widget);
+            this.selectedWidget = widget;
+            this.isDirty = true;
+            // Wait for Alpine.js x-for to render the new widget DOM node
+            this.$nextTick(() => setTimeout(() => this.renderWidget(widget.id, type), 30));
+        },
 
-            this.restoreSelection();
-            const range = this._getInsertRange();
+        selectWidget(widget) {
+            this.selectedWidget = widget;
+            this.renderWidget(widget.id, widget.type);
+        },
 
-            // Widget wrapper
-            const wrapper = document.createElement('div');
-            wrapper.className = 'report-widget';
-            wrapper.dataset.widgetType = type;
-            wrapper.dataset.widgetId = id;
-            wrapper.setAttribute('contenteditable', 'false');
-            wrapper.setAttribute('onclick', 'event.stopPropagation();window.__selectWidget(this)');
+        deleteWidget(widget) {
+            if (!this.currentSlide) return;
+            if (this._chartInstances[widget.id]) {
+                try { this._chartInstances[widget.id].destroy(); } catch(e) {}
+                delete this._chartInstances[widget.id];
+            }
+            this.currentSlide.widgets = this.currentSlide.widgets.filter(w => w.id !== widget.id);
+            this.selectedWidget = null;
+            this.isDirty = true;
+        },
 
-            // Widget toolbar
-            const toolbar = document.createElement('div');
-            toolbar.className = 'widget-toolbar';
-            toolbar.innerHTML =
-                `<span style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px">${type}</span>` +
-                `<button class="widget-tb-btn" onclick="event.stopPropagation();window.__refreshWidget(this)">↻ Refresh</button>` +
-                `<button class="widget-tb-btn widget-tb-del" onclick="event.stopPropagation();window.__deleteWidget(this)">✕ Delete</button>`;
-            wrapper.appendChild(toolbar);
+        startWidgetDrag(event, widget) {
+            const startX = event.clientX - widget.x;
+            const startY = event.clientY - widget.y;
+            const onMove = (e) => {
+                widget.x = Math.max(0, e.clientX - startX);
+                widget.y = Math.max(0, e.clientY - startY);
+                this.isDirty = true;
+            };
+            const onUp = () => {
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+            };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        },
 
-            // Widget content
-            const content = document.createElement('div');
-            content.id = 'wc-' + id;
-            content.style.cssText = 'padding:12px;min-height:80px';
-            content.innerHTML = `<p style="color:#9ca3af;text-align:center;padding:20px;font-size:13px">⏳ Loading ${labels[type]||type}...</p>`;
-            wrapper.appendChild(content);
-
-            range.deleteContents();
-            range.insertNode(wrapper);
-
-            const p = document.createElement('p');
-            p.innerHTML = '<br>';
-            wrapper.after(p);
-
-            const newRange = document.createRange();
-            newRange.setStart(p, 0); newRange.collapse(true);
-            window.getSelection().removeAllRanges();
-            window.getSelection().addRange(newRange);
-
-            this.onSlideInput();
-            this.$nextTick(() => this.renderWidget(id, type));
+        startWidgetResize(event, widget) {
+            const startX = event.clientX;
+            const startY = event.clientY;
+            const startW = widget.w;
+            const startH = widget.h;
+            const onMove = (e) => {
+                widget.w = Math.max(100, startW + e.clientX - startX);
+                widget.h = Math.max(60,  startH + e.clientY - startY);
+                this.isDirty = true;
+            };
+            const onUp = () => {
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+                this.$nextTick(() => this.renderWidget(widget.id, widget.type));
+            };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
         },
 
         // ── Widget Rendering ──
         renderWidgets() {
-            const c = this.$refs.slideCanvas;
-            if (!c) return;
-            c.querySelectorAll('.report-widget[data-widget-id]').forEach(w => {
-                this.renderWidget(w.dataset.widgetId, w.dataset.widgetType);
-            });
+            if (!this.currentSlide) return;
+            this.currentSlide.widgets.forEach(w => this.renderWidget(w.id, w.type));
         },
 
         renderWidget(id, type) {
@@ -813,18 +949,25 @@ function reportBuilder() {
                 delete this._chartInstances[id];
             }
             switch (type) {
-                case 'kpi':       el.innerHTML = this._renderKPI(); break;
+                case 'kpi':
+                    el.innerHTML = this._renderKPI();
+                    break;
                 case 'chart':
-                    el.innerHTML = `<div style="padding:12px"><canvas id="chart-${id}" width="420" height="200"></canvas></div>`;
+                    el.innerHTML = `<div style="padding:8px"><canvas id="chart-${id}" width="340" height="180"></canvas></div>`;
                     this.$nextTick(() => this._initChart(id));
                     break;
                 case 'gantt':
-                    el.style.minHeight = '220px';
-                    el.innerHTML = this._renderGantt(el.parentElement?.offsetWidth || 700);
+                    el.innerHTML = this._renderGantt(el.parentElement?.offsetWidth || 600);
                     break;
-                case 'milestone': el.innerHTML = this._renderMilestones(); break;
-                case 'team':      el.innerHTML = this._renderTeam(); break;
-                case 'blocker':   el.innerHTML = this._renderBlockers(); break;
+                case 'milestone':
+                    el.innerHTML = this._renderMilestones();
+                    break;
+                case 'team':
+                    el.innerHTML = this._renderTeam();
+                    break;
+                case 'blocker':
+                    el.innerHTML = this._renderBlockers();
+                    break;
             }
         },
 
@@ -838,11 +981,11 @@ function reportBuilder() {
                 { label:'Progress',    value:k.progress_pct+'%', color:'#0891b2', bg:'#ecfeff' },
                 { label:'Members',     value:k.members,          color:'#7c3aed', bg:'#faf5ff' },
             ];
-            return `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px">` +
+            return `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:8px">` +
                 cards.map(c =>
-                    `<div style="background:${c.bg};border-radius:8px;padding:12px;text-align:center;border:1px solid ${c.color}22">
-                        <div style="font-size:1.8em;font-weight:800;color:${c.color};line-height:1">${c.value}</div>
-                        <div style="font-size:10px;color:#6b7280;margin-top:4px">${c.label}</div>
+                    `<div style="background:${c.bg};border-radius:6px;padding:8px;text-align:center;border:1px solid ${c.color}22">
+                        <div style="font-size:1.5em;font-weight:800;color:${c.color};line-height:1">${c.value}</div>
+                        <div style="font-size:9px;color:#6b7280;margin-top:3px">${c.label}</div>
                     </div>`
                 ).join('') + '</div>';
         },
@@ -869,7 +1012,7 @@ function reportBuilder() {
             const all = tasks.flatMap(t => [new Date(t.start_date), new Date(t.due_date)]);
             const minD = new Date(Math.min(...all)), maxD = new Date(Math.max(...all));
             const totalDays = Math.max(1, (maxD - minD) / 86400000 + 1);
-            const lW = 130, cW = Math.max(300, W - lW - 4), rH = 22, hH = 26;
+            const lW = 120, cW = Math.max(200, W - lW - 20), rH = 22, hH = 26;
             const H = hH + tasks.length * rH + 2;
             const sc = { done:'#16a34a', in_progress:'#4f46e5', review:'#f59e0b', todo:'#94a3b8', cancelled:'#ef4444' };
             let s = `<svg width="${lW+cW}" height="${H}" xmlns="http://www.w3.org/2000/svg" style="font-family:sans-serif;display:block">`;
@@ -919,7 +1062,7 @@ function reportBuilder() {
         _renderTeam() {
             const m = PROJECT_DATA.members;
             if (!m.length) return '<div style="padding:16px;text-align:center;color:#9ca3af;font-size:12px">No members</div>';
-            return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;padding:12px">` +
+            return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;padding:8px">` +
                 m.map(mb =>
                     `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0">
                         <div style="width:28px;height:28px;border-radius:50%;background:#4f46e5;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">${mb.name.charAt(0).toUpperCase()}</div>
@@ -952,11 +1095,13 @@ function reportBuilder() {
             this.saveError = '';
             try {
                 const slides = this.slides.map((s, i) => ({
-                    id: s.id, slide_order: i,
-                    bg_color: s.bg_color || '#ffffff',
-                    notes: s.notes || '',
+                    id:           s.id,
+                    slide_order:  i,
+                    bg_color:     s.bg_color || '#ffffff',
+                    notes:        s.notes || '',
                     html_content: s.html_content || '',
-                    elements: [],
+                    widgets:      s.widgets || [],
+                    elements:     [],
                 }));
                 const res = await fetch(SAVE_URL, {
                     method: 'PUT',
@@ -965,7 +1110,12 @@ function reportBuilder() {
                 });
                 const data = await res.json();
                 if (data.success) {
-                    this.slides = data.slides.map(s => ({ ...s }));
+                    this.slides = data.slides.map(s => ({
+                        ...s,
+                        widgets: Array.isArray(s.widgets_data)
+                            ? s.widgets_data.map(w => ({ config:{}, data_mode:'live', ...w }))
+                            : [],
+                    }));
                     this.isDirty = false;
                     this.$nextTick(() => this.loadSlideToCanvas());
                     this._showToast();

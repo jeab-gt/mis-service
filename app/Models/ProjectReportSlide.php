@@ -6,7 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class ProjectReportSlide extends Model
 {
-    protected $fillable = ['report_id', 'slide_order', 'bg_color', 'notes', 'html_content'];
+    protected $fillable = ['report_id', 'slide_order', 'bg_color', 'notes', 'html_content', 'widgets_data'];
+
+    protected $casts = ['widgets_data' => 'array'];
 
     public function report()
     {

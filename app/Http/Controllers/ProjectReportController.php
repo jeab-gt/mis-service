@@ -119,7 +119,7 @@ class ProjectReportController extends Controller
 
     public function builder(Project $project, ProjectReport $report)
     {
-        $report->load(['slides.elements', 'attachments']);
+        $report->load(['slides', 'attachments']);
         $kpi         = $this->buildKpi($project);
         $chartData   = $this->buildChartData($project);
         $projectData = $this->buildProjectData($project);
@@ -137,6 +137,7 @@ class ProjectReportController extends Controller
             'slides.*.bg_color'           => 'nullable|string|max:20',
             'slides.*.notes'              => 'nullable|string',
             'slides.*.html_content'       => 'nullable|string',
+            'slides.*.widgets'            => 'nullable|array',
             'slides.*.elements'           => 'nullable|array',
             'slides.*.elements.*.id'      => 'nullable',
             'slides.*.elements.*.type'    => 'nullable|in:text,image,chart,kpi,shape,gantt_mini,milestone_list,team_list,blocker_list,table,divider',
@@ -167,6 +168,7 @@ class ProjectReportController extends Controller
                         'bg_color'     => $slideData['bg_color'] ?? '#ffffff',
                         'notes'        => $slideData['notes'] ?? null,
                         'html_content' => $slideData['html_content'] ?? null,
+                        'widgets_data' => $slideData['widgets'] ?? null,
                     ]);
                 } else {
                     $slide = ProjectReportSlide::find($slideData['id']);
@@ -176,6 +178,7 @@ class ProjectReportController extends Controller
                         'bg_color'     => $slideData['bg_color'] ?? '#ffffff',
                         'notes'        => $slideData['notes'] ?? null,
                         'html_content' => $slideData['html_content'] ?? null,
+                        'widgets_data' => $slideData['widgets'] ?? null,
                     ]);
                 }
                 $savedSlideIds[] = $slide->id;
@@ -228,6 +231,7 @@ class ProjectReportController extends Controller
                     'bg_color'     => $s->bg_color,
                     'notes'        => $s->notes ?? '',
                     'html_content' => $s->html_content ?? '',
+                    'widgets_data' => $s->widgets_data ?? [],
                     'elements'     => [],
                 ])->values(),
             ]);
