@@ -45,7 +45,7 @@
 .slide-canvas ul, .slide-canvas ol { padding-left:28px; margin:6px 0; }
 .slide-canvas li { margin:2px 0; }
 .slide-canvas table { width:100%; border-collapse:collapse; margin:10px 0; }
-.slide-canvas td, .slide-canvas th { border:1px solid #d1d5db; padding:8px 12px; text-align:left; }
+.slide-canvas td, .slide-canvas th { border:1px solid #d1d5db; padding:8px 12px; text-align:left; min-width:60px; }
 .slide-canvas th { background:#f3f4f6; font-weight:600; }
 .slide-canvas hr { border:none; border-top:2px solid #e5e7eb; margin:18px 0; }
 .slide-canvas img { max-width:100%; height:auto; border-radius:4px; display:block; margin:6px 0; }
@@ -53,11 +53,19 @@
 .slide-canvas a { color:#6366f1; text-decoration:underline; }
 
 /* ── Widget ── */
-.report-widget { display:block; border:2px solid #e0e7ff; border-radius:8px; margin:10px 0; overflow:hidden;
-    background:#f8fafc; position:relative; }
-.report-widget:hover { border-color:#6366f1; }
-.report-widget::before { content:attr(data-widget-type); position:absolute; top:4px; right:6px;
-    font-size:9px; color:#9ca3af; text-transform:uppercase; letter-spacing:.5px; pointer-events:none; }
+.report-widget { display:block; border:2px dashed #6366f1; border-radius:8px; margin:10px 0;
+    background:#fff; position:relative; cursor:pointer; }
+.report-widget.selected { border-color:#2563eb; border-style:solid; }
+.report-widget:hover { border-color:#4f46e5; }
+.widget-toolbar { display:none; position:absolute; top:-36px; left:0; z-index:200;
+    background:#1f2937; border-radius:6px; padding:4px 8px; align-items:center; gap:6px;
+    white-space:nowrap; box-shadow:0 2px 10px rgba(0,0,0,.5); }
+.widget-toolbar.show { display:flex !important; }
+.widget-tb-btn { background:#374151; border:none; color:#e5e7eb; padding:3px 10px;
+    border-radius:4px; font-size:11px; cursor:pointer; }
+.widget-tb-btn:hover { background:#4b5563; }
+.widget-tb-del { background:#dc2626; }
+.widget-tb-del:hover { background:#b91c1c; }
 
 /* ── Ribbon Buttons ── */
 .rb-btn { display:inline-flex; align-items:center; gap:2px; padding:3px 7px; border-radius:5px;
@@ -104,7 +112,6 @@
 
         <div class="rb-sep"></div>
 
-        {{-- Heading / Block --}}
         <select class="rb-select" @change="execCmd('formatBlock',$event.target.value);$event.target.value=''" title="Paragraph style">
             <option value="">Style</option>
             <option value="p">Normal</option>
@@ -118,13 +125,11 @@
 
         <div class="rb-sep"></div>
 
-        {{-- Text formatting --}}
         <button class="rb-btn font-bold" @click="execCmd('bold')" title="Bold (Ctrl+B)">B</button>
-        <button class="rb-btn italic" @click="execCmd('italic')" title="Italic (Ctrl+I)">I</button>
+        <button class="rb-btn italic"    @click="execCmd('italic')" title="Italic (Ctrl+I)">I</button>
         <button class="rb-btn underline" @click="execCmd('underline')" title="Underline (Ctrl+U)">U</button>
-        <button class="rb-btn" @click="execCmd('strikeThrough')" title="Strikethrough" style="text-decoration:line-through">S</button>
+        <button class="rb-btn" @click="execCmd('strikeThrough')" style="text-decoration:line-through" title="Strikethrough">S</button>
 
-        {{-- Color --}}
         <div class="relative" title="Text Color">
             <button class="rb-btn">A <span style="display:inline-block;width:10px;height:3px;background:#ef4444;margin-bottom:1px"></span></button>
             <input type="color" value="#ef4444" @input="execCmd('foreColor',$event.target.value)"
@@ -138,30 +143,28 @@
 
         <div class="rb-sep"></div>
 
-        {{-- Align --}}
-        <button class="rb-btn" @click="execCmd('justifyLeft')" title="Align Left"><i class="ti ti-align-left"></i></button>
+        <button class="rb-btn" @click="execCmd('justifyLeft')"   title="Align Left"><i class="ti ti-align-left"></i></button>
         <button class="rb-btn" @click="execCmd('justifyCenter')" title="Align Center"><i class="ti ti-align-center"></i></button>
-        <button class="rb-btn" @click="execCmd('justifyRight')" title="Align Right"><i class="ti ti-align-right"></i></button>
-
-        {{-- Lists --}}
+        <button class="rb-btn" @click="execCmd('justifyRight')"  title="Align Right"><i class="ti ti-align-right"></i></button>
         <button class="rb-btn" @click="execCmd('insertUnorderedList')" title="Bullet List"><i class="ti ti-list"></i></button>
-        <button class="rb-btn" @click="execCmd('insertOrderedList')" title="Numbered List"><i class="ti ti-list-numbers"></i></button>
+        <button class="rb-btn" @click="execCmd('insertOrderedList')"   title="Numbered List"><i class="ti ti-list-numbers"></i></button>
 
         <div class="rb-sep"></div>
 
-        {{-- Insert --}}
         <button class="rb-btn" @click="insertImageFromFile()" title="Insert Image"><i class="ti ti-photo"></i> Image</button>
         <button class="rb-btn" @click="insertLink()" title="Insert Link"><i class="ti ti-link"></i></button>
 
         {{-- Table Picker --}}
         <div class="relative" x-data="{ open:false, hr:1, hc:1 }">
-            <button class="rb-btn" @click="open=!open" title="Insert Table"><i class="ti ti-table"></i> Table</button>
+            <button class="rb-btn" @mousedown.prevent @click="open=!open" title="Insert Table">
+                <i class="ti ti-table"></i> Table
+            </button>
             <div x-show="open" @click.outside="open=false" x-cloak
                  class="absolute top-11 left-0 bg-white border border-gray-200 rounded-xl shadow-xl p-3 z-50 w-40">
                 <p class="text-xs text-gray-400 text-center mb-2" x-text="hr+'×'+hc"></p>
                 <div class="grid gap-0.5" style="grid-template-columns:repeat(6,1fr)">
                     <template x-for="cell in tableCells" :key="cell.key">
-                        <div @click="insertTable(cell.r,cell.c);open=false"
+                        <div @mousedown.prevent @click="insertTable(cell.r,cell.c);open=false"
                              @mouseenter="hr=cell.r;hc=cell.c"
                              :class="cell.r<=hr&&cell.c<=hc?'on':''"
                              class="tp-cell"></div>
@@ -170,22 +173,22 @@
             </div>
         </div>
 
-        <button class="rb-btn" @click="insertDivider()" title="Horizontal Divider"><i class="ti ti-minus"></i></button>
+        <button class="rb-btn" @mousedown.prevent @click="insertDivider()" title="Horizontal Divider">
+            <i class="ti ti-minus"></i>
+        </button>
 
         <div class="rb-sep"></div>
 
-        {{-- Widgets --}}
         <span class="text-xs text-gray-600 mr-0.5">Widgets:</span>
-        <button class="rb-btn" @click="insertWidget('kpi')"><i class="ti ti-chart-bar"></i> KPI</button>
-        <button class="rb-btn" @click="insertWidget('chart')"><i class="ti ti-chart-donut"></i> Chart</button>
-        <button class="rb-btn" @click="insertWidget('gantt')"><i class="ti ti-calendar-stats"></i> Gantt</button>
-        <button class="rb-btn" @click="insertWidget('milestone')"><i class="ti ti-flag"></i> Milestone</button>
-        <button class="rb-btn" @click="insertWidget('team')"><i class="ti ti-users"></i> Team</button>
-        <button class="rb-btn" @click="insertWidget('blocker')"><i class="ti ti-alert-triangle"></i> Blocker</button>
+        <button class="rb-btn" @mousedown.prevent @click="insertWidget('kpi')"><i class="ti ti-chart-bar"></i> KPI</button>
+        <button class="rb-btn" @mousedown.prevent @click="insertWidget('chart')"><i class="ti ti-chart-donut"></i> Chart</button>
+        <button class="rb-btn" @mousedown.prevent @click="insertWidget('gantt')"><i class="ti ti-calendar-stats"></i> Gantt</button>
+        <button class="rb-btn" @mousedown.prevent @click="insertWidget('milestone')"><i class="ti ti-flag"></i> Milestone</button>
+        <button class="rb-btn" @mousedown.prevent @click="insertWidget('team')"><i class="ti ti-users"></i> Team</button>
+        <button class="rb-btn" @mousedown.prevent @click="insertWidget('blocker')"><i class="ti ti-alert-triangle"></i> Blocker</button>
 
         <div class="flex-1"></div>
 
-        {{-- Layout --}}
         <select class="rb-select mr-1" x-model="slideLayout" title="Canvas Size">
             <option value="a4">A4 Portrait</option>
             <option value="slide">16:9 Slide</option>
@@ -196,7 +199,7 @@
 
         <button class="rb-btn" @click="save()" :disabled="isSaving"><i class="ti ti-device-floppy"></i> Save</button>
         <a href="{{ route('projects.reports.preview', [$project, $report]) }}" target="_blank" class="rb-btn"><i class="ti ti-eye"></i> Preview</a>
-        <a href="{{ route('projects.reports.export', [$project, $report]) }}" target="_blank" class="rb-btn"><i class="ti ti-printer"></i> Export</a>
+        <a href="{{ route('projects.reports.export',  [$project, $report]) }}" target="_blank" class="rb-btn"><i class="ti ti-printer"></i> Export</a>
 
         <div class="relative" x-data="{ open:false }">
             <button class="rb-btn" @click="open=!open"><i class="ti ti-dots-vertical"></i></button>
@@ -216,33 +219,28 @@
         {{-- Slide Panel --}}
         <div class="slide-panel">
             <div class="text-xs text-gray-500 mb-2 font-medium">Slides</div>
-
             <template x-for="(slide, idx) in slides" :key="slide.id">
                 <div class="relative group">
                     <div class="slide-thumb" :class="idx===currentSlideIndex?'active':''"
                          @click="switchSlide(idx)">
                         <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none;background:#fff">
                             <div style="transform:scale(0.165);transform-origin:top left;width:794px;padding:40px;font-family:sans-serif;font-size:14px;line-height:1.6;color:#1a1a1a"
-                                 x-html="slide.html_content||'<p style=\'color:#ccc;font-size:12px\'>Empty</p>'">
-                            </div>
+                                 x-html="slide.html_content||'<p style=\'color:#ccc;font-size:12px\'>Empty</p>'"></div>
                         </div>
                         <div class="slide-thumb-num" x-text="idx+1"></div>
                     </div>
                     <div class="hidden group-hover:flex absolute top-1 right-1 gap-1 z-10">
                         <button @click.stop="duplicateSlide(idx)"
-                                class="w-5 h-5 rounded bg-gray-700 text-gray-300 hover:bg-gray-600 flex items-center justify-center"
-                                title="Duplicate">
+                                class="w-5 h-5 rounded bg-gray-700 text-gray-300 hover:bg-gray-600 flex items-center justify-center" title="Duplicate">
                             <i class="ti ti-copy" style="font-size:9px"></i>
                         </button>
                         <button @click.stop="deleteSlide(idx)" x-show="slides.length>1"
-                                class="w-5 h-5 rounded bg-red-800 text-red-300 hover:bg-red-700 flex items-center justify-center"
-                                title="Delete">
+                                class="w-5 h-5 rounded bg-red-800 text-red-300 hover:bg-red-700 flex items-center justify-center" title="Delete">
                             <i class="ti ti-trash" style="font-size:9px"></i>
                         </button>
                     </div>
                 </div>
             </template>
-
             <button @click="addSlide()"
                     class="w-full mt-1 py-2 rounded-lg border border-dashed border-gray-600 text-gray-500 hover:border-indigo-500 hover:text-indigo-400 text-xs transition-colors">
                 + Add Slide
@@ -257,10 +255,11 @@
                      spellcheck="false"
                      x-ref="slideCanvas"
                      @input="onSlideInput()"
+                     @blur="saveSelection()"
                      @mouseup="onSelectionChange()"
                      @keyup="onSelectionChange()"
                      @keydown="onCanvasKeydown($event)"
-                     @click.stop="onSelectionChange()"
+                     @click.stop="onSelectionChange();deselectAllWidgets()"
                      @dragover.prevent
                      @drop.prevent="handleDrop($event)"
                      :style="canvasStyle">
@@ -274,57 +273,35 @@
          class="fixed z-[200] bg-gray-900 rounded-lg shadow-2xl flex items-center gap-0.5 px-2 py-1.5 border border-gray-700"
          :style="`top:${toolbarY}px;left:${toolbarX}px`"
          @mousedown.prevent>
-
-        <button @click="execCmd('bold')" class="ftb-btn font-bold" title="Bold">B</button>
-        <button @click="execCmd('italic')" class="ftb-btn italic" title="Italic">I</button>
-        <button @click="execCmd('underline')" class="ftb-btn underline" title="Underline">U</button>
-        <button @click="execCmd('strikeThrough')" class="ftb-btn" title="Strikethrough" style="text-decoration:line-through">S</button>
-
+        <button @click="execCmd('bold')"          class="ftb-btn font-bold" title="Bold">B</button>
+        <button @click="execCmd('italic')"        class="ftb-btn italic"    title="Italic">I</button>
+        <button @click="execCmd('underline')"     class="ftb-btn underline" title="Underline">U</button>
+        <button @click="execCmd('strikeThrough')" class="ftb-btn" style="text-decoration:line-through" title="Strike">S</button>
         <div class="w-px h-4 bg-gray-700 mx-0.5"></div>
-
-        <select @change="execCmd('fontSize',$event.target.value)" class="ftb-sel" title="Font Size">
-            <option value="1">8</option>
-            <option value="2">10</option>
-            <option value="3" selected>12</option>
-            <option value="4">14</option>
-            <option value="5">18</option>
-            <option value="6">24</option>
-            <option value="7">36</option>
+        <select @change="execCmd('fontSize',$event.target.value)" class="ftb-sel" title="Size">
+            <option value="1">8</option><option value="2">10</option><option value="3" selected>12</option>
+            <option value="4">14</option><option value="5">18</option><option value="6">24</option><option value="7">36</option>
         </select>
-
         <select @change="execCmd('formatBlock',$event.target.value)" class="ftb-sel ml-0.5" title="Style">
-            <option value="p">Normal</option>
-            <option value="h1">H1</option>
-            <option value="h2">H2</option>
-            <option value="h3">H3</option>
+            <option value="p">Normal</option><option value="h1">H1</option><option value="h2">H2</option><option value="h3">H3</option>
         </select>
-
         <div class="w-px h-4 bg-gray-700 mx-0.5"></div>
-
         <div class="relative" title="Text Color">
             <button class="ftb-btn text-xs">A</button>
-            <input type="color" @input="execCmd('foreColor',$event.target.value)"
-                   class="absolute inset-0 opacity-0 w-full h-full cursor-pointer">
+            <input type="color" @input="execCmd('foreColor',$event.target.value)" class="absolute inset-0 opacity-0 w-full h-full cursor-pointer">
         </div>
         <div class="relative" title="Highlight">
             <button class="ftb-btn text-xs" style="background:#fef08a;color:#1a1a1a;border-radius:3px;width:auto;padding:0 4px">H</button>
-            <input type="color" @input="execCmd('backColor',$event.target.value)"
-                   class="absolute inset-0 opacity-0 w-full h-full cursor-pointer">
+            <input type="color" @input="execCmd('backColor',$event.target.value)" class="absolute inset-0 opacity-0 w-full h-full cursor-pointer">
         </div>
-
         <div class="w-px h-4 bg-gray-700 mx-0.5"></div>
-
-        <button @click="execCmd('justifyLeft')" class="ftb-btn" title="Left"><i class="ti ti-align-left"></i></button>
+        <button @click="execCmd('justifyLeft')"   class="ftb-btn" title="Left"><i class="ti ti-align-left"></i></button>
         <button @click="execCmd('justifyCenter')" class="ftb-btn" title="Center"><i class="ti ti-align-center"></i></button>
-        <button @click="execCmd('justifyRight')" class="ftb-btn" title="Right"><i class="ti ti-align-right"></i></button>
-
+        <button @click="execCmd('justifyRight')"  class="ftb-btn" title="Right"><i class="ti ti-align-right"></i></button>
         <div class="w-px h-4 bg-gray-700 mx-0.5"></div>
-
         <button @click="execCmd('insertUnorderedList')" class="ftb-btn" title="Bullet"><i class="ti ti-list"></i></button>
-        <button @click="execCmd('insertOrderedList')" class="ftb-btn" title="Numbered"><i class="ti ti-list-numbers"></i></button>
-
+        <button @click="execCmd('insertOrderedList')"   class="ftb-btn" title="Numbered"><i class="ti ti-list-numbers"></i></button>
         <div class="w-px h-4 bg-gray-700 mx-0.5"></div>
-
         <button @click="insertLink()" class="ftb-btn" title="Link"><i class="ti ti-link"></i></button>
     </div>
 
@@ -345,7 +322,7 @@
         </div>
     </div>
 
-</div>{{-- /report-builder --}}
+</div>
 @endsection
 
 @push('scripts')
@@ -372,6 +349,53 @@ const PROJECT_DATA = @json($projectData);
 const SAVE_URL     = '{{ route('projects.reports.save', [$project, $report]) }}';
 const TEMPLATE_URL = '{{ route('projects.reports.save-as-template', [$project, $report]) }}';
 
+/* ── Global widget helpers (available to onclick attributes in saved HTML) ── */
+window.__selectWidget = function(el) {
+    document.querySelectorAll('.report-widget').forEach(w => {
+        w.classList.remove('selected');
+        const tb = w.querySelector('.widget-toolbar');
+        if (tb) tb.classList.remove('show');
+    });
+    el.classList.add('selected');
+    const tb = el.querySelector('.widget-toolbar');
+    if (tb) tb.classList.add('show');
+};
+
+window.__deleteWidget = function(btn) {
+    const widget = btn.closest('.report-widget');
+    if (!widget) return;
+    if (confirm('Delete this widget?')) {
+        const next = widget.nextElementSibling;
+        widget.remove();
+        if (next) {
+            const range = document.createRange();
+            range.setStart(next, 0);
+            range.collapse(true);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+        }
+        window.__reportBuilder && window.__reportBuilder.onSlideInput();
+    }
+};
+
+window.__refreshWidget = function(btn) {
+    const widget = btn.closest('.report-widget');
+    if (!widget || !window.__reportBuilder) return;
+    window.__reportBuilder.renderWidget(widget.dataset.widgetId, widget.dataset.widgetType);
+};
+
+/* ── Click outside → deselect widgets ── */
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.report-widget')) {
+        document.querySelectorAll('.report-widget').forEach(w => {
+            w.classList.remove('selected');
+            const tb = w.querySelector('.widget-toolbar');
+            if (tb) tb.classList.remove('show');
+        });
+    }
+});
+
 function reportBuilder() {
     return {
         slides: [],
@@ -385,22 +409,23 @@ function reportBuilder() {
         showTemplateSave: false,
         templateName: '',
         _chartInstances: {},
+        _savedRange: null,
         tableCells: Array.from({length:36}, (_,i) => ({ r:Math.floor(i/6)+1, c:(i%6)+1, key:i })),
 
         get canvasStyle() {
             const base = { background:'#fff', outline:'none' };
-            const layouts = {
-                a4:    { ...base, width:'794px', minHeight:'1123px', padding:'60px 72px' },
-                slide: { ...base, width:'960px', height:'540px', padding:'48px 56px', overflow:'hidden' },
-                wide:  { ...base, width:'1122px', minHeight:'794px', padding:'56px 72px' },
-            };
-            return layouts[this.slideLayout] || layouts.a4;
+            return {
+                a4:    { ...base, width:'794px',  minHeight:'1123px', padding:'60px 72px' },
+                slide: { ...base, width:'960px',  height:'540px',     padding:'48px 56px', overflow:'hidden' },
+                wide:  { ...base, width:'1122px', minHeight:'794px',  padding:'56px 72px' },
+            }[this.slideLayout] || { ...base, width:'794px', minHeight:'1123px', padding:'60px 72px' };
         },
 
         get currentSlide() { return this.slides[this.currentSlideIndex] || null; },
 
         // ── Init ──
         init() {
+            window.__reportBuilder = this;
             this.slides = (REPORT_DATA.slides || []).map(s => ({ ...s }));
             if (!this.slides.length) this.addSlide();
             this.$nextTick(() => this.loadSlideToCanvas());
@@ -427,20 +452,66 @@ function reportBuilder() {
                 c.focus();
                 const r = document.createRange();
                 r.setStart(c, 0); r.collapse(true);
-                const s = window.getSelection();
-                s?.removeAllRanges(); s?.addRange(r);
+                window.getSelection()?.removeAllRanges();
+                window.getSelection()?.addRange(r);
             }
             this.$nextTick(() => this.renderWidgets());
         },
 
         saveCurrentCanvas() {
             const c = this.$refs.slideCanvas;
-            if (c && this.currentSlide) this.currentSlide.html_content = c.innerHTML;
+            if (!c || !this.currentSlide) return;
+            // Hide all widget toolbars before saving
+            c.querySelectorAll('.widget-toolbar').forEach(tb => tb.classList.remove('show'));
+            c.querySelectorAll('.report-widget').forEach(w => w.classList.remove('selected'));
+            this.currentSlide.html_content = c.innerHTML;
         },
 
         onSlideInput() {
             const c = this.$refs.slideCanvas;
-            if (c && this.currentSlide) { this.currentSlide.html_content = c.innerHTML; this.isDirty = true; }
+            if (c && this.currentSlide) {
+                this.currentSlide.html_content = c.innerHTML;
+                this.isDirty = true;
+            }
+        },
+
+        // ── Selection save/restore ──
+        saveSelection() {
+            const sel = window.getSelection();
+            if (sel && sel.rangeCount > 0) {
+                const canvas = this.$refs.slideCanvas;
+                const range = sel.getRangeAt(0);
+                if (canvas && canvas.contains(range.commonAncestorContainer)) {
+                    this._savedRange = range.cloneRange();
+                }
+            }
+        },
+
+        restoreSelection() {
+            const canvas = this.$refs.slideCanvas;
+            if (!canvas) return;
+            canvas.focus();
+            if (this._savedRange) {
+                try {
+                    const sel = window.getSelection();
+                    sel.removeAllRanges();
+                    sel.addRange(this._savedRange);
+                } catch(e) {
+                    // Range may be stale; place cursor at end
+                    this._placeCaretAtEnd(canvas);
+                }
+            } else {
+                this._placeCaretAtEnd(canvas);
+            }
+        },
+
+        _placeCaretAtEnd(el) {
+            const range = document.createRange();
+            range.selectNodeContents(el);
+            range.collapse(false);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
         },
 
         // ── Slide management ──
@@ -449,16 +520,17 @@ function reportBuilder() {
             this.saveCurrentCanvas();
             this.currentSlideIndex = idx;
             this.showToolbar = false;
+            this._savedRange = null;
             this.$nextTick(() => this.loadSlideToCanvas());
         },
 
         addSlide() {
-            const slide = { id:'new_'+Date.now(), slide_order:this.slides.length,
-                            bg_color:'#ffffff', notes:'', html_content:'' };
-            this.slides.push(slide);
             this.saveCurrentCanvas();
+            const slide = { id:'new_'+Date.now(), slide_order:this.slides.length, bg_color:'#ffffff', notes:'', html_content:'' };
+            this.slides.push(slide);
             this.currentSlideIndex = this.slides.length - 1;
             this.isDirty = true;
+            this._savedRange = null;
             this.$nextTick(() => this.loadSlideToCanvas());
         },
 
@@ -466,8 +538,9 @@ function reportBuilder() {
             if (this.slides.length <= 1) return;
             this.slides.splice(idx, 1);
             if (this.currentSlideIndex >= this.slides.length) this.currentSlideIndex = this.slides.length - 1;
-            this.$nextTick(() => this.loadSlideToCanvas());
             this.isDirty = true;
+            this._savedRange = null;
+            this.$nextTick(() => this.loadSlideToCanvas());
         },
 
         duplicateSlide(idx) {
@@ -475,8 +548,16 @@ function reportBuilder() {
             const dup = { ...JSON.parse(JSON.stringify(this.slides[idx])), id:'new_'+Date.now() };
             this.slides.splice(idx+1, 0, dup);
             this.currentSlideIndex = idx + 1;
-            this.$nextTick(() => this.loadSlideToCanvas());
             this.isDirty = true;
+            this._savedRange = null;
+            this.$nextTick(() => this.loadSlideToCanvas());
+        },
+
+        deselectAllWidgets() {
+            document.querySelectorAll('.report-widget').forEach(w => {
+                w.classList.remove('selected');
+                w.querySelector('.widget-toolbar')?.classList.remove('show');
+            });
         },
 
         // ── Selection / Floating Toolbar ──
@@ -495,7 +576,6 @@ function reportBuilder() {
         },
 
         onCanvasKeydown(e) {
-            // Ctrl+S handled globally; allow Tab to insert spaces
             if (e.key === 'Tab') {
                 e.preventDefault();
                 document.execCommand('insertText', false, '    ');
@@ -513,6 +593,29 @@ function reportBuilder() {
             this.$refs.slideCanvas?.focus();
             const url = prompt('Enter URL:', 'https://');
             if (url?.trim()) { document.execCommand('createLink', false, url.trim()); this.onSlideInput(); }
+        },
+
+        // ── DOM-based range insertion helper ──
+        _getInsertRange() {
+            const canvas = this.$refs.slideCanvas;
+            const sel = window.getSelection();
+            if (sel && sel.rangeCount > 0 && canvas.contains(sel.anchorNode)) {
+                return sel.getRangeAt(0);
+            }
+            // Fallback: restore saved or place at end
+            if (this._savedRange) {
+                try {
+                    sel.removeAllRanges();
+                    sel.addRange(this._savedRange);
+                    return sel.getRangeAt(0);
+                } catch(e) {}
+            }
+            const range = document.createRange();
+            range.selectNodeContents(canvas);
+            range.collapse(false);
+            sel.removeAllRanges();
+            sel.addRange(range);
+            return sel.getRangeAt(0);
         },
 
         // ── Image ──
@@ -545,9 +648,20 @@ function reportBuilder() {
             const blob = await this.compressImage(file);
             const reader = new FileReader();
             reader.onload = e => {
-                this.$refs.slideCanvas?.focus();
-                document.execCommand('insertHTML', false,
-                    `<img src="${e.target.result}" style="max-width:100%;height:auto;border-radius:4px;display:block;margin:8px 0">`);
+                this.restoreSelection();
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.cssText = 'max-width:100%;height:auto;border-radius:4px;display:block;margin:8px 0';
+                const range = this._getInsertRange();
+                range.deleteContents();
+                range.insertNode(img);
+                const p = document.createElement('p');
+                p.innerHTML = '<br>';
+                img.after(p);
+                const newRange = document.createRange();
+                newRange.setStart(p, 0); newRange.collapse(true);
+                window.getSelection().removeAllRanges();
+                window.getSelection().addRange(newRange);
                 this.onSlideInput();
             };
             reader.readAsDataURL(blob);
@@ -558,44 +672,110 @@ function reportBuilder() {
             for (const f of files) await this.insertImageFile(f);
         },
 
-        // ── Insert Elements ──
+        // ── Insert Table (DOM API) ──
         insertTable(rows = 3, cols = 3) {
-            let h = '<table style="width:100%;border-collapse:collapse;margin:10px 0">';
+            this.restoreSelection();
+            const range = this._getInsertRange();
+
+            const table = document.createElement('table');
+            table.style.cssText = 'width:100%;border-collapse:collapse;margin:10px 0';
+
             for (let r = 0; r < rows; r++) {
-                h += '<tr>';
+                const tr = document.createElement('tr');
                 for (let c = 0; c < cols; c++) {
-                    const isH = r === 0;
-                    const tag = isH ? 'th' : 'td';
-                    h += `<${tag} style="border:1px solid #d1d5db;padding:8px 12px;text-align:left;${isH?'background:#f3f4f6;font-weight:600;':''}">${isH?'Col '+(c+1):''}</${tag}>`;
+                    const isHead = r === 0;
+                    const cell = document.createElement(isHead ? 'th' : 'td');
+                    cell.style.cssText = 'border:1px solid #d1d5db;padding:8px 12px;text-align:left;min-width:60px;' +
+                        (isHead ? 'background:#f3f4f6;font-weight:600;' : '');
+                    cell.innerHTML = isHead ? 'Header ' + (c + 1) : '';
+                    tr.appendChild(cell);
                 }
-                h += '</tr>';
+                table.appendChild(tr);
             }
-            h += '</table><p><br></p>';
-            this.$refs.slideCanvas?.focus();
-            document.execCommand('insertHTML', false, h);
+
+            range.deleteContents();
+            range.insertNode(table);
+
+            const p = document.createElement('p');
+            p.innerHTML = '<br>';
+            table.after(p);
+
+            const newRange = document.createRange();
+            newRange.setStart(p, 0); newRange.collapse(true);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(newRange);
+
             this.onSlideInput();
         },
 
+        // ── Insert Divider ──
         insertDivider() {
-            this.$refs.slideCanvas?.focus();
-            document.execCommand('insertHTML', false, '<hr style="border:none;border-top:2px solid #e5e7eb;margin:18px 0"><p><br></p>');
+            this.restoreSelection();
+            const range = this._getInsertRange();
+            const hr = document.createElement('hr');
+            hr.style.cssText = 'border:none;border-top:2px solid #e5e7eb;margin:18px 0';
+            range.deleteContents();
+            range.insertNode(hr);
+            const p = document.createElement('p');
+            p.innerHTML = '<br>';
+            hr.after(p);
+            const newRange = document.createRange();
+            newRange.setStart(p, 0); newRange.collapse(true);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(newRange);
             this.onSlideInput();
         },
 
-        // ── Widgets ──
+        // ── Widgets (DOM API) ──
         insertWidget(type) {
             const id = 'w_' + Date.now();
             const labels = { kpi:'KPI Dashboard', chart:'Task Status Chart', gantt:'Gantt Timeline',
                              milestone:'Milestones', team:'Team Members', blocker:'Active Blockers' };
-            const html = `<div class="report-widget" data-widget-type="${type}" data-widget-id="${id}" contenteditable="false">` +
-                `<div id="wc-${id}" style="min-height:80px;display:flex;align-items:center;justify-content:center;padding:12px">` +
-                `<span style="color:#9ca3af;font-size:12px">⏳ Loading ${labels[type]||type}...</span></div></div><p><br></p>`;
-            this.$refs.slideCanvas?.focus();
-            document.execCommand('insertHTML', false, html);
+
+            this.restoreSelection();
+            const range = this._getInsertRange();
+
+            // Widget wrapper
+            const wrapper = document.createElement('div');
+            wrapper.className = 'report-widget';
+            wrapper.dataset.widgetType = type;
+            wrapper.dataset.widgetId = id;
+            wrapper.setAttribute('contenteditable', 'false');
+            wrapper.setAttribute('onclick', 'event.stopPropagation();window.__selectWidget(this)');
+
+            // Widget toolbar
+            const toolbar = document.createElement('div');
+            toolbar.className = 'widget-toolbar';
+            toolbar.innerHTML =
+                `<span style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px">${type}</span>` +
+                `<button class="widget-tb-btn" onclick="event.stopPropagation();window.__refreshWidget(this)">↻ Refresh</button>` +
+                `<button class="widget-tb-btn widget-tb-del" onclick="event.stopPropagation();window.__deleteWidget(this)">✕ Delete</button>`;
+            wrapper.appendChild(toolbar);
+
+            // Widget content
+            const content = document.createElement('div');
+            content.id = 'wc-' + id;
+            content.style.cssText = 'padding:12px;min-height:80px';
+            content.innerHTML = `<p style="color:#9ca3af;text-align:center;padding:20px;font-size:13px">⏳ Loading ${labels[type]||type}...</p>`;
+            wrapper.appendChild(content);
+
+            range.deleteContents();
+            range.insertNode(wrapper);
+
+            const p = document.createElement('p');
+            p.innerHTML = '<br>';
+            wrapper.after(p);
+
+            const newRange = document.createRange();
+            newRange.setStart(p, 0); newRange.collapse(true);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(newRange);
+
             this.onSlideInput();
             this.$nextTick(() => this.renderWidget(id, type));
         },
 
+        // ── Widget Rendering ──
         renderWidgets() {
             const c = this.$refs.slideCanvas;
             if (!c) return;
@@ -607,7 +787,10 @@ function reportBuilder() {
         renderWidget(id, type) {
             const el = document.getElementById('wc-' + id);
             if (!el) return;
-            if (this._chartInstances[id]) { try { this._chartInstances[id].destroy(); } catch(e) {} delete this._chartInstances[id]; }
+            if (this._chartInstances[id]) {
+                try { this._chartInstances[id].destroy(); } catch(e) {}
+                delete this._chartInstances[id];
+            }
             switch (type) {
                 case 'kpi':       el.innerHTML = this._renderKPI(); break;
                 case 'chart':
@@ -627,31 +810,33 @@ function reportBuilder() {
         _renderKPI() {
             const k = PROJECT_KPI;
             const cards = [
-                { label:'Total Tasks',  value:k.total,          color:'#4f46e5', bg:'#f5f3ff' },
-                { label:'Done',         value:k.done,           color:'#16a34a', bg:'#f0fdf4' },
-                { label:'In Progress',  value:k.in_progress,    color:'#2563eb', bg:'#eff6ff' },
-                { label:'Overdue',      value:k.overdue,        color:'#dc2626', bg:'#fef2f2' },
-                { label:'Progress',     value:k.progress_pct+'%', color:'#0891b2', bg:'#ecfeff' },
-                { label:'Members',      value:k.members,        color:'#7c3aed', bg:'#faf5ff' },
+                { label:'Total Tasks', value:k.total,            color:'#4f46e5', bg:'#f5f3ff' },
+                { label:'Done',        value:k.done,             color:'#16a34a', bg:'#f0fdf4' },
+                { label:'In Progress', value:k.in_progress,      color:'#2563eb', bg:'#eff6ff' },
+                { label:'Overdue',     value:k.overdue,          color:'#dc2626', bg:'#fef2f2' },
+                { label:'Progress',    value:k.progress_pct+'%', color:'#0891b2', bg:'#ecfeff' },
+                { label:'Members',     value:k.members,          color:'#7c3aed', bg:'#faf5ff' },
             ];
-            return `<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;padding:12px">
-                ${cards.map(c=>`<div style="background:${c.bg};border-radius:8px;padding:10px;text-align:center;border:1px solid ${c.color}22">
-                    <div style="font-size:1.6em;font-weight:800;color:${c.color};line-height:1">${c.value}</div>
-                    <div style="font-size:9px;color:#6b7280;margin-top:3px">${c.label}</div>
-                </div>`).join('')}
-            </div>`;
+            return `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px">` +
+                cards.map(c =>
+                    `<div style="background:${c.bg};border-radius:8px;padding:12px;text-align:center;border:1px solid ${c.color}22">
+                        <div style="font-size:1.8em;font-weight:800;color:${c.color};line-height:1">${c.value}</div>
+                        <div style="font-size:10px;color:#6b7280;margin-top:4px">${c.label}</div>
+                    </div>`
+                ).join('') + '</div>';
         },
 
         _initChart(id) {
-            const canvas = document.getElementById('chart-'+id);
-            if (!canvas || typeof Chart==='undefined') return;
+            const canvas = document.getElementById('chart-' + id);
+            if (!canvas || typeof Chart === 'undefined') return;
             const d = CHART_DATA.tasksByStatus;
             this._chartInstances[id] = new Chart(canvas, {
                 type: 'doughnut',
                 data: {
                     labels: ['Todo','In Progress','Review','Done','Cancelled'],
                     datasets: [{ data:[d.todo,d.in_progress,d.review,d.done,d.cancelled],
-                        backgroundColor:['#94a3b8','#6366f1','#f59e0b','#22c55e','#ef4444'], borderWidth:1, borderColor:'#fff' }]
+                        backgroundColor:['#94a3b8','#6366f1','#f59e0b','#22c55e','#ef4444'],
+                        borderWidth:1, borderColor:'#fff' }]
                 },
                 options: { responsive:false, plugins:{ legend:{ position:'right', labels:{ font:{size:10} } } } },
             });
@@ -662,8 +847,8 @@ function reportBuilder() {
             if (!tasks.length) return '<div style="padding:20px;text-align:center;color:#9ca3af;font-size:12px">No tasks with scheduled dates</div>';
             const all = tasks.flatMap(t => [new Date(t.start_date), new Date(t.due_date)]);
             const minD = new Date(Math.min(...all)), maxD = new Date(Math.max(...all));
-            const totalDays = Math.max(1, (maxD-minD)/86400000+1);
-            const lW = 120, cW = Math.max(300, W-lW-4), rH = 22, hH = 26;
+            const totalDays = Math.max(1, (maxD - minD) / 86400000 + 1);
+            const lW = 130, cW = Math.max(300, W - lW - 4), rH = 22, hH = 26;
             const H = hH + tasks.length * rH + 2;
             const sc = { done:'#16a34a', in_progress:'#4f46e5', review:'#f59e0b', todo:'#94a3b8', cancelled:'#ef4444' };
             let s = `<svg width="${lW+cW}" height="${H}" xmlns="http://www.w3.org/2000/svg" style="font-family:sans-serif;display:block">`;
@@ -671,26 +856,27 @@ function reportBuilder() {
             s += `<rect width="${lW+cW}" height="${hH}" fill="#e2e8f0" rx="2"/>`;
             const cur = new Date(minD.getFullYear(), minD.getMonth(), 1);
             while (cur <= maxD) {
-                const x = lW + ((cur-minD)/86400000)/totalDays*cW;
+                const x = lW + ((cur - minD) / 86400000) / totalDays * cW;
                 s += `<line x1="${x}" y1="${hH}" x2="${x}" y2="${H}" stroke="#e2e8f0" stroke-width="1"/>`;
-                s += `<text x="${x+3}" y="18" font-size="9" fill="#64748b">${cur.toLocaleString('default',{month:'short'})} ${cur.getFullYear()}</text>`;
-                cur.setMonth(cur.getMonth()+1);
+                s += `<text x="${x+2}" y="18" font-size="9" fill="#64748b">${cur.toLocaleString('default',{month:'short'})} ${cur.getFullYear()}</text>`;
+                cur.setMonth(cur.getMonth() + 1);
             }
             s += `<line x1="${lW}" y1="0" x2="${lW}" y2="${H}" stroke="#cbd5e1" stroke-width="1"/>`;
-            tasks.forEach((t,i) => {
-                const y = hH + i*rH;
+            tasks.forEach((t, i) => {
+                const y = hH + i * rH;
                 s += `<rect x="0" y="${y}" width="${lW+cW}" height="${rH}" fill="${i%2?'#f8fafc':'#fff'}"/>`;
-                const maxCh = Math.floor(lW/6.2);
-                const lbl = t.title.length>maxCh ? t.title.slice(0,maxCh-1)+'…' : t.title;
+                const maxCh = Math.floor(lW / 6.5);
+                const lbl = t.title.length > maxCh ? t.title.slice(0, maxCh-1)+'…' : t.title;
                 s += `<text x="4" y="${y+rH/2+4}" font-size="9" fill="#374151">${lbl}</text>`;
-                const bx = lW + ((new Date(t.start_date)-minD)/86400000)/totalDays*cW;
-                const bw = Math.max(4, ((new Date(t.due_date)-new Date(t.start_date))/86400000+1)/totalDays*cW);
+                const bx = lW + ((new Date(t.start_date) - minD) / 86400000) / totalDays * cW;
+                const bw = Math.max(4, ((new Date(t.due_date) - new Date(t.start_date)) / 86400000 + 1) / totalDays * cW);
                 s += `<rect x="${bx}" y="${y+3}" width="${bw}" height="${rH-6}" rx="2" fill="${sc[t.status]||'#94a3b8'}" opacity="0.85"/>`;
-                if (t.progress_pct>0) s += `<rect x="${bx}" y="${y+3}" width="${bw*t.progress_pct/100}" height="${rH-6}" rx="2" fill="rgba(255,255,255,.25)"/>`;
+                if (t.progress_pct > 0)
+                    s += `<rect x="${bx}" y="${y+3}" width="${bw * t.progress_pct / 100}" height="${rH-6}" rx="2" fill="rgba(255,255,255,.3)"/>`;
             });
             const today = new Date();
-            if (today>=minD && today<=maxD) {
-                const tx = lW + ((today-minD)/86400000)/totalDays*cW;
+            if (today >= minD && today <= maxD) {
+                const tx = lW + ((today - minD) / 86400000) / totalDays * cW;
                 s += `<line x1="${tx}" y1="${hH}" x2="${tx}" y2="${H}" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4,2"/>`;
                 s += `<text x="${tx+2}" y="${hH-2}" font-size="8" fill="#ef4444">Today</text>`;
             }
@@ -702,7 +888,7 @@ function reportBuilder() {
             if (!ms.length) return '<div style="padding:16px;text-align:center;color:#9ca3af;font-size:12px">No milestones</div>';
             return '<div>' + ms.map(m =>
                 `<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid #f1f5f9">
-                    <span style="font-size:14px">${m.is_completed?'✅':'⭕'}</span>
+                    <span>${m.is_completed?'✅':'⭕'}</span>
                     <span style="flex:1;font-size:12px;color:#374151">${m.name}</span>
                     <span style="font-size:11px;color:#9ca3af;flex-shrink:0">${m.due_date||'—'}</span>
                 </div>`
@@ -712,11 +898,14 @@ function reportBuilder() {
         _renderTeam() {
             const m = PROJECT_DATA.members;
             if (!m.length) return '<div style="padding:16px;text-align:center;color:#9ca3af;font-size:12px">No members</div>';
-            return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;padding:12px">` +
+            return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;padding:12px">` +
                 m.map(mb =>
                     `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0">
                         <div style="width:28px;height:28px;border-radius:50%;background:#4f46e5;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">${mb.name.charAt(0).toUpperCase()}</div>
-                        <div style="min-width:0"><div style="font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${mb.name}</div><div style="font-size:9px;color:#9ca3af;text-transform:capitalize">${mb.role}</div></div>
+                        <div style="min-width:0">
+                            <div style="font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${mb.name}</div>
+                            <div style="font-size:9px;color:#9ca3af;text-transform:capitalize">${mb.role}</div>
+                        </div>
                     </div>`
                 ).join('') + '</div>';
         },
@@ -726,9 +915,11 @@ function reportBuilder() {
             if (!bl.length) return '<div style="padding:16px;text-align:center;color:#16a34a;font-size:12px;background:#f0fdf4">✅ No active blockers</div>';
             return '<div style="background:#fef2f2">' + bl.map(b =>
                 `<div style="display:flex;align-items:flex-start;gap:8px;padding:10px 14px;border-bottom:1px solid #fee2e2">
-                    <span style="font-size:14px;flex-shrink:0">🚨</span>
-                    <div><div style="font-size:11px;font-weight:600;color:#dc2626">${b.task_title}</div>
-                    <div style="font-size:10px;color:#6b7280;margin-top:2px">${b.description}</div></div>
+                    <span style="flex-shrink:0;font-size:14px">🚨</span>
+                    <div>
+                        <div style="font-size:11px;font-weight:600;color:#dc2626">${b.task_title}</div>
+                        <div style="font-size:10px;color:#6b7280;margin-top:2px">${b.description}</div>
+                    </div>
                 </div>`
             ).join('') + '</div>';
         },
@@ -739,8 +930,7 @@ function reportBuilder() {
             this.isSaving = true;
             try {
                 const slides = this.slides.map((s, i) => ({
-                    id: s.id,
-                    slide_order: i,
+                    id: s.id, slide_order: i,
                     bg_color: s.bg_color || '#ffffff',
                     notes: s.notes || '',
                     html_content: s.html_content || '',
