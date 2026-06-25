@@ -6,8 +6,11 @@
 <style>
 [x-cloak] { display: none !important; }
 
+/* Remove main layout padding so builder is truly full-screen */
+main { padding:0 !important; overflow:hidden !important; }
+
 /* ── Layout ── */
-#report-builder { display:flex; flex-direction:column; height:calc(100vh - 56px); overflow:hidden; }
+#report-builder { display:flex; flex-direction:column; height:100%; overflow:hidden; }
 .builder-ribbon { flex-shrink:0; height:50px; display:flex; align-items:center; gap:2px; padding:0 8px;
     background:#1e1e2e; border-bottom:1px solid #2d2d44; overflow-x:auto; overflow-y:hidden; scrollbar-width:none; }
 .builder-ribbon::-webkit-scrollbar { display:none; }
@@ -305,6 +308,17 @@
         <button @click="insertLink()" class="ftb-btn" title="Link"><i class="ti ti-link"></i></button>
     </div>
 
+    {{-- ══ Save Toast ══ --}}
+    <div x-show="saveToast" x-cloak x-transition
+         class="fixed bottom-6 right-6 z-[300] flex items-center gap-3 bg-gray-900 text-white text-sm px-5 py-3 rounded-xl shadow-2xl border border-green-500/30">
+        <span class="text-green-400 text-base">✓</span> Saved successfully
+    </div>
+    <div x-show="saveError" x-cloak x-transition
+         class="fixed bottom-6 right-6 z-[300] flex items-center gap-3 bg-red-900 text-white text-sm px-5 py-3 rounded-xl shadow-2xl border border-red-500/30">
+        <span class="text-red-300 text-base">✕</span> <span x-text="saveError"></span>
+        <button @click="saveError=''" class="ml-2 text-red-300 hover:text-white">✕</button>
+    </div>
+
     {{-- ══ Template Save Modal ══ --}}
     <div x-show="showTemplateSave" x-cloak
          class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
@@ -408,6 +422,8 @@ function reportBuilder() {
         toolbarY: 0,
         showTemplateSave: false,
         templateName: '',
+        saveToast: false,
+        saveError: '',
         _chartInstances: {},
         _savedRange: null,
         tableCells: Array.from({length:36}, (_,i) => ({ r:Math.floor(i/6)+1, c:(i%6)+1, key:i })),
@@ -490,14 +506,19 @@ function reportBuilder() {
         restoreSelection() {
             const canvas = this.$refs.slideCanvas;
             if (!canvas) return;
+            // If selection is already inside canvas (e.g. @mousedown.prevent kept focus),
+            // don't disturb it — just ensure canvas has focus
+            const sel = window.getSelection();
+            if (sel && sel.rangeCount > 0 && canvas.contains(sel.anchorNode)) {
+                canvas.focus();
+                return;
+            }
             canvas.focus();
             if (this._savedRange) {
                 try {
-                    const sel = window.getSelection();
                     sel.removeAllRanges();
                     sel.addRange(this._savedRange);
                 } catch(e) {
-                    // Range may be stale; place cursor at end
                     this._placeCaretAtEnd(canvas);
                 }
             } else {
@@ -928,6 +949,7 @@ function reportBuilder() {
         async save() {
             this.saveCurrentCanvas();
             this.isSaving = true;
+            this.saveError = '';
             try {
                 const slides = this.slides.map((s, i) => ({
                     id: s.id, slide_order: i,
@@ -946,9 +968,21 @@ function reportBuilder() {
                     this.slides = data.slides.map(s => ({ ...s }));
                     this.isDirty = false;
                     this.$nextTick(() => this.loadSlideToCanvas());
+                    this._showToast();
+                } else {
+                    this.saveError = data.error || 'Save failed';
                 }
-            } catch(err) { console.error('Save failed', err); }
+            } catch(err) {
+                console.error('Save failed', err);
+                this.saveError = 'Network error — could not save';
+            }
             this.isSaving = false;
+        },
+
+        _showToast() {
+            this.saveToast = true;
+            clearTimeout(this._toastTimer);
+            this._toastTimer = setTimeout(() => { this.saveToast = false; }, 2500);
         },
 
         openTemplateSave() { this.templateName = ''; this.showTemplateSave = true; },

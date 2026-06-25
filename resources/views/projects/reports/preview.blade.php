@@ -10,13 +10,17 @@
 * { box-sizing:border-box; margin:0; padding:0; }
 body { background:#0a0a0f; color:#fff; font-family:sans-serif; overflow:hidden; }
 
-#preview-wrapper { width:100vw; height:100vh; display:flex; flex-direction:column; }
-#slide-display   { flex:1; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+#preview-wrapper { width:100vw; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+#slide-display   { flex:1; position:relative; overflow:hidden; }
 #controls { flex-shrink:0; height:52px; display:flex; align-items:center; padding:0 20px;
     background:rgba(255,255,255,.04); border-top:1px solid rgba(255,255,255,.08); gap:16px; }
 
-/* Canvas outer frame */
-#slide-frame { position:relative; flex-shrink:0; overflow:hidden; background:#fff; }
+/* Canvas outer frame — absolute centred, scaled without affecting layout */
+#slide-frame {
+    position:absolute; top:50%; left:50%;
+    overflow:hidden; background:#fff;
+    box-shadow:0 8px 48px rgba(0,0,0,.7);
+}
 
 /* Content inside frame */
 #slide-content {
@@ -59,8 +63,9 @@ body { background:#0a0a0f; color:#fff; font-family:sans-serif; overflow:hidden; 
         <div id="slide-frame"
              :style="`background:${currentSlide?.bg_color||'#fff'};
                       width:${frameW}px;height:${frameH}px;
-                      transform:scale(${scale});transform-origin:center center;`">
-            <div id="slide-content" :style="`padding:${framePad}px`"></div>
+                      transform:translate(-50%,-50%) scale(${scale});
+                      transform-origin:center center;`">
+            <div id="slide-content" :style="`padding:${framePad}px;width:100%;height:100%;box-sizing:border-box`"></div>
         </div>
     </div>
 
@@ -91,6 +96,11 @@ $slidesJson = $report->slides->map(function($s) {
 })->values();
 @endphp
 <script>
+/* No-ops so widget onclick attrs don't throw in read-only preview */
+window.__selectWidget  = function() {};
+window.__deleteWidget  = function() {};
+window.__refreshWidget = function() {};
+
 const SLIDES       = @json($slidesJson);
 const PROJECT_KPI  = @json($kpi);
 const CHART_DATA   = @json($chartData);
@@ -117,9 +127,9 @@ function previewApp() {
         },
 
         recalc() {
-            const avW = window.innerWidth - 40;
-            const avH = window.innerHeight - 52 - 40;
-            this.scale = Math.min(avW / this.frameW, avH / this.frameH, 1);
+            const avW = window.innerWidth  - 48;
+            const avH = window.innerHeight - 52 - 48;
+            this.scale = Math.min(avW / this.frameW, avH / this.frameH);
         },
 
         prev() { if (this.current > 0) { this.current--; this.$nextTick(() => this.loadSlide()); } },

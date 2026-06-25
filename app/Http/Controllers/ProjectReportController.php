@@ -65,6 +65,7 @@ class ProjectReportController extends Controller
         $reports = ProjectReport::where('project_id', $project->id)
             ->where('is_template', false)
             ->with('creator')
+            ->withCount('slides')
             ->latest()
             ->get();
 
@@ -318,10 +319,11 @@ class ProjectReportController extends Controller
 
         foreach ($source->slides as $slide) {
             $newSlide = ProjectReportSlide::create([
-                'report_id'   => $target->id,
-                'slide_order' => $slide->slide_order,
-                'bg_color'    => $slide->bg_color,
-                'notes'       => $slide->notes,
+                'report_id'    => $target->id,
+                'slide_order'  => $slide->slide_order,
+                'bg_color'     => $slide->bg_color,
+                'notes'        => $slide->notes,
+                'html_content' => $slide->html_content,
             ]);
             foreach ($slide->elements as $el) {
                 ProjectReportElement::create([
