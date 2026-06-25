@@ -26,6 +26,6 @@
         "@tabler/icons-webfont": "^3.44.0",
         "drawflow": "^0.0.60",
         "frappe-gantt": "^1.2.2",
-        "tinymce": "^8.6.0"
+        "quill": "^2.0.3"
     }
 }

@@ -3,7 +3,6 @@
 @section('title', $report->title . ' — Builder')
 
 @push('styles')
-<script src="/vendor/tinymce/tinymce.min.js" referrerpolicy="origin"></script>
 <style>
 [x-cloak] { display: none !important; }
 #report-builder { display:flex; flex-direction:column; height:calc(100vh - 56px); overflow:hidden; user-select:none; }
@@ -52,6 +51,13 @@
 .save-dot.dirty  { background:#f59e0b; }
 .save-dot.saved  { background:#22c55e; }
 .save-dot.saving { background:#6366f1; animation:pulse 1s infinite; }
+
+/* Quill editor overrides inside modal */
+#quill-editor .ql-container { font-size:14px; border:none; height:calc(100% - 42px); }
+#quill-editor .ql-toolbar { border-top:none; border-left:none; border-right:none; border-bottom:1px solid #e5e7eb; background:#fafafa; }
+#quill-editor .ql-editor { height:100%; overflow-y:auto; }
+/* Table editor textarea */
+#table-editor-area { width:100%; height:100%; resize:none; border:none; outline:none; padding:12px; font-family:monospace; font-size:12px; background:#fafafa; }
 </style>
 @endpush
 
@@ -175,14 +181,14 @@
                             {{-- TEXT --}}
                             <div x-show="el.type === 'text'" class="el-text w-full h-full"
                                  :style="`font-size:${el.props.font_size??20}px;font-weight:${el.props.font_weight??'normal'};color:${el.props.color??'#1a1a1a'};text-align:${el.props.align??'left'};background:${el.props.bg_color??'transparent'};padding:8px;font-style:${el.props.italic?'italic':'normal'};line-height:${el.props.line_height??1.4}`"
-                                 @dblclick.stop="openTinyEditor(el)">
+                                 @dblclick.stop="openTextEditor(el)">
                                 <div x-html="el.props.content ?? '<p style=\'color:#9ca3af\'>Double-click to edit</p>'"
-                                     style="pointer-events:none;overflow:hidden;width:100%;height:100%"></div>
+                                     class="ql-editor" style="pointer-events:none;overflow:hidden;width:100%;height:100%;padding:0;border:none;box-shadow:none"></div>
                             </div>
 
                             {{-- TABLE --}}
                             <div x-show="el.type === 'table'" class="w-full h-full overflow-hidden rounded bg-white/95"
-                                 @dblclick.stop="openTinyEditor(el)">
+                                 @dblclick.stop="openTableEditor(el)">
                                 <div x-html="el.props.content ?? '<p style=\'color:#9ca3af;padding:8px;font-size:12px\'>Double-click to edit table</p>'"
                                      style="pointer-events:none;overflow:hidden;width:100%;height:100%;padding:4px;font-size:11px"></div>
                             </div>
@@ -340,9 +346,9 @@
                     <template x-if="selectedElement.type === 'text'">
                         <div class="prop-section space-y-2">
                             <div class="prop-label font-semibold text-gray-400">Text</div>
-                            <button @click="openTinyEditor(selectedElement)"
+                            <button @click="openTextEditor(selectedElement)"
                                     class="w-full py-1.5 rounded text-xs bg-indigo-600 text-white hover:bg-indigo-700">
-                                <i class="ti ti-edit mr-1"></i> Open TinyMCE Editor
+                                <i class="ti ti-edit mr-1"></i> Open Text Editor
                             </button>
                             <div><div class="prop-label">Font Size</div>
                                 <input type="number" min="8" max="200" class="prop-input" :value="selectedElement.props.font_size??20"
@@ -379,10 +385,11 @@
                     <template x-if="selectedElement.type === 'table'">
                         <div class="prop-section space-y-2">
                             <div class="prop-label font-semibold text-gray-400">Table</div>
-                            <button @click="openTinyEditor(selectedElement)"
+                            <button @click="openTableEditor(selectedElement)"
                                     class="w-full py-1.5 rounded text-xs bg-indigo-600 text-white hover:bg-indigo-700">
-                                <i class="ti ti-table mr-1"></i> Edit Table Content
+                                <i class="ti ti-table mr-1"></i> Edit Table HTML
                             </button>
+                            <p class="text-xs text-gray-600">Edit raw HTML for full table control.</p>
                         </div>
                     </template>
 
@@ -565,27 +572,52 @@
         </div>
     </div>{{-- /builder-body --}}
 
-    {{-- ══ TinyMCE Editor Overlay ══ --}}
-    <div x-show="tinyEditing" x-cloak
+    {{-- ══ Quill Text Editor Modal ══ --}}
+    <div x-show="quillEditing" x-cloak
          class="fixed inset-0 z-[200] flex items-center justify-center bg-black/75"
-         @keydown.escape.window="cancelTinyEditor()">
+         @keydown.escape.window="cancelTextEdit()">
         <div class="bg-white rounded-xl overflow-hidden shadow-2xl flex flex-col"
-             style="width:900px;max-width:95vw;height:600px">
+             style="width:900px;max-width:95vw;height:580px">
             <div class="flex justify-between items-center px-5 py-3 bg-gray-100 border-b flex-shrink-0">
-                <h3 class="font-semibold text-gray-800 text-sm" x-text="tinyEditorLabel"></h3>
+                <h3 class="font-semibold text-gray-800 text-sm">Edit Text Content</h3>
                 <div class="flex gap-2">
-                    <button @click="saveTinyEditor()"
+                    <button @click="saveTextEdit()"
                             class="px-4 py-1.5 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">
                         <i class="ti ti-check mr-1"></i> Save
                     </button>
-                    <button @click="cancelTinyEditor()"
+                    <button @click="cancelTextEdit()"
+                            class="px-4 py-1.5 border border-gray-300 text-gray-600 rounded-lg text-sm hover:bg-gray-50">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+            <div class="flex-1 overflow-hidden" style="display:flex;flex-direction:column">
+                <div id="quill-editor" style="flex:1;overflow:hidden;display:flex;flex-direction:column"></div>
+            </div>
+        </div>
+    </div>
+
+    {{-- ══ Table HTML Editor Modal ══ --}}
+    <div x-show="tableEditing" x-cloak
+         class="fixed inset-0 z-[200] flex items-center justify-center bg-black/75"
+         @keydown.escape.window="cancelTableEdit()">
+        <div class="bg-white rounded-xl overflow-hidden shadow-2xl flex flex-col"
+             style="width:900px;max-width:95vw;height:580px">
+            <div class="flex justify-between items-center px-5 py-3 bg-gray-100 border-b flex-shrink-0">
+                <h3 class="font-semibold text-gray-800 text-sm">Edit Table (HTML)</h3>
+                <div class="flex gap-2">
+                    <button @click="saveTableEdit()"
+                            class="px-4 py-1.5 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">
+                        <i class="ti ti-check mr-1"></i> Save
+                    </button>
+                    <button @click="cancelTableEdit()"
                             class="px-4 py-1.5 border border-gray-300 text-gray-600 rounded-lg text-sm hover:bg-gray-50">
                         Cancel
                     </button>
                 </div>
             </div>
             <div class="flex-1 overflow-hidden">
-                <textarea id="tinymce-editor-area" style="width:100%;height:100%"></textarea>
+                <textarea id="table-editor-area" x-ref="tableEditorArea" spellcheck="false"></textarea>
             </div>
         </div>
     </div>
@@ -657,10 +689,13 @@ function reportBuilder() {
         isSaving: false,
         showTemplateSave: false,
         templateName: '',
-        tinyEditing: false,
-        tinyEditorElement: null,
-        tinyEditorLabel: 'Edit Content',
-        _tinyBackup: null,
+        quillEditing: false,
+        quillEditorElement: null,
+        quillInstance: null,
+        _quillBackup: null,
+        tableEditing: false,
+        tableEditorElement: null,
+        _tableBackup: null,
         _replaceTarget: null,
         _chartInstances: {},
 
@@ -674,13 +709,13 @@ function reportBuilder() {
                     const tag = document.activeElement.tagName;
                     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
                     if (document.activeElement.contentEditable === 'true') return;
-                    if (this.tinyEditing) return;
+                    if (this.quillEditing || this.tableEditing) return;
                     this.deleteSelected();
                 }
                 if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); this.save(); }
                 if ((e.ctrlKey || e.metaKey) && e.key === 'z') { /* undo stub */ }
             });
-            setInterval(() => { if (this.isDirty && !this.isSaving && !this.tinyEditing) this.save(); }, 60000);
+            setInterval(() => { if (this.isDirty && !this.isSaving && !this.quillEditing && !this.tableEditing) this.save(); }, 60000);
         },
 
         get currentSlide() { return this.slides[this.currentSlideIndex] || null; },
@@ -768,50 +803,91 @@ function reportBuilder() {
             this.isDirty = true;
         },
 
-        // ── TinyMCE ──
-        openTinyEditor(element) {
-            this._tinyBackup = element.props.content;
-            this.tinyEditorElement = element;
-            this.tinyEditorLabel = element.type === 'table' ? 'Edit Table Content' : 'Edit Text Content';
-            this.tinyEditing = true;
+        // ── Quill Text Editor ──
+        openTextEditor(element) {
+            this._quillBackup = element.props.content;
+            this.quillEditorElement = element;
+            this.quillEditing = true;
             this.$nextTick(() => {
-                if (typeof tinymce === 'undefined') { alert('TinyMCE not loaded'); return; }
-                tinymce.remove('#tinymce-editor-area');
-                tinymce.init({
-                    selector: '#tinymce-editor-area',
-                    base_url: '/vendor/tinymce',
-                    suffix: '.min',
-                    height: 530,
-                    plugins: 'lists link table code',
-                    toolbar: 'undo redo | blocks | bold italic underline strikethrough | alignleft aligncenter alignright | bullist numlist | link table | code',
-                    menubar: false,
-                    branding: false,
-                    content_style: 'body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:14px;line-height:1.5;margin:12px}',
-                    setup: (editor) => {
-                        editor.on('init', () => { editor.setContent(element.props.content || ''); });
+                const container = document.getElementById('quill-editor');
+                if (!container) return;
+                // Destroy previous instance if any
+                if (this.quillInstance) {
+                    this.quillInstance = null;
+                    container.innerHTML = '';
+                }
+                this.quillInstance = new Quill(container, {
+                    theme: 'snow',
+                    modules: {
+                        toolbar: [
+                            [{ header: [1, 2, 3, 4, false] }],
+                            [{ font: [] }, { size: ['small', false, 'large', 'huge'] }],
+                            ['bold', 'italic', 'underline', 'strike'],
+                            [{ color: [] }, { background: [] }],
+                            [{ align: [] }],
+                            [{ list: 'ordered' }, { list: 'bullet' }],
+                            ['link', 'blockquote', 'code-block'],
+                            ['clean'],
+                        ],
                     },
                 });
+                // Load existing content
+                const html = element.props.content || '';
+                if (html) {
+                    this.quillInstance.clipboard.dangerouslyPasteHTML(html);
+                }
+                // Focus editor
+                this.quillInstance.focus();
             });
         },
-        saveTinyEditor() {
-            if (typeof tinymce !== 'undefined') {
-                const editor = tinymce.get('tinymce-editor-area');
-                if (editor && this.tinyEditorElement) {
-                    this.tinyEditorElement.props.content = editor.getContent();
-                    this.isDirty = true;
-                }
-                tinymce.remove('#tinymce-editor-area');
+        saveTextEdit() {
+            if (this.quillInstance && this.quillEditorElement) {
+                const html = this.quillInstance.root.innerHTML;
+                // Store empty string if only empty paragraph
+                this.quillEditorElement.props.content = (html === '<p><br></p>' || html === '<p></p>') ? '' : html;
+                this.isDirty = true;
             }
-            this.tinyEditing = false;
-            this.tinyEditorElement = null;
+            this.quillEditing = false;
+            this.quillEditorElement = null;
+            this.quillInstance = null;
         },
-        cancelTinyEditor() {
-            if (typeof tinymce !== 'undefined') tinymce.remove('#tinymce-editor-area');
-            if (this.tinyEditorElement && this._tinyBackup !== undefined) {
-                this.tinyEditorElement.props.content = this._tinyBackup;
+        cancelTextEdit() {
+            if (this.quillEditorElement && this._quillBackup !== undefined) {
+                this.quillEditorElement.props.content = this._quillBackup;
             }
-            this.tinyEditing = false;
-            this.tinyEditorElement = null;
+            this.quillEditing = false;
+            this.quillEditorElement = null;
+            this.quillInstance = null;
+        },
+
+        // ── Table HTML Editor ──
+        openTableEditor(element) {
+            this._tableBackup = element.props.content;
+            this.tableEditorElement = element;
+            this.tableEditing = true;
+            this.$nextTick(() => {
+                const ta = document.getElementById('table-editor-area');
+                if (ta) {
+                    ta.value = element.props.content || '';
+                    ta.focus();
+                }
+            });
+        },
+        saveTableEdit() {
+            const ta = document.getElementById('table-editor-area');
+            if (ta && this.tableEditorElement) {
+                this.tableEditorElement.props.content = ta.value;
+                this.isDirty = true;
+            }
+            this.tableEditing = false;
+            this.tableEditorElement = null;
+        },
+        cancelTableEdit() {
+            if (this.tableEditorElement && this._tableBackup !== undefined) {
+                this.tableEditorElement.props.content = this._tableBackup;
+            }
+            this.tableEditing = false;
+            this.tableEditorElement = null;
         },
 
         // ── Drag ──

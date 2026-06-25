@@ -1,5 +1,6 @@
 @import '@tabler/icons-webfont/dist/tabler-icons.css';
 @import 'drawflow/dist/drawflow.min.css';
+@import 'quill/dist/quill.snow.css';
 
 @tailwind base;
 @tailwind components;
