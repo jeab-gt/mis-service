@@ -315,53 +315,16 @@ main { padding:0 !important; overflow:hidden !important; }
         <div class="props-panel">
             <div class="props-panel-header">
                 <h3 class="text-xs font-semibold text-gray-600">
-                    <span x-show="!selectedWidget && !selectedImageEl">Properties</span>
+                    <span x-show="!selectedWidget">Properties</span>
                     <span x-show="selectedWidget" x-text="selectedWidget ? selectedWidget.type.toUpperCase()+' Widget' : ''"></span>
-                    <span x-show="selectedImageEl && !selectedWidget">Image</span>
                 </h3>
             </div>
 
             {{-- Nothing selected --}}
-            <template x-if="!selectedWidget && !selectedImageEl">
+            <template x-if="!selectedWidget">
                 <div class="flex flex-col items-center justify-center p-4 text-center text-gray-400" style="min-height:120px">
                     <div style="font-size:24px;margin-bottom:6px">🖱️</div>
-                    <div class="text-xs">Click a widget or image to configure</div>
-                </div>
-            </template>
-
-            {{-- Image properties --}}
-            <template x-if="selectedImageEl && !selectedWidget">
-                <div class="p-3 space-y-3">
-                    <p class="text-xs font-medium text-gray-500">Size</p>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="text-xs text-gray-400 block mb-0.5">Width (px)</label>
-                            <input type="number" :value="selectedImageEl?.offsetWidth"
-                                   @input="selectedImageEl.style.width=$event.target.value+'px';selectedImageEl.style.height='auto';onSlideInput()"
-                                   class="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-indigo-400">
-                        </div>
-                        <div>
-                            <label class="text-xs text-gray-400 block mb-0.5">Height (px)</label>
-                            <input type="number" :value="selectedImageEl?.offsetHeight"
-                                   @input="selectedImageEl.style.height=$event.target.value+'px';selectedImageEl.style.width='auto';onSlideInput()"
-                                   class="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-indigo-400">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="text-xs text-gray-400 block mb-1">Alignment</label>
-                        <div class="flex gap-1">
-                            <button @click="selectedImageEl.style.float='left';selectedImageEl.style.margin='8px 16px 8px 0';onSlideInput()"
-                                    class="flex-1 border border-gray-200 rounded text-xs py-1 hover:bg-gray-50">⬅</button>
-                            <button @click="selectedImageEl.style.float='none';selectedImageEl.style.margin='8px auto';selectedImageEl.style.display='block';onSlideInput()"
-                                    class="flex-1 border border-gray-200 rounded text-xs py-1 hover:bg-gray-50">↔</button>
-                            <button @click="selectedImageEl.style.float='right';selectedImageEl.style.margin='8px 0 8px 16px';onSlideInput()"
-                                    class="flex-1 border border-gray-200 rounded text-xs py-1 hover:bg-gray-50">➡</button>
-                        </div>
-                    </div>
-                    <button @click="selectedImageEl.remove();selectedImageEl=null;onSlideInput()"
-                            class="w-full bg-red-50 text-red-600 border border-red-200 rounded-lg py-1.5 text-xs hover:bg-red-100 transition-colors">
-                        🗑 Delete Image
-                    </button>
+                    <div class="text-xs">Click a widget to configure</div>
                 </div>
             </template>
 
@@ -398,16 +361,18 @@ main { padding:0 !important; overflow:hidden !important; }
                         </div>
                     </div>
 
-                    {{-- Data Mode --}}
-                    <div>
-                        <label class="text-xs text-gray-500 block mb-0.5">Data Mode</label>
-                        <select x-model="selectedWidget.data_mode"
-                                @change="$nextTick(()=>renderWidget(selectedWidget.id,selectedWidget.type))"
-                                class="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-indigo-400">
-                            <option value="live">🔄 Live (real-time)</option>
-                            <option value="snapshot">📸 Snapshot</option>
-                        </select>
-                    </div>
+                    {{-- Data Mode (not for image) --}}
+                    <template x-if="selectedWidget.type!=='image'">
+                        <div>
+                            <label class="text-xs text-gray-500 block mb-0.5">Data Mode</label>
+                            <select x-model="selectedWidget.data_mode"
+                                    @change="$nextTick(()=>renderWidget(selectedWidget.id,selectedWidget.type))"
+                                    class="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-indigo-400">
+                                <option value="live">🔄 Live (real-time)</option>
+                                <option value="snapshot">📸 Snapshot</option>
+                            </select>
+                        </div>
+                    </template>
 
                     {{-- KPI metric selector --}}
                     <template x-if="selectedWidget.type==='kpi'">
@@ -438,6 +403,27 @@ main { padding:0 !important; overflow:hidden !important; }
                                 <option value="burndown">Burndown Chart</option>
                                 <option value="workload">Workload per Member</option>
                             </select>
+                        </div>
+                    </template>
+
+                    {{-- Image widget config --}}
+                    <template x-if="selectedWidget.type==='image'">
+                        <div class="space-y-2">
+                            <div>
+                                <label class="text-xs text-gray-500 block mb-0.5">Fit</label>
+                                <select x-model="selectedWidget.config.objectFit"
+                                        @change="$nextTick(()=>renderWidget(selectedWidget.id,'image'))"
+                                        class="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-indigo-400">
+                                    <option value="contain">Contain</option>
+                                    <option value="cover">Cover</option>
+                                    <option value="fill">Fill (stretch)</option>
+                                    <option value="none">Original</option>
+                                </select>
+                            </div>
+                            <button @click="replaceImageWidget(selectedWidget)"
+                                    class="w-full bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg py-1.5 text-xs hover:bg-indigo-100 transition-colors">
+                                🖼 Change Image
+                            </button>
                         </div>
                     </template>
 
@@ -551,7 +537,6 @@ function reportBuilder() {
         slides: [],
         currentSlideIndex: 0,
         selectedWidget: null,
-        selectedImageEl: null,
         isDirty: false,
         isSaving: false,
         slideLayout: 'slide',
@@ -610,22 +595,6 @@ function reportBuilder() {
                 if (tb && !tb.contains(e.target)) {
                     const sel = window.getSelection();
                     if (!sel || sel.isCollapsed) this.showToolbar = false;
-                }
-            });
-            // Image selection handler
-            document.addEventListener('click', e => {
-                const canvas = this.$refs.slideCanvas;
-                if (!canvas) return;
-                if (e.target.tagName === 'IMG' && canvas.contains(e.target)) {
-                    canvas.querySelectorAll('img').forEach(img => img.style.outline = 'none');
-                    e.target.style.outline = '2px solid #6366f1';
-                    this.selectedImageEl = e.target;
-                    this.selectedWidget = null;
-                } else if (!e.target.closest('.props-panel')) {
-                    if (this.selectedImageEl) {
-                        canvas.querySelectorAll('img').forEach(img => img.style.outline = 'none');
-                        this.selectedImageEl = null;
-                    }
                 }
             });
             setInterval(() => { if (this.isDirty && !this.isSaving) this.save(); }, 90000);
@@ -710,7 +679,6 @@ function reportBuilder() {
             this.saveCurrentCanvas();
             this.currentSlideIndex = idx;
             this.selectedWidget = null;
-            this.selectedImageEl = null;
             this.showToolbar = false;
             this._savedRange = null;
             this.$nextTick(() => this.loadSlideToCanvas());
@@ -722,7 +690,6 @@ function reportBuilder() {
             this.slides.push(slide);
             this.currentSlideIndex = this.slides.length - 1;
             this.selectedWidget = null;
-            this.selectedImageEl = null;
             this.isDirty = true;
             this._savedRange = null;
             this.$nextTick(() => this.loadSlideToCanvas());
@@ -733,7 +700,6 @@ function reportBuilder() {
             this.slides.splice(idx, 1);
             if (this.currentSlideIndex >= this.slides.length) this.currentSlideIndex = this.slides.length - 1;
             this.selectedWidget = null;
-            this.selectedImageEl = null;
             this.isDirty = true;
             this._savedRange = null;
             this.$nextTick(() => this.loadSlideToCanvas());
@@ -745,7 +711,6 @@ function reportBuilder() {
             this.slides.splice(idx+1, 0, dup);
             this.currentSlideIndex = idx + 1;
             this.selectedWidget = null;
-            this.selectedImageEl = null;
             this.isDirty = true;
             this._savedRange = null;
             this.$nextTick(() => this.loadSlideToCanvas());
@@ -835,26 +800,42 @@ function reportBuilder() {
         },
 
         async insertImageFile(file) {
+            if (!this.currentSlide) return;
             const blob = await this.compressImage(file);
             const reader = new FileReader();
             reader.onload = e => {
-                this.restoreSelection();
-                const img = document.createElement('img');
-                img.src = e.target.result;
-                img.style.cssText = 'max-width:100%;height:auto;border-radius:4px;display:block;margin:8px auto;resize:both;overflow:auto;outline:none;cursor:default';
-                const range = this._getInsertRange();
-                range.deleteContents();
-                range.insertNode(img);
-                const p = document.createElement('p');
-                p.innerHTML = '<br>';
-                img.after(p);
-                const newRange = document.createRange();
-                newRange.setStart(p, 0); newRange.collapse(true);
-                window.getSelection().removeAllRanges();
-                window.getSelection().addRange(newRange);
-                this.onSlideInput();
+                const widget = {
+                    id: 'w_' + Date.now(),
+                    type: 'image',
+                    x: 40, y: 40,
+                    w: 360, h: 240,
+                    config: { src: e.target.result, objectFit: 'contain' },
+                    data_mode: 'live',
+                    snapshot_data: null,
+                };
+                this.currentSlide.widgets.push(widget);
+                this.selectedWidget = widget;
+                this.isDirty = true;
+                this.$nextTick(() => setTimeout(() => this.renderWidget(widget.id, 'image'), 30));
             };
             reader.readAsDataURL(blob);
+        },
+
+        replaceImageWidget(widget) {
+            const input = document.createElement('input');
+            input.type = 'file'; input.accept = 'image/*';
+            input.onchange = async e => {
+                if (!e.target.files[0]) return;
+                const blob = await this.compressImage(e.target.files[0]);
+                const reader = new FileReader();
+                reader.onload = ev => {
+                    widget.config.src = ev.target.result;
+                    this.isDirty = true;
+                    this.$nextTick(() => this.renderWidget(widget.id, 'image'));
+                };
+                reader.readAsDataURL(blob);
+            };
+            input.click();
         },
 
         async handleDrop(e) {
@@ -867,32 +848,38 @@ function reportBuilder() {
             const canvas = this.$refs.slideCanvas;
             canvas.focus();
 
-            let tableHTML = '<table style="width:100%;border-collapse:collapse;margin:12px 0;">';
+            const table = document.createElement('table');
+            table.style.cssText = 'width:100%;border-collapse:collapse;margin:12px 0;';
             for (let r = 0; r < rows; r++) {
-                tableHTML += '<tr>';
+                const tr = document.createElement('tr');
                 for (let c = 0; c < cols; c++) {
                     const isH = r === 0;
-                    tableHTML += `<${isH?'th':'td'} contenteditable="true" style="border:1px solid #d1d5db;padding:8px 12px;text-align:left;min-width:80px;${isH?'background:#f3f4f6;font-weight:600;':''}">${isH?'Header '+(c+1):'Cell'}</${isH?'th':'td'}>`;
+                    const cell = document.createElement(isH ? 'th' : 'td');
+                    cell.style.cssText = 'border:1px solid #d1d5db;padding:8px 12px;text-align:left;min-width:80px;' + (isH ? 'background:#f3f4f6;font-weight:600;' : '');
+                    cell.textContent = isH ? 'Header ' + (c + 1) : 'Cell';
+                    tr.appendChild(cell);
                 }
-                tableHTML += '</tr>';
+                table.appendChild(tr);
             }
-            tableHTML += '</table>';
+            const after = document.createElement('p');
+            after.innerHTML = '<br>';
 
             const sel = window.getSelection();
-            if (sel && sel.rangeCount > 0 && canvas.contains(sel.anchorNode)) {
-                const range = sel.getRangeAt(0);
+            const range = (sel && sel.rangeCount > 0 && canvas.contains(sel.anchorNode))
+                ? sel.getRangeAt(0) : null;
+            if (range) {
                 range.deleteContents();
-                const div = document.createElement('div');
-                div.innerHTML = tableHTML + '<p><br></p>';
-                const frag = document.createDocumentFragment();
-                let child;
-                while ((child = div.firstChild)) frag.appendChild(child);
-                range.insertNode(frag);
-                range.collapse(false);
-                sel.removeAllRanges();
-                sel.addRange(range);
+                range.insertNode(after);
+                range.insertNode(table);
+                const newRange = document.createRange();
+                newRange.setStart(after, 0); newRange.collapse(true);
+                sel.removeAllRanges(); sel.addRange(newRange);
             } else {
-                canvas.innerHTML += tableHTML + '<p><br></p>';
+                canvas.appendChild(table);
+                canvas.appendChild(after);
+                const newRange = document.createRange();
+                newRange.setStart(after, 0); newRange.collapse(true);
+                sel?.removeAllRanges(); sel?.addRange(newRange);
             }
 
             this.onSlideInput();
@@ -946,8 +933,6 @@ function reportBuilder() {
 
         selectWidget(widget) {
             this.selectedWidget = widget;
-            this.selectedImageEl = null;
-            this.$refs.slideCanvas?.querySelectorAll('img').forEach(img => img.style.outline = 'none');
             this.renderWidget(widget.id, widget.type);
         },
 
@@ -1030,6 +1015,15 @@ function reportBuilder() {
                 case 'blocker':
                     el.innerHTML = this._renderBlockers();
                     break;
+                case 'image': {
+                    const widget = (this.currentSlide?.widgets || []).find(w => w.id === id);
+                    const src = widget?.config?.src || '';
+                    const fit = widget?.config?.objectFit || 'contain';
+                    el.innerHTML = src
+                        ? `<img src="${src}" style="width:100%;height:100%;object-fit:${fit};display:block;border-radius:4px" draggable="false">`
+                        : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:12px;background:#f9fafb;border-radius:4px">No image</div>`;
+                    break;
+                }
             }
         },
 

@@ -194,6 +194,16 @@ function previewApp() {
                 case 'milestone': el.innerHTML = this._renderMilestones(); break;
                 case 'team':      el.innerHTML = this._renderTeam(); break;
                 case 'blocker':   el.innerHTML = this._renderBlockers(); break;
+                case 'image': {
+                    const widgets = Array.isArray(this.currentSlide?.widgets_data) ? this.currentSlide.widgets_data : [];
+                    const w = widgets.find(x => x.id === id);
+                    const src = w?.config?.src || '';
+                    const fit = w?.config?.objectFit || 'contain';
+                    el.innerHTML = src
+                        ? `<img src="${src}" style="width:100%;height:100%;object-fit:${fit};display:block;border-radius:4px" draggable="false">`
+                        : '';
+                    break;
+                }
             }
         },
 
