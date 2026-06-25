@@ -135,15 +135,16 @@ class ProjectReportController extends Controller
             'slides.*.slide_order'        => 'required|integer',
             'slides.*.bg_color'           => 'nullable|string|max:20',
             'slides.*.notes'              => 'nullable|string',
+            'slides.*.html_content'       => 'nullable|string',
             'slides.*.elements'           => 'nullable|array',
             'slides.*.elements.*.id'      => 'nullable',
-            'slides.*.elements.*.type'    => 'required|in:text,image,chart,kpi,shape,gantt_mini,milestone_list,team_list,blocker_list,table,divider',
-            'slides.*.elements.*.x'       => 'required|numeric',
-            'slides.*.elements.*.y'       => 'required|numeric',
-            'slides.*.elements.*.w'       => 'required|numeric|min:10',
-            'slides.*.elements.*.h'       => 'required|numeric|min:10',
-            'slides.*.elements.*.z_index' => 'required|integer',
-            'slides.*.elements.*.props'   => 'required|array',
+            'slides.*.elements.*.type'    => 'nullable|in:text,image,chart,kpi,shape,gantt_mini,milestone_list,team_list,blocker_list,table,divider',
+            'slides.*.elements.*.x'       => 'nullable|numeric',
+            'slides.*.elements.*.y'       => 'nullable|numeric',
+            'slides.*.elements.*.w'       => 'nullable|numeric',
+            'slides.*.elements.*.h'       => 'nullable|numeric',
+            'slides.*.elements.*.z_index' => 'nullable|integer',
+            'slides.*.elements.*.props'   => 'nullable|array',
         ]);
 
         if (!empty($data['title'])) {
@@ -160,18 +161,20 @@ class ProjectReportController extends Controller
 
                 if ($isNew) {
                     $slide = ProjectReportSlide::create([
-                        'report_id'   => $report->id,
-                        'slide_order' => $slideData['slide_order'],
-                        'bg_color'    => $slideData['bg_color'] ?? '#ffffff',
-                        'notes'       => $slideData['notes'] ?? null,
+                        'report_id'    => $report->id,
+                        'slide_order'  => $slideData['slide_order'],
+                        'bg_color'     => $slideData['bg_color'] ?? '#ffffff',
+                        'notes'        => $slideData['notes'] ?? null,
+                        'html_content' => $slideData['html_content'] ?? null,
                     ]);
                 } else {
                     $slide = ProjectReportSlide::find($slideData['id']);
                     if (!$slide || $slide->report_id !== $report->id) continue;
                     $slide->update([
-                        'slide_order' => $slideData['slide_order'],
-                        'bg_color'    => $slideData['bg_color'] ?? '#ffffff',
-                        'notes'       => $slideData['notes'] ?? null,
+                        'slide_order'  => $slideData['slide_order'],
+                        'bg_color'     => $slideData['bg_color'] ?? '#ffffff',
+                        'notes'        => $slideData['notes'] ?? null,
+                        'html_content' => $slideData['html_content'] ?? null,
                     ]);
                 }
                 $savedSlideIds[] = $slide->id;
@@ -215,24 +218,16 @@ class ProjectReportController extends Controller
 
             DB::commit();
 
-            $report->load(['slides.elements']);
+            $report->load(['slides']);
             return response()->json([
                 'success' => true,
                 'slides'  => $report->slides->map(fn($s) => [
-                    'id'          => $s->id,
-                    'slide_order' => $s->slide_order,
-                    'bg_color'    => $s->bg_color,
-                    'notes'       => $s->notes ?? '',
-                    'elements'    => $s->elements->map(fn($e) => [
-                        'id'      => $e->id,
-                        'type'    => $e->type,
-                        'x'       => $e->x,
-                        'y'       => $e->y,
-                        'w'       => $e->w,
-                        'h'       => $e->h,
-                        'z_index' => $e->z_index,
-                        'props'   => $e->props,
-                    ])->values(),
+                    'id'           => $s->id,
+                    'slide_order'  => $s->slide_order,
+                    'bg_color'     => $s->bg_color,
+                    'notes'        => $s->notes ?? '',
+                    'html_content' => $s->html_content ?? '',
+                    'elements'     => [],
                 ])->values(),
             ]);
         } catch (\Throwable $e) {

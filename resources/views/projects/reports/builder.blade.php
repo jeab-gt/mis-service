@@ -5,117 +5,204 @@
 @push('styles')
 <style>
 [x-cloak] { display: none !important; }
-#report-builder { display:flex; flex-direction:column; height:calc(100vh - 56px); overflow:hidden; user-select:none; }
-.builder-toolbar { flex-shrink:0; height:48px; display:flex; align-items:center; gap:4px; padding:0 10px;
-    background:#1e1e2e; border-bottom:1px solid #2d2d44; overflow-x:auto; overflow-y:hidden; }
+
+/* ── Layout ── */
+#report-builder { display:flex; flex-direction:column; height:calc(100vh - 56px); overflow:hidden; }
+.builder-ribbon { flex-shrink:0; height:50px; display:flex; align-items:center; gap:2px; padding:0 8px;
+    background:#1e1e2e; border-bottom:1px solid #2d2d44; overflow-x:auto; overflow-y:hidden; scrollbar-width:none; }
+.builder-ribbon::-webkit-scrollbar { display:none; }
 .builder-body { flex:1; display:flex; overflow:hidden; }
-.slide-panel { width:152px; flex-shrink:0; overflow-y:auto; background:#16162a; border-right:1px solid #2d2d44; padding:8px; }
-.canvas-area { flex:1; overflow:auto; background:#111122; display:flex; align-items:flex-start; justify-content:center; padding:24px; }
-.props-panel { width:256px; flex-shrink:0; overflow-y:auto; background:#16162a; border-left:1px solid #2d2d44; padding:12px; }
 
-.report-canvas { position:relative; width:960px; height:540px; flex-shrink:0; box-shadow:0 8px 40px rgba(0,0,0,.6); overflow:hidden; cursor:default; }
-
-.slide-thumb { position:relative; width:100%; padding-top:56.25%; cursor:pointer; border-radius:6px; overflow:hidden;
-    border:2px solid transparent; margin-bottom:6px; transition:border-color .15s; }
+/* ── Slide Panel ── */
+.slide-panel { width:156px; flex-shrink:0; overflow-y:auto; background:#16162a;
+    border-right:1px solid #2d2d44; padding:8px; scrollbar-width:thin; scrollbar-color:#333 transparent; }
+.slide-thumb { position:relative; width:132px; height:100px; cursor:pointer; border-radius:6px;
+    overflow:hidden; border:2px solid transparent; margin-bottom:8px; transition:border-color .15s; background:#fff; }
 .slide-thumb.active { border-color:#6366f1; }
-.slide-thumb-inner { position:absolute; inset:0; overflow:hidden; }
-.slide-thumb-label { position:absolute; bottom:2px; left:0; right:0; text-align:center; font-size:9px; color:#888; }
+.slide-thumb-num { position:absolute; bottom:2px; left:0; right:0; text-align:center;
+    font-size:9px; color:#888; pointer-events:none; }
 
-.canvas-el { position:absolute; box-sizing:border-box; }
-.canvas-el.selected { outline:2px solid #6366f1; outline-offset:1px; }
-.canvas-el .rh { position:absolute; width:8px; height:8px; background:#6366f1; border:2px solid #fff; border-radius:50%; z-index:100; }
-.canvas-el .rh[data-h="nw"] { top:-4px; left:-4px; cursor:nw-resize; }
-.canvas-el .rh[data-h="ne"] { top:-4px; right:-4px; cursor:ne-resize; }
-.canvas-el .rh[data-h="sw"] { bottom:-4px; left:-4px; cursor:sw-resize; }
-.canvas-el .rh[data-h="se"] { bottom:-4px; right:-4px; cursor:se-resize; }
-.canvas-el .rh[data-h="n"]  { top:-4px; left:calc(50% - 4px); cursor:n-resize; }
-.canvas-el .rh[data-h="s"]  { bottom:-4px; left:calc(50% - 4px); cursor:s-resize; }
-.canvas-el .rh[data-h="e"]  { right:-4px; top:calc(50% - 4px); cursor:e-resize; }
-.canvas-el .rh[data-h="w"]  { left:-4px; top:calc(50% - 4px); cursor:w-resize; }
+/* ── Canvas Area ── */
+.canvas-area { flex:1; overflow:auto; background:#111122; display:flex;
+    justify-content:center; padding:32px 32px 80px; }
+.canvas-wrap { flex-shrink:0; }
 
-.el-text { overflow:hidden; }
-.el-kpi { display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+/* ── Slide Canvas ── */
+.slide-canvas {
+    background:#fff; outline:none; cursor:text;
+    box-shadow:0 8px 40px rgba(0,0,0,.55);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    font-size:14px; line-height:1.65; color:#1a1a1a;
+    word-wrap:break-word; overflow-wrap:break-word;
+    transition:box-shadow .2s;
+}
+.slide-canvas:focus { box-shadow:0 8px 40px rgba(99,102,241,.45), 0 0 0 2px rgba(99,102,241,.25); }
+.slide-canvas p  { margin:0 0 6px; min-height:1.5em; }
+.slide-canvas h1 { font-size:2em; font-weight:700; margin:16px 0 10px; line-height:1.25; }
+.slide-canvas h2 { font-size:1.5em; font-weight:600; margin:14px 0 8px; line-height:1.3; }
+.slide-canvas h3 { font-size:1.25em; font-weight:600; margin:12px 0 6px; line-height:1.35; }
+.slide-canvas h4 { font-size:1.1em; font-weight:600; margin:10px 0 5px; }
+.slide-canvas ul, .slide-canvas ol { padding-left:28px; margin:6px 0; }
+.slide-canvas li { margin:2px 0; }
+.slide-canvas table { width:100%; border-collapse:collapse; margin:10px 0; }
+.slide-canvas td, .slide-canvas th { border:1px solid #d1d5db; padding:8px 12px; text-align:left; }
+.slide-canvas th { background:#f3f4f6; font-weight:600; }
+.slide-canvas hr { border:none; border-top:2px solid #e5e7eb; margin:18px 0; }
+.slide-canvas img { max-width:100%; height:auto; border-radius:4px; display:block; margin:6px 0; }
+.slide-canvas blockquote { border-left:4px solid #6366f1; margin:10px 0; padding:6px 16px; background:#f5f3ff; border-radius:0 6px 6px 0; }
+.slide-canvas a { color:#6366f1; text-decoration:underline; }
 
-.tb-btn { display:flex; align-items:center; gap:3px; padding:3px 7px; border-radius:5px; font-size:11px;
-    color:#ccc; cursor:pointer; border:none; background:transparent; white-space:nowrap; transition:background .15s; flex-shrink:0; }
-.tb-btn:hover { background:#2d2d44; color:#fff; }
-.tb-btn:disabled { opacity:.35; cursor:not-allowed; }
-.tb-sep { width:1px; height:22px; background:#2d2d44; margin:0 3px; flex-shrink:0; }
+/* ── Widget ── */
+.report-widget { display:block; border:2px solid #e0e7ff; border-radius:8px; margin:10px 0; overflow:hidden;
+    background:#f8fafc; position:relative; }
+.report-widget:hover { border-color:#6366f1; }
+.report-widget::before { content:attr(data-widget-type); position:absolute; top:4px; right:6px;
+    font-size:9px; color:#9ca3af; text-transform:uppercase; letter-spacing:.5px; pointer-events:none; }
 
-.prop-label { font-size:11px; color:#888; margin-bottom:3px; }
-.prop-input { width:100%; padding:4px 8px; border-radius:5px; background:#0f0f1a; border:1px solid #2d2d44; color:#ddd; font-size:12px; outline:none; }
-.prop-input:focus { border-color:#6366f1; }
-.prop-section { border-top:1px solid #2d2d44; padding-top:10px; margin-top:10px; }
+/* ── Ribbon Buttons ── */
+.rb-btn { display:inline-flex; align-items:center; gap:2px; padding:3px 7px; border-radius:5px;
+    font-size:11px; color:#ccc; cursor:pointer; border:none; background:transparent;
+    white-space:nowrap; transition:background .12s; flex-shrink:0; }
+.rb-btn:hover { background:#2d2d44; color:#fff; }
+.rb-btn:disabled { opacity:.4; cursor:not-allowed; }
+.rb-sep { width:1px; height:22px; background:#2d2d44; margin:0 3px; flex-shrink:0; }
+.rb-select { background:#252535; color:#ccc; font-size:11px; border:1px solid #3d3d5a;
+    border-radius:5px; padding:3px 6px; cursor:pointer; flex-shrink:0; outline:none; }
+.rb-select:focus { border-color:#6366f1; }
 
-.save-dot { width:7px; height:7px; border-radius:50%; display:inline-block; }
+/* ── Floating Toolbar ── */
+#floating-tb { pointer-events:auto; user-select:none; }
+.ftb-btn { width:26px; height:26px; border-radius:4px; border:none; background:transparent;
+    color:#e5e7eb; cursor:pointer; font-size:12px; display:inline-flex; align-items:center;
+    justify-content:center; flex-shrink:0; transition:background .1s; }
+.ftb-btn:hover { background:#374151; }
+.ftb-sel { background:#1f2937; color:#e5e7eb; font-size:11px; border:1px solid #374151;
+    border-radius:4px; padding:2px 4px; cursor:pointer; outline:none; }
+
+/* ── Table Picker ── */
+.tp-cell { width:19px; height:19px; border-radius:2px; cursor:pointer; border:1px solid #d1d5db; transition:background .08s; }
+.tp-cell.on { background:#c7d2fe; border-color:#6366f1; }
+
+/* ── Save dot ── */
+.save-dot { width:7px; height:7px; border-radius:50%; display:inline-block; flex-shrink:0; }
 .save-dot.dirty  { background:#f59e0b; }
 .save-dot.saved  { background:#22c55e; }
 .save-dot.saving { background:#6366f1; animation:pulse 1s infinite; }
-
-/* Quill editor overrides inside modal */
-#quill-editor .ql-container { font-size:14px; border:none; height:calc(100% - 42px); }
-#quill-editor .ql-toolbar { border-top:none; border-left:none; border-right:none; border-bottom:1px solid #e5e7eb; background:#fafafa; }
-#quill-editor .ql-editor { height:100%; overflow-y:auto; }
-/* Table editor textarea */
-#table-editor-area { width:100%; height:100%; resize:none; border:none; outline:none; padding:12px; font-family:monospace; font-size:12px; background:#fafafa; }
 </style>
 @endpush
 
 @section('content')
 <div id="report-builder" x-data="reportBuilder()" x-init="init()">
 
-    {{-- ══ Toolbar ══ --}}
-    <div class="builder-toolbar">
-        <a href="{{ route('projects.reports.index', $project) }}" class="tb-btn" title="Back">
+    {{-- ══ Ribbon ══ --}}
+    <div class="builder-ribbon">
+        <a href="{{ route('projects.reports.index', $project) }}" class="rb-btn" title="Back">
             <i class="ti ti-arrow-left"></i>
         </a>
-        <div class="tb-sep"></div>
+        <span class="text-xs text-gray-400 font-medium max-w-[130px] truncate ml-1">{{ $report->title }}</span>
+        <span class="save-dot ml-1" :class="isSaving?'saving':isDirty?'dirty':'saved'"></span>
 
-        <span class="text-xs text-gray-400 font-medium max-w-[140px] truncate">{{ $report->title }}</span>
-        <span class="save-dot ml-1" :class="isSaving ? 'saving' : isDirty ? 'dirty' : 'saved'"></span>
+        <div class="rb-sep"></div>
+
+        {{-- Heading / Block --}}
+        <select class="rb-select" @change="execCmd('formatBlock',$event.target.value);$event.target.value=''" title="Paragraph style">
+            <option value="">Style</option>
+            <option value="p">Normal</option>
+            <option value="h1">H1</option>
+            <option value="h2">H2</option>
+            <option value="h3">H3</option>
+            <option value="h4">H4</option>
+            <option value="blockquote">Quote</option>
+            <option value="pre">Code</option>
+        </select>
+
+        <div class="rb-sep"></div>
+
+        {{-- Text formatting --}}
+        <button class="rb-btn font-bold" @click="execCmd('bold')" title="Bold (Ctrl+B)">B</button>
+        <button class="rb-btn italic" @click="execCmd('italic')" title="Italic (Ctrl+I)">I</button>
+        <button class="rb-btn underline" @click="execCmd('underline')" title="Underline (Ctrl+U)">U</button>
+        <button class="rb-btn" @click="execCmd('strikeThrough')" title="Strikethrough" style="text-decoration:line-through">S</button>
+
+        {{-- Color --}}
+        <div class="relative" title="Text Color">
+            <button class="rb-btn">A <span style="display:inline-block;width:10px;height:3px;background:#ef4444;margin-bottom:1px"></span></button>
+            <input type="color" value="#ef4444" @input="execCmd('foreColor',$event.target.value)"
+                   class="absolute inset-0 opacity-0 w-full h-full cursor-pointer">
+        </div>
+        <div class="relative" title="Highlight Color">
+            <button class="rb-btn">H <span style="display:inline-block;width:10px;height:3px;background:#fef08a;margin-bottom:1px"></span></button>
+            <input type="color" value="#fef08a" @input="execCmd('backColor',$event.target.value)"
+                   class="absolute inset-0 opacity-0 w-full h-full cursor-pointer">
+        </div>
+
+        <div class="rb-sep"></div>
+
+        {{-- Align --}}
+        <button class="rb-btn" @click="execCmd('justifyLeft')" title="Align Left"><i class="ti ti-align-left"></i></button>
+        <button class="rb-btn" @click="execCmd('justifyCenter')" title="Align Center"><i class="ti ti-align-center"></i></button>
+        <button class="rb-btn" @click="execCmd('justifyRight')" title="Align Right"><i class="ti ti-align-right"></i></button>
+
+        {{-- Lists --}}
+        <button class="rb-btn" @click="execCmd('insertUnorderedList')" title="Bullet List"><i class="ti ti-list"></i></button>
+        <button class="rb-btn" @click="execCmd('insertOrderedList')" title="Numbered List"><i class="ti ti-list-numbers"></i></button>
+
+        <div class="rb-sep"></div>
+
+        {{-- Insert --}}
+        <button class="rb-btn" @click="insertImageFromFile()" title="Insert Image"><i class="ti ti-photo"></i> Image</button>
+        <button class="rb-btn" @click="insertLink()" title="Insert Link"><i class="ti ti-link"></i></button>
+
+        {{-- Table Picker --}}
+        <div class="relative" x-data="{ open:false, hr:1, hc:1 }">
+            <button class="rb-btn" @click="open=!open" title="Insert Table"><i class="ti ti-table"></i> Table</button>
+            <div x-show="open" @click.outside="open=false" x-cloak
+                 class="absolute top-11 left-0 bg-white border border-gray-200 rounded-xl shadow-xl p-3 z-50 w-40">
+                <p class="text-xs text-gray-400 text-center mb-2" x-text="hr+'×'+hc"></p>
+                <div class="grid gap-0.5" style="grid-template-columns:repeat(6,1fr)">
+                    <template x-for="cell in tableCells" :key="cell.key">
+                        <div @click="insertTable(cell.r,cell.c);open=false"
+                             @mouseenter="hr=cell.r;hc=cell.c"
+                             :class="cell.r<=hr&&cell.c<=hc?'on':''"
+                             class="tp-cell"></div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <button class="rb-btn" @click="insertDivider()" title="Horizontal Divider"><i class="ti ti-minus"></i></button>
+
+        <div class="rb-sep"></div>
+
+        {{-- Widgets --}}
+        <span class="text-xs text-gray-600 mr-0.5">Widgets:</span>
+        <button class="rb-btn" @click="insertWidget('kpi')"><i class="ti ti-chart-bar"></i> KPI</button>
+        <button class="rb-btn" @click="insertWidget('chart')"><i class="ti ti-chart-donut"></i> Chart</button>
+        <button class="rb-btn" @click="insertWidget('gantt')"><i class="ti ti-calendar-stats"></i> Gantt</button>
+        <button class="rb-btn" @click="insertWidget('milestone')"><i class="ti ti-flag"></i> Milestone</button>
+        <button class="rb-btn" @click="insertWidget('team')"><i class="ti ti-users"></i> Team</button>
+        <button class="rb-btn" @click="insertWidget('blocker')"><i class="ti ti-alert-triangle"></i> Blocker</button>
 
         <div class="flex-1"></div>
 
-        {{-- Content group --}}
-        <span class="text-xs text-gray-600 mr-1">Content:</span>
-        <button class="tb-btn" @click="addElement('text')"><i class="ti ti-text-size"></i> Text</button>
-        <button class="tb-btn" @click="addElement('table')"><i class="ti ti-table"></i> Table</button>
-        <button class="tb-btn" @click="addElement('divider')"><i class="ti ti-minus"></i> Divider</button>
-        <button class="tb-btn" @click="addElement('shape')"><i class="ti ti-square"></i> Shape</button>
-        <button class="tb-btn" @click="$refs.imgInput.click()"><i class="ti ti-photo"></i> Image</button>
-        <input type="file" x-ref="imgInput" accept="image/*" class="hidden" @change="uploadImage($event)">
-        <div class="tb-sep"></div>
+        {{-- Layout --}}
+        <select class="rb-select mr-1" x-model="slideLayout" title="Canvas Size">
+            <option value="a4">A4 Portrait</option>
+            <option value="slide">16:9 Slide</option>
+            <option value="wide">Wide</option>
+        </select>
 
-        {{-- Data Widgets group --}}
-        <span class="text-xs text-gray-600 mr-1">Widgets:</span>
-        <button class="tb-btn" @click="addElement('kpi')"><i class="ti ti-chart-bar"></i> KPI</button>
-        <button class="tb-btn" @click="addElement('chart')"><i class="ti ti-chart-donut"></i> Chart</button>
-        <button class="tb-btn" @click="addElement('gantt_mini')"><i class="ti ti-calendar-stats"></i> Gantt</button>
-        <button class="tb-btn" @click="addElement('milestone_list')"><i class="ti ti-flag"></i> Milestones</button>
-        <button class="tb-btn" @click="addElement('team_list')"><i class="ti ti-users"></i> Team</button>
-        <button class="tb-btn" @click="addElement('blocker_list')"><i class="ti ti-alert-triangle"></i> Blockers</button>
-        <div class="tb-sep"></div>
+        <div class="rb-sep"></div>
 
-        {{-- Actions --}}
-        <button class="tb-btn" @click="deleteSelected()" :disabled="!selectedId"
-                :class="selectedId ? 'text-red-400 hover:bg-red-900/30' : ''">
-            <i class="ti ti-trash"></i>
-        </button>
-        <div class="tb-sep"></div>
-        <button class="tb-btn" @click="save()" :disabled="isSaving">
-            <i class="ti ti-device-floppy"></i> {{ app()->getLocale() === 'th' ? 'บันทึก' : 'Save' }}
-        </button>
-        <a href="{{ route('projects.reports.preview', [$project, $report]) }}" target="_blank" class="tb-btn">
-            <i class="ti ti-eye"></i> Preview
-        </a>
-        <a href="{{ route('projects.reports.export', [$project, $report]) }}" target="_blank" class="tb-btn">
-            <i class="ti ti-printer"></i> Export
-        </a>
+        <button class="rb-btn" @click="save()" :disabled="isSaving"><i class="ti ti-device-floppy"></i> Save</button>
+        <a href="{{ route('projects.reports.preview', [$project, $report]) }}" target="_blank" class="rb-btn"><i class="ti ti-eye"></i> Preview</a>
+        <a href="{{ route('projects.reports.export', [$project, $report]) }}" target="_blank" class="rb-btn"><i class="ti ti-printer"></i> Export</a>
+
         <div class="relative" x-data="{ open:false }">
-            <button class="tb-btn" @click="open=!open"><i class="ti ti-dots-vertical"></i></button>
-            <div x-show="open" @click.outside="open=false"
-                 class="absolute right-0 top-10 w-52 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50 py-1">
-                <button @click="openTemplateSave(); open=false"
+            <button class="rb-btn" @click="open=!open"><i class="ti ti-dots-vertical"></i></button>
+            <div x-show="open" @click.outside="open=false" x-cloak
+                 class="absolute right-0 top-11 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50 py-1">
+                <button @click="openTemplateSave();open=false"
                         class="w-full text-left px-4 py-2 text-xs text-gray-300 hover:bg-gray-700">
                     <i class="ti ti-template mr-1"></i> Save as Template
                 </button>
@@ -128,30 +215,28 @@
 
         {{-- Slide Panel --}}
         <div class="slide-panel">
-            <div class="text-xs text-gray-500 mb-2">{{ app()->getLocale() === 'th' ? 'สไลด์' : 'Slides' }}</div>
+            <div class="text-xs text-gray-500 mb-2 font-medium">Slides</div>
 
             <template x-for="(slide, idx) in slides" :key="slide.id">
                 <div class="relative group">
-                    <div class="slide-thumb" :class="idx === currentSlideIndex ? 'active' : ''"
-                         @click="currentSlideIndex = idx; selectedId = null">
-                        <div class="slide-thumb-inner" :style="{ background: slide.bg_color }">
-                            <svg width="100%" height="100%" viewBox="0 0 960 540" style="position:absolute;inset:0">
-                                <template x-for="el in slide.elements" :key="el.id">
-                                    <rect :x="el.x" :y="el.y" :width="el.w" :height="el.h"
-                                          :fill="el.type==='shape' ? (el.props.fill??'#4f46e5') : (el.type==='text'||el.type==='table' ? (el.props.bg_color??'#e0e7ff') : '#e0e7ff')"
-                                          :opacity="el.type==='shape' ? (el.props.opacity??1) : 0.5" rx="2"></rect>
-                                </template>
-                            </svg>
+                    <div class="slide-thumb" :class="idx===currentSlideIndex?'active':''"
+                         @click="switchSlide(idx)">
+                        <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none;background:#fff">
+                            <div style="transform:scale(0.165);transform-origin:top left;width:794px;padding:40px;font-family:sans-serif;font-size:14px;line-height:1.6;color:#1a1a1a"
+                                 x-html="slide.html_content||'<p style=\'color:#ccc;font-size:12px\'>Empty</p>'">
+                            </div>
                         </div>
-                        <div class="slide-thumb-label" x-text="idx + 1"></div>
+                        <div class="slide-thumb-num" x-text="idx+1"></div>
                     </div>
                     <div class="hidden group-hover:flex absolute top-1 right-1 gap-1 z-10">
                         <button @click.stop="duplicateSlide(idx)"
-                                class="w-5 h-5 rounded bg-gray-700 text-gray-300 hover:bg-gray-600 flex items-center justify-center">
+                                class="w-5 h-5 rounded bg-gray-700 text-gray-300 hover:bg-gray-600 flex items-center justify-center"
+                                title="Duplicate">
                             <i class="ti ti-copy" style="font-size:9px"></i>
                         </button>
-                        <button @click.stop="deleteSlide(idx)" x-show="slides.length > 1"
-                                class="w-5 h-5 rounded bg-red-800 text-red-300 hover:bg-red-700 flex items-center justify-center">
+                        <button @click.stop="deleteSlide(idx)" x-show="slides.length>1"
+                                class="w-5 h-5 rounded bg-red-800 text-red-300 hover:bg-red-700 flex items-center justify-center"
+                                title="Delete">
                             <i class="ti ti-trash" style="font-size:9px"></i>
                         </button>
                     </div>
@@ -160,466 +245,87 @@
 
             <button @click="addSlide()"
                     class="w-full mt-1 py-2 rounded-lg border border-dashed border-gray-600 text-gray-500 hover:border-indigo-500 hover:text-indigo-400 text-xs transition-colors">
-                + {{ app()->getLocale() === 'th' ? 'เพิ่มสไลด์' : 'Add Slide' }}
+                + Add Slide
             </button>
         </div>
 
         {{-- Canvas Area --}}
-        <div class="canvas-area" x-ref="canvasContainer" @click.self="selectedId = null">
-            <div class="report-canvas"
-                 :style="`background:${currentSlide ? currentSlide.bg_color : '#fff'};transform:scale(${canvasScale});transform-origin:top center;`"
-                 @click.self="selectedId = null">
-
-                <template x-if="currentSlide">
-                    <template x-for="el in currentSlide.elements" :key="el.id">
-                        <div class="canvas-el"
-                             :class="selectedId === el.id ? 'selected' : ''"
-                             :style="`left:${el.x}px;top:${el.y}px;width:${el.w}px;height:${el.h}px;z-index:${el.z_index}`"
-                             @mousedown="startDrag($event, el)"
-                             @click.stop="selectedId = el.id">
-
-                            {{-- TEXT --}}
-                            <div x-show="el.type === 'text'" class="el-text w-full h-full"
-                                 :style="`font-size:${el.props.font_size??20}px;font-weight:${el.props.font_weight??'normal'};color:${el.props.color??'#1a1a1a'};text-align:${el.props.align??'left'};background:${el.props.bg_color??'transparent'};padding:8px;font-style:${el.props.italic?'italic':'normal'};line-height:${el.props.line_height??1.4}`"
-                                 @dblclick.stop="openTextEditor(el)">
-                                <div x-html="el.props.content ?? '<p style=\'color:#9ca3af\'>Double-click to edit</p>'"
-                                     class="ql-editor" style="pointer-events:none;overflow:hidden;width:100%;height:100%;padding:0;border:none;box-shadow:none"></div>
-                            </div>
-
-                            {{-- TABLE --}}
-                            <div x-show="el.type === 'table'" class="w-full h-full overflow-hidden rounded bg-white/95"
-                                 @dblclick.stop="openTableEditor(el)">
-                                <div x-html="el.props.content ?? '<p style=\'color:#9ca3af;padding:8px;font-size:12px\'>Double-click to edit table</p>'"
-                                     style="pointer-events:none;overflow:hidden;width:100%;height:100%;padding:4px;font-size:11px"></div>
-                            </div>
-
-                            {{-- KPI --}}
-                            <div x-show="el.type === 'kpi'" class="el-kpi w-full h-full rounded-lg"
-                                 :style="`background:${el.props.bg??'#f5f3ff'};border:2px solid ${el.props.accent??'#4f46e5'};`">
-                                <div style="font-size:2em;font-weight:800" :style="`color:${el.props.accent??'#4f46e5'}`"
-                                     x-text="(el.props.prefix??'') + kpiValue(el.props.data_source) + (el.props.suffix??'')"></div>
-                                <div style="font-size:0.75em;color:#6b7280;margin-top:4px" x-text="el.props.label??''"></div>
-                            </div>
-
-                            {{-- CHART --}}
-                            <div x-show="el.type === 'chart'" class="w-full h-full flex flex-col bg-white/80 rounded-lg p-2">
-                                <div style="font-size:11px;font-weight:600;color:#374151;margin-bottom:4px" x-text="el.props.title??'Chart'"></div>
-                                <canvas :id="'chart-'+el.id" style="flex:1;min-height:0;max-height:100%"></canvas>
-                            </div>
-
-                            {{-- IMAGE --}}
-                            <div x-show="el.type === 'image'" class="w-full h-full overflow-hidden rounded bg-gray-200 flex items-center justify-center">
-                                <img x-show="el.props.url" :src="el.props.url"
-                                     :style="`width:100%;height:100%;object-fit:${el.props.fit??'cover'}`">
-                                <div x-show="!el.props.url" class="text-gray-400 text-center">
-                                    <i class="ti ti-photo text-2xl block"></i>
-                                    <p style="font-size:10px;margin-top:2px">Double-click to replace</p>
-                                </div>
-                            </div>
-
-                            {{-- SHAPE --}}
-                            <div x-show="el.type === 'shape'" class="w-full h-full"
-                                 :style="`background:${el.props.fill??'#4f46e5'};opacity:${el.props.opacity??1};border-radius:${el.props.border_radius??0}px;border:${el.props.border_width??0}px solid ${el.props.border_color??'#000'}`">
-                            </div>
-
-                            {{-- GANTT MINI --}}
-                            <div x-show="el.type === 'gantt_mini'"
-                                 class="w-full h-full overflow-hidden rounded"
-                                 style="background:#f8fafc"
-                                 x-html="buildGanttSvg(el)">
-                            </div>
-
-                            {{-- MILESTONE LIST --}}
-                            <div x-show="el.type === 'milestone_list'"
-                                 class="w-full h-full overflow-hidden rounded bg-white/95 flex flex-col">
-                                <div style="font-size:11px;font-weight:600;color:#374151;padding:6px 10px;background:#f8fafc;border-bottom:1px solid #e2e8f0;flex-shrink:0"
-                                     x-text="el.props.title ?? 'Milestones'"></div>
-                                <div style="overflow-y:auto;flex:1">
-                                    <template x-if="PROJECT_DATA.milestones.length === 0">
-                                        <div style="text-align:center;color:#9ca3af;font-size:10px;padding:12px">No milestones</div>
-                                    </template>
-                                    <template x-for="m in PROJECT_DATA.milestones" :key="m.id">
-                                        <div style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-bottom:1px solid #f1f5f9;font-size:10px">
-                                            <span x-text="m.is_completed ? '✅' : '⭕'"></span>
-                                            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" x-text="m.name"></span>
-                                            <span style="color:#9ca3af;flex-shrink:0" x-text="m.due_date ?? '—'"></span>
-                                        </div>
-                                    </template>
-                                </div>
-                            </div>
-
-                            {{-- TEAM LIST --}}
-                            <div x-show="el.type === 'team_list'"
-                                 class="w-full h-full overflow-hidden rounded bg-white/95 flex flex-col">
-                                <div style="font-size:11px;font-weight:600;color:#374151;padding:6px 10px;background:#f8fafc;border-bottom:1px solid #e2e8f0;flex-shrink:0"
-                                     x-text="el.props.title ?? 'Team Members'"></div>
-                                <div style="overflow-y:auto;flex:1">
-                                    <template x-for="m in PROJECT_DATA.members" :key="m.id">
-                                        <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid #f1f5f9">
-                                            <div style="width:22px;height:22px;border-radius:50%;background:#4f46e5;display:flex;align-items:center;justify-content:center;color:#fff;font-size:9px;font-weight:700;flex-shrink:0"
-                                                 x-text="m.name.charAt(0).toUpperCase()"></div>
-                                            <div style="flex:1;min-width:0">
-                                                <div style="font-size:10px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" x-text="m.name"></div>
-                                                <div style="font-size:9px;color:#9ca3af;text-transform:capitalize" x-text="m.role"></div>
-                                            </div>
-                                            <span style="font-size:9px;color:#9ca3af;flex-shrink:0" x-text="m.tasks_count + ' tasks'"></span>
-                                        </div>
-                                    </template>
-                                </div>
-                            </div>
-
-                            {{-- BLOCKER LIST --}}
-                            <div x-show="el.type === 'blocker_list'"
-                                 class="w-full h-full overflow-hidden rounded flex flex-col"
-                                 :style="`background:${PROJECT_DATA.active_blockers_list.length ? '#fff5f5' : '#f0fdf4'}`">
-                                <div style="font-size:11px;font-weight:600;padding:6px 10px;border-bottom:1px solid;flex-shrink:0"
-                                     :class="PROJECT_DATA.active_blockers_list.length ? 'bg-red-50 text-red-700 border-red-100' : 'bg-green-50 text-green-700 border-green-100'"
-                                     x-text="el.props.title ?? 'Active Blockers'"></div>
-                                <div style="overflow-y:auto;flex:1">
-                                    <template x-if="!PROJECT_DATA.active_blockers_list.length">
-                                        <div style="text-align:center;color:#16a34a;font-size:10px;padding:12px">✅ No active blockers</div>
-                                    </template>
-                                    <template x-for="(b, i) in PROJECT_DATA.active_blockers_list" :key="i">
-                                        <div style="display:flex;align-items:flex-start;gap:6px;padding:6px 10px;border-bottom:1px solid #fee2e2">
-                                            <span style="flex-shrink:0;font-size:12px">🚨</span>
-                                            <div style="min-width:0">
-                                                <div style="font-size:10px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" x-text="b.task_title"></div>
-                                                <div style="font-size:9px;color:#dc2626;margin-top:1px" x-text="b.description"></div>
-                                            </div>
-                                        </div>
-                                    </template>
-                                </div>
-                            </div>
-
-                            {{-- DIVIDER --}}
-                            <div x-show="el.type === 'divider'" class="w-full h-full flex items-center">
-                                <div class="w-full" :style="`border-top:${el.props.thickness??2}px solid ${el.props.color??'#e5e7eb'}`"></div>
-                            </div>
-
-                            {{-- Resize handles (selected only) --}}
-                            <template x-if="selectedId === el.id">
-                                <div>
-                                    <div class="rh" data-h="nw" @mousedown.stop="startResize($event,el,'nw')"></div>
-                                    <div class="rh" data-h="n"  @mousedown.stop="startResize($event,el,'n')"></div>
-                                    <div class="rh" data-h="ne" @mousedown.stop="startResize($event,el,'ne')"></div>
-                                    <div class="rh" data-h="e"  @mousedown.stop="startResize($event,el,'e')"></div>
-                                    <div class="rh" data-h="se" @mousedown.stop="startResize($event,el,'se')"></div>
-                                    <div class="rh" data-h="s"  @mousedown.stop="startResize($event,el,'s')"></div>
-                                    <div class="rh" data-h="sw" @mousedown.stop="startResize($event,el,'sw')"></div>
-                                    <div class="rh" data-h="w"  @mousedown.stop="startResize($event,el,'w')"></div>
-                                </div>
-                            </template>
-                        </div>
-                    </template>
-                </template>
-            </div>
-        </div>
-
-        {{-- Properties Panel --}}
-        <div class="props-panel">
-            <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                {{ app()->getLocale() === 'th' ? 'คุณสมบัติ' : 'Properties' }}
-            </div>
-
-            <template x-if="selectedElement">
-                <div class="space-y-3">
-                    {{-- Position & Size --}}
-                    <div class="grid grid-cols-2 gap-2">
-                        <div><div class="prop-label">X</div>
-                            <input type="number" class="prop-input" :value="Math.round(selectedElement.x)"
-                                   @input="selectedElement.x=+$event.target.value;isDirty=true"></div>
-                        <div><div class="prop-label">Y</div>
-                            <input type="number" class="prop-input" :value="Math.round(selectedElement.y)"
-                                   @input="selectedElement.y=+$event.target.value;isDirty=true"></div>
-                        <div><div class="prop-label">W</div>
-                            <input type="number" class="prop-input" :value="Math.round(selectedElement.w)"
-                                   @input="selectedElement.w=Math.max(10,+$event.target.value);isDirty=true"></div>
-                        <div><div class="prop-label">H</div>
-                            <input type="number" class="prop-input" :value="Math.round(selectedElement.h)"
-                                   @input="selectedElement.h=Math.max(10,+$event.target.value);isDirty=true"></div>
-                    </div>
-                    <div><div class="prop-label">Z-index</div>
-                        <input type="number" class="prop-input" :value="selectedElement.z_index"
-                               @input="selectedElement.z_index=+$event.target.value;isDirty=true"></div>
-
-                    {{-- TEXT props --}}
-                    <template x-if="selectedElement.type === 'text'">
-                        <div class="prop-section space-y-2">
-                            <div class="prop-label font-semibold text-gray-400">Text</div>
-                            <button @click="openTextEditor(selectedElement)"
-                                    class="w-full py-1.5 rounded text-xs bg-indigo-600 text-white hover:bg-indigo-700">
-                                <i class="ti ti-edit mr-1"></i> Open Text Editor
-                            </button>
-                            <div><div class="prop-label">Font Size</div>
-                                <input type="number" min="8" max="200" class="prop-input" :value="selectedElement.props.font_size??20"
-                                       @input="selectedElement.props.font_size=+$event.target.value;isDirty=true"></div>
-                            <div><div class="prop-label">Color</div>
-                                <input type="color" class="w-full h-8 rounded cursor-pointer" :value="selectedElement.props.color??'#1a1a1a'"
-                                       @input="selectedElement.props.color=$event.target.value;isDirty=true"></div>
-                            <div><div class="prop-label">Background</div>
-                                <input type="color" class="w-full h-8 rounded cursor-pointer" :value="selectedElement.props.bg_color??'#ffffff'"
-                                       @input="selectedElement.props.bg_color=$event.target.value;isDirty=true"></div>
-                            <div><div class="prop-label">Align</div>
-                                <div class="flex gap-1">
-                                    <template x-for="a in ['left','center','right']" :key="a">
-                                        <button class="flex-1 py-1 rounded text-xs border"
-                                                :class="selectedElement.props.align===a ? 'bg-indigo-600 border-indigo-500 text-white' : 'border-gray-600 text-gray-400'"
-                                                @click="selectedElement.props.align=a;isDirty=true" x-text="a"></button>
-                                    </template>
-                                </div>
-                            </div>
-                            <div class="flex gap-2">
-                                <label class="flex items-center gap-1 text-xs text-gray-400 cursor-pointer">
-                                    <input type="checkbox" :checked="selectedElement.props.font_weight==='bold'"
-                                           @change="selectedElement.props.font_weight=$event.target.checked?'bold':'normal';isDirty=true"> Bold
-                                </label>
-                                <label class="flex items-center gap-1 text-xs text-gray-400 cursor-pointer">
-                                    <input type="checkbox" :checked="selectedElement.props.italic"
-                                           @change="selectedElement.props.italic=$event.target.checked;isDirty=true"> Italic
-                                </label>
-                            </div>
-                        </div>
-                    </template>
-
-                    {{-- TABLE props --}}
-                    <template x-if="selectedElement.type === 'table'">
-                        <div class="prop-section space-y-2">
-                            <div class="prop-label font-semibold text-gray-400">Table</div>
-                            <button @click="openTableEditor(selectedElement)"
-                                    class="w-full py-1.5 rounded text-xs bg-indigo-600 text-white hover:bg-indigo-700">
-                                <i class="ti ti-table mr-1"></i> Edit Table HTML
-                            </button>
-                            <p class="text-xs text-gray-600">Edit raw HTML for full table control.</p>
-                        </div>
-                    </template>
-
-                    {{-- KPI props --}}
-                    <template x-if="selectedElement.type === 'kpi'">
-                        <div class="prop-section space-y-2">
-                            <div class="prop-label font-semibold text-gray-400">KPI</div>
-                            <div><div class="prop-label">Data Source</div>
-                                <select class="prop-input" :value="selectedElement.props.data_source??'total'"
-                                        @change="selectedElement.props.data_source=$event.target.value;isDirty=true">
-                                    <option value="total">Total Tasks</option>
-                                    <option value="done">Done Tasks</option>
-                                    <option value="in_progress">In Progress</option>
-                                    <option value="overdue">Overdue</option>
-                                    <option value="progress_pct">Progress %</option>
-                                    <option value="members">Members</option>
-                                </select></div>
-                            <div><div class="prop-label">Label</div>
-                                <input type="text" class="prop-input" :value="selectedElement.props.label??''"
-                                       @input="selectedElement.props.label=$event.target.value;isDirty=true"></div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div><div class="prop-label">Prefix</div>
-                                    <input type="text" class="prop-input" maxlength="5" :value="selectedElement.props.prefix??''"
-                                           @input="selectedElement.props.prefix=$event.target.value;isDirty=true"></div>
-                                <div><div class="prop-label">Suffix</div>
-                                    <input type="text" class="prop-input" maxlength="5" :value="selectedElement.props.suffix??''"
-                                           @input="selectedElement.props.suffix=$event.target.value;isDirty=true"></div>
-                            </div>
-                            <div><div class="prop-label">Accent</div>
-                                <input type="color" class="w-full h-8 rounded cursor-pointer" :value="selectedElement.props.accent??'#4f46e5'"
-                                       @input="selectedElement.props.accent=$event.target.value;isDirty=true"></div>
-                        </div>
-                    </template>
-
-                    {{-- CHART props --}}
-                    <template x-if="selectedElement.type === 'chart'">
-                        <div class="prop-section space-y-2">
-                            <div class="prop-label font-semibold text-gray-400">Chart</div>
-                            <div><div class="prop-label">Chart Type</div>
-                                <select class="prop-input" :value="selectedElement.props.chart_type??'doughnut'"
-                                        @change="selectedElement.props.chart_type=$event.target.value;isDirty=true;$nextTick(()=>renderAllCharts())">
-                                    <option value="doughnut">Doughnut</option>
-                                    <option value="bar">Bar</option>
-                                    <option value="pie">Pie</option>
-                                    <option value="line">Line</option>
-                                </select></div>
-                            <div><div class="prop-label">Data Source</div>
-                                <select class="prop-input" :value="selectedElement.props.data_source??'status'"
-                                        @change="selectedElement.props.data_source=$event.target.value;isDirty=true;$nextTick(()=>renderAllCharts())">
-                                    <option value="status">Tasks by Status</option>
-                                    <option value="priority">Tasks by Priority</option>
-                                    <option value="assignee">Tasks by Assignee</option>
-                                </select></div>
-                            <div><div class="prop-label">Title</div>
-                                <input type="text" class="prop-input" :value="selectedElement.props.title??''"
-                                       @input="selectedElement.props.title=$event.target.value;isDirty=true"></div>
-                        </div>
-                    </template>
-
-                    {{-- SHAPE props --}}
-                    <template x-if="selectedElement.type === 'shape'">
-                        <div class="prop-section space-y-2">
-                            <div class="prop-label font-semibold text-gray-400">Shape</div>
-                            <div><div class="prop-label">Fill</div>
-                                <input type="color" class="w-full h-8 rounded cursor-pointer" :value="selectedElement.props.fill??'#4f46e5'"
-                                       @input="selectedElement.props.fill=$event.target.value;isDirty=true"></div>
-                            <div><div class="prop-label">Opacity</div>
-                                <input type="range" min="0" max="1" step=".05" class="w-full" :value="selectedElement.props.opacity??1"
-                                       @input="selectedElement.props.opacity=+$event.target.value;isDirty=true"></div>
-                            <div><div class="prop-label">Border Radius</div>
-                                <input type="range" min="0" max="100" step="1" class="w-full" :value="selectedElement.props.border_radius??0"
-                                       @input="selectedElement.props.border_radius=+$event.target.value;isDirty=true"></div>
-                            <div><div class="prop-label">Border Width</div>
-                                <input type="number" min="0" max="20" class="prop-input" :value="selectedElement.props.border_width??0"
-                                       @input="selectedElement.props.border_width=+$event.target.value;isDirty=true"></div>
-                            <div><div class="prop-label">Border Color</div>
-                                <input type="color" class="w-full h-8 rounded cursor-pointer" :value="selectedElement.props.border_color??'#000000'"
-                                       @input="selectedElement.props.border_color=$event.target.value;isDirty=true"></div>
-                        </div>
-                    </template>
-
-                    {{-- IMAGE props --}}
-                    <template x-if="selectedElement.type === 'image'">
-                        <div class="prop-section space-y-2">
-                            <div class="prop-label font-semibold text-gray-400">Image</div>
-                            <div><div class="prop-label">Fit</div>
-                                <select class="prop-input" :value="selectedElement.props.fit??'cover'"
-                                        @change="selectedElement.props.fit=$event.target.value;isDirty=true">
-                                    <option value="cover">Cover</option>
-                                    <option value="contain">Contain</option>
-                                    <option value="fill">Fill</option>
-                                </select></div>
-                            <button class="w-full py-1.5 rounded border border-gray-600 text-xs text-gray-300 hover:bg-gray-700"
-                                    @click="replaceImage(selectedElement)">
-                                <i class="ti ti-upload mr-1"></i> Replace Image
-                            </button>
-                        </div>
-                    </template>
-
-                    {{-- GANTT MINI props --}}
-                    <template x-if="selectedElement.type === 'gantt_mini'">
-                        <div class="prop-section space-y-2">
-                            <div class="prop-label font-semibold text-gray-400">Gantt Mini</div>
-                            <div><div class="prop-label">Title</div>
-                                <input type="text" class="prop-input" :value="selectedElement.props.title??'Project Timeline'"
-                                       @input="selectedElement.props.title=$event.target.value;isDirty=true"></div>
-                            <p class="text-xs text-gray-600">Shows tasks with scheduled start/end dates from project.</p>
-                        </div>
-                    </template>
-
-                    {{-- MILESTONE LIST props --}}
-                    <template x-if="selectedElement.type === 'milestone_list'">
-                        <div class="prop-section space-y-2">
-                            <div class="prop-label font-semibold text-gray-400">Milestone List</div>
-                            <div><div class="prop-label">Title</div>
-                                <input type="text" class="prop-input" :value="selectedElement.props.title??'Milestones'"
-                                       @input="selectedElement.props.title=$event.target.value;isDirty=true"></div>
-                        </div>
-                    </template>
-
-                    {{-- TEAM LIST props --}}
-                    <template x-if="selectedElement.type === 'team_list'">
-                        <div class="prop-section space-y-2">
-                            <div class="prop-label font-semibold text-gray-400">Team List</div>
-                            <div><div class="prop-label">Title</div>
-                                <input type="text" class="prop-input" :value="selectedElement.props.title??'Team Members'"
-                                       @input="selectedElement.props.title=$event.target.value;isDirty=true"></div>
-                        </div>
-                    </template>
-
-                    {{-- BLOCKER LIST props --}}
-                    <template x-if="selectedElement.type === 'blocker_list'">
-                        <div class="prop-section space-y-2">
-                            <div class="prop-label font-semibold text-gray-400">Blocker List</div>
-                            <div><div class="prop-label">Title</div>
-                                <input type="text" class="prop-input" :value="selectedElement.props.title??'Active Blockers'"
-                                       @input="selectedElement.props.title=$event.target.value;isDirty=true"></div>
-                        </div>
-                    </template>
-
-                    {{-- DIVIDER props --}}
-                    <template x-if="selectedElement.type === 'divider'">
-                        <div class="prop-section space-y-2">
-                            <div class="prop-label font-semibold text-gray-400">Divider</div>
-                            <div><div class="prop-label">Color</div>
-                                <input type="color" class="w-full h-8 rounded cursor-pointer" :value="selectedElement.props.color??'#e5e7eb'"
-                                       @input="selectedElement.props.color=$event.target.value;isDirty=true"></div>
-                            <div><div class="prop-label">Thickness (px)</div>
-                                <input type="number" min="1" max="20" class="prop-input" :value="selectedElement.props.thickness??2"
-                                       @input="selectedElement.props.thickness=+$event.target.value;isDirty=true"></div>
-                        </div>
-                    </template>
-
-                    {{-- Slide Background (always shown) --}}
-                    <div class="prop-section">
-                        <div class="prop-label font-semibold text-gray-400 mb-2">Slide Background</div>
-                        <input type="color" class="w-full h-8 rounded cursor-pointer"
-                               :value="currentSlide ? currentSlide.bg_color : '#ffffff'"
-                               @input="if(currentSlide){currentSlide.bg_color=$event.target.value;isDirty=true}">
-                    </div>
-
-                    <button @click="deleteSelected()"
-                            class="w-full mt-2 py-2 rounded-lg bg-red-900/30 border border-red-800 text-red-400 text-xs hover:bg-red-900/50">
-                        <i class="ti ti-trash mr-1"></i> Delete Element
-                    </button>
+        <div class="canvas-area" @click.self="$refs.slideCanvas&&$refs.slideCanvas.focus()">
+            <div class="canvas-wrap">
+                <div class="slide-canvas"
+                     contenteditable="true"
+                     spellcheck="false"
+                     x-ref="slideCanvas"
+                     @input="onSlideInput()"
+                     @mouseup="onSelectionChange()"
+                     @keyup="onSelectionChange()"
+                     @keydown="onCanvasKeydown($event)"
+                     @click.stop="onSelectionChange()"
+                     @dragover.prevent
+                     @drop.prevent="handleDrop($event)"
+                     :style="canvasStyle">
                 </div>
-            </template>
-
-            <template x-if="!selectedElement">
-                <div>
-                    <div class="prop-section">
-                        <div class="prop-label font-semibold text-gray-400 mb-2">Slide Background</div>
-                        <input type="color" class="w-full h-8 rounded cursor-pointer"
-                               :value="currentSlide ? currentSlide.bg_color : '#ffffff'"
-                               @input="if(currentSlide){currentSlide.bg_color=$event.target.value;isDirty=true}">
-                    </div>
-                    <p class="text-xs text-gray-600 mt-4 text-center">Click element to select · Double-click text/table to edit</p>
-                </div>
-            </template>
-        </div>
-    </div>{{-- /builder-body --}}
-
-    {{-- ══ Quill Text Editor Modal ══ --}}
-    <div x-show="quillEditing" x-cloak
-         class="fixed inset-0 z-[200] flex items-center justify-center bg-black/75"
-         @keydown.escape.window="cancelTextEdit()">
-        <div class="bg-white rounded-xl overflow-hidden shadow-2xl flex flex-col"
-             style="width:900px;max-width:95vw;height:580px">
-            <div class="flex justify-between items-center px-5 py-3 bg-gray-100 border-b flex-shrink-0">
-                <h3 class="font-semibold text-gray-800 text-sm">Edit Text Content</h3>
-                <div class="flex gap-2">
-                    <button @click="saveTextEdit()"
-                            class="px-4 py-1.5 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">
-                        <i class="ti ti-check mr-1"></i> Save
-                    </button>
-                    <button @click="cancelTextEdit()"
-                            class="px-4 py-1.5 border border-gray-300 text-gray-600 rounded-lg text-sm hover:bg-gray-50">
-                        Cancel
-                    </button>
-                </div>
-            </div>
-            <div class="flex-1 overflow-hidden" style="display:flex;flex-direction:column">
-                <div id="quill-editor" style="flex:1;overflow:hidden;display:flex;flex-direction:column"></div>
             </div>
         </div>
     </div>
 
-    {{-- ══ Table HTML Editor Modal ══ --}}
-    <div x-show="tableEditing" x-cloak
-         class="fixed inset-0 z-[200] flex items-center justify-center bg-black/75"
-         @keydown.escape.window="cancelTableEdit()">
-        <div class="bg-white rounded-xl overflow-hidden shadow-2xl flex flex-col"
-             style="width:900px;max-width:95vw;height:580px">
-            <div class="flex justify-between items-center px-5 py-3 bg-gray-100 border-b flex-shrink-0">
-                <h3 class="font-semibold text-gray-800 text-sm">Edit Table (HTML)</h3>
-                <div class="flex gap-2">
-                    <button @click="saveTableEdit()"
-                            class="px-4 py-1.5 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">
-                        <i class="ti ti-check mr-1"></i> Save
-                    </button>
-                    <button @click="cancelTableEdit()"
-                            class="px-4 py-1.5 border border-gray-300 text-gray-600 rounded-lg text-sm hover:bg-gray-50">
-                        Cancel
-                    </button>
-                </div>
-            </div>
-            <div class="flex-1 overflow-hidden">
-                <textarea id="table-editor-area" x-ref="tableEditorArea" spellcheck="false"></textarea>
-            </div>
+    {{-- ══ Floating Toolbar ══ --}}
+    <div id="floating-tb" x-show="showToolbar" x-cloak
+         class="fixed z-[200] bg-gray-900 rounded-lg shadow-2xl flex items-center gap-0.5 px-2 py-1.5 border border-gray-700"
+         :style="`top:${toolbarY}px;left:${toolbarX}px`"
+         @mousedown.prevent>
+
+        <button @click="execCmd('bold')" class="ftb-btn font-bold" title="Bold">B</button>
+        <button @click="execCmd('italic')" class="ftb-btn italic" title="Italic">I</button>
+        <button @click="execCmd('underline')" class="ftb-btn underline" title="Underline">U</button>
+        <button @click="execCmd('strikeThrough')" class="ftb-btn" title="Strikethrough" style="text-decoration:line-through">S</button>
+
+        <div class="w-px h-4 bg-gray-700 mx-0.5"></div>
+
+        <select @change="execCmd('fontSize',$event.target.value)" class="ftb-sel" title="Font Size">
+            <option value="1">8</option>
+            <option value="2">10</option>
+            <option value="3" selected>12</option>
+            <option value="4">14</option>
+            <option value="5">18</option>
+            <option value="6">24</option>
+            <option value="7">36</option>
+        </select>
+
+        <select @change="execCmd('formatBlock',$event.target.value)" class="ftb-sel ml-0.5" title="Style">
+            <option value="p">Normal</option>
+            <option value="h1">H1</option>
+            <option value="h2">H2</option>
+            <option value="h3">H3</option>
+        </select>
+
+        <div class="w-px h-4 bg-gray-700 mx-0.5"></div>
+
+        <div class="relative" title="Text Color">
+            <button class="ftb-btn text-xs">A</button>
+            <input type="color" @input="execCmd('foreColor',$event.target.value)"
+                   class="absolute inset-0 opacity-0 w-full h-full cursor-pointer">
         </div>
+        <div class="relative" title="Highlight">
+            <button class="ftb-btn text-xs" style="background:#fef08a;color:#1a1a1a;border-radius:3px;width:auto;padding:0 4px">H</button>
+            <input type="color" @input="execCmd('backColor',$event.target.value)"
+                   class="absolute inset-0 opacity-0 w-full h-full cursor-pointer">
+        </div>
+
+        <div class="w-px h-4 bg-gray-700 mx-0.5"></div>
+
+        <button @click="execCmd('justifyLeft')" class="ftb-btn" title="Left"><i class="ti ti-align-left"></i></button>
+        <button @click="execCmd('justifyCenter')" class="ftb-btn" title="Center"><i class="ti ti-align-center"></i></button>
+        <button @click="execCmd('justifyRight')" class="ftb-btn" title="Right"><i class="ti ti-align-right"></i></button>
+
+        <div class="w-px h-4 bg-gray-700 mx-0.5"></div>
+
+        <button @click="execCmd('insertUnorderedList')" class="ftb-btn" title="Bullet"><i class="ti ti-list"></i></button>
+        <button @click="execCmd('insertOrderedList')" class="ftb-btn" title="Numbered"><i class="ti ti-list-numbers"></i></button>
+
+        <div class="w-px h-4 bg-gray-700 mx-0.5"></div>
+
+        <button @click="insertLink()" class="ftb-btn" title="Link"><i class="ti ti-link"></i></button>
     </div>
 
     {{-- ══ Template Save Modal ══ --}}
@@ -629,7 +335,7 @@
         <div class="bg-gray-800 rounded-xl border border-gray-700 p-6 w-80 shadow-2xl">
             <h3 class="text-sm font-semibold text-gray-200 mb-4">Save as Template</h3>
             <input type="text" x-model="templateName" placeholder="Template name"
-                   class="w-full prop-input mb-4">
+                   class="w-full px-3 py-2 rounded-lg bg-gray-900 border border-gray-600 text-gray-200 text-sm mb-4 outline-none focus:border-indigo-500">
             <div class="flex gap-3">
                 <button @click="showTemplateSave=false"
                         class="flex-1 py-2 rounded-lg border border-gray-600 text-xs text-gray-400 hover:bg-gray-700">Cancel</button>
@@ -639,8 +345,7 @@
         </div>
     </div>
 
-    <input type="file" x-ref="replaceImgInput" accept="image/*" class="hidden" @change="doReplaceImage($event)">
-</div>
+</div>{{-- /report-builder --}}
 @endsection
 
 @push('scripts')
@@ -650,440 +355,408 @@ $reportJson = [
     'title'  => $report->title,
     'slides' => $report->slides->map(function($s) {
         return [
-            'id'          => $s->id,
-            'slide_order' => $s->slide_order,
-            'bg_color'    => $s->bg_color,
-            'notes'       => $s->notes ?? '',
-            'elements'    => $s->elements->map(function($e) {
-                return [
-                    'id'      => $e->id,
-                    'type'    => $e->type,
-                    'x'       => $e->x,
-                    'y'       => $e->y,
-                    'w'       => $e->w,
-                    'h'       => $e->h,
-                    'z_index' => $e->z_index,
-                    'props'   => $e->props,
-                ];
-            })->values(),
+            'id'           => $s->id,
+            'slide_order'  => $s->slide_order,
+            'bg_color'     => $s->bg_color,
+            'notes'        => $s->notes ?? '',
+            'html_content' => $s->html_content ?? '',
         ];
     })->values(),
 ];
 @endphp
 <script>
-const REPORT_DATA   = @json($reportJson);
-const PROJECT_KPI   = @json($kpi);
-const CHART_DATA    = @json($chartData);
-const PROJECT_DATA  = @json($projectData);
-const SAVE_URL      = '{{ route('projects.reports.save', [$project, $report]) }}';
-const UPLOAD_IMG_URL = '{{ route('projects.reports.upload-image', [$project, $report]) }}';
-const TEMPLATE_URL  = '{{ route('projects.reports.save-as-template', [$project, $report]) }}';
+const REPORT_DATA  = @json($reportJson);
+const PROJECT_KPI  = @json($kpi);
+const CHART_DATA   = @json($chartData);
+const PROJECT_DATA = @json($projectData);
+const SAVE_URL     = '{{ route('projects.reports.save', [$project, $report]) }}';
+const TEMPLATE_URL = '{{ route('projects.reports.save-as-template', [$project, $report]) }}';
 
 function reportBuilder() {
     return {
         slides: [],
         currentSlideIndex: 0,
-        selectedId: null,
-        canvasScale: 1,
         isDirty: false,
         isSaving: false,
+        slideLayout: 'a4',
+        showToolbar: false,
+        toolbarX: 0,
+        toolbarY: 0,
         showTemplateSave: false,
         templateName: '',
-        quillEditing: false,
-        quillEditorElement: null,
-        quillInstance: null,
-        _quillBackup: null,
-        tableEditing: false,
-        tableEditorElement: null,
-        _tableBackup: null,
-        _replaceTarget: null,
         _chartInstances: {},
+        tableCells: Array.from({length:36}, (_,i) => ({ r:Math.floor(i/6)+1, c:(i%6)+1, key:i })),
 
-        init() {
-            this.slides = JSON.parse(JSON.stringify(REPORT_DATA.slides || []));
-            if (!this.slides.length) this.addSlide();
-            this.$nextTick(() => { this.recalcScale(); this.renderAllCharts(); });
-            window.addEventListener('resize', () => this.recalcScale());
-            window.addEventListener('keydown', (e) => {
-                if (e.key === 'Delete' || e.key === 'Backspace') {
-                    const tag = document.activeElement.tagName;
-                    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-                    if (document.activeElement.contentEditable === 'true') return;
-                    if (this.quillEditing || this.tableEditing) return;
-                    this.deleteSelected();
-                }
-                if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); this.save(); }
-                if ((e.ctrlKey || e.metaKey) && e.key === 'z') { /* undo stub */ }
-            });
-            setInterval(() => { if (this.isDirty && !this.isSaving && !this.quillEditing && !this.tableEditing) this.save(); }, 60000);
+        get canvasStyle() {
+            const base = { background:'#fff', outline:'none' };
+            const layouts = {
+                a4:    { ...base, width:'794px', minHeight:'1123px', padding:'60px 72px' },
+                slide: { ...base, width:'960px', height:'540px', padding:'48px 56px', overflow:'hidden' },
+                wide:  { ...base, width:'1122px', minHeight:'794px', padding:'56px 72px' },
+            };
+            return layouts[this.slideLayout] || layouts.a4;
         },
 
         get currentSlide() { return this.slides[this.currentSlideIndex] || null; },
-        get selectedElement() {
-            if (!this.selectedId || !this.currentSlide) return null;
-            return this.currentSlide.elements.find(e => e.id === this.selectedId) || null;
+
+        // ── Init ──
+        init() {
+            this.slides = (REPORT_DATA.slides || []).map(s => ({ ...s }));
+            if (!this.slides.length) this.addSlide();
+            this.$nextTick(() => this.loadSlideToCanvas());
+            window.addEventListener('keydown', e => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); this.save(); }
+            });
+            document.addEventListener('mousedown', e => {
+                const tb = document.getElementById('floating-tb');
+                if (tb && !tb.contains(e.target)) {
+                    const sel = window.getSelection();
+                    if (!sel || sel.isCollapsed) this.showToolbar = false;
+                }
+            });
+            setInterval(() => { if (this.isDirty && !this.isSaving) this.save(); }, 90000);
         },
 
-        recalcScale() {
-            const el = this.$refs.canvasContainer;
-            if (!el) return;
-            this.canvasScale = Math.min((el.clientWidth - 48) / 960, (el.clientHeight - 48) / 540, 1);
+        // ── Canvas I/O ──
+        loadSlideToCanvas() {
+            const c = this.$refs.slideCanvas;
+            if (!c) return;
+            const html = this.currentSlide?.html_content || '';
+            c.innerHTML = html;
+            if (!html) {
+                c.focus();
+                const r = document.createRange();
+                r.setStart(c, 0); r.collapse(true);
+                const s = window.getSelection();
+                s?.removeAllRanges(); s?.addRange(r);
+            }
+            this.$nextTick(() => this.renderWidgets());
+        },
+
+        saveCurrentCanvas() {
+            const c = this.$refs.slideCanvas;
+            if (c && this.currentSlide) this.currentSlide.html_content = c.innerHTML;
+        },
+
+        onSlideInput() {
+            const c = this.$refs.slideCanvas;
+            if (c && this.currentSlide) { this.currentSlide.html_content = c.innerHTML; this.isDirty = true; }
         },
 
         // ── Slide management ──
-        addSlide() {
-            const s = { id: 'new_' + Date.now(), slide_order: this.slides.length, bg_color: '#ffffff', notes: '', elements: [] };
-            this.slides.push(s);
-            this.currentSlideIndex = this.slides.length - 1;
-            this.selectedId = null;
-            this.isDirty = true;
+        switchSlide(idx) {
+            if (idx === this.currentSlideIndex) return;
+            this.saveCurrentCanvas();
+            this.currentSlideIndex = idx;
+            this.showToolbar = false;
+            this.$nextTick(() => this.loadSlideToCanvas());
         },
+
+        addSlide() {
+            const slide = { id:'new_'+Date.now(), slide_order:this.slides.length,
+                            bg_color:'#ffffff', notes:'', html_content:'' };
+            this.slides.push(slide);
+            this.saveCurrentCanvas();
+            this.currentSlideIndex = this.slides.length - 1;
+            this.isDirty = true;
+            this.$nextTick(() => this.loadSlideToCanvas());
+        },
+
         deleteSlide(idx) {
             if (this.slides.length <= 1) return;
             this.slides.splice(idx, 1);
             if (this.currentSlideIndex >= this.slides.length) this.currentSlideIndex = this.slides.length - 1;
-            this.selectedId = null;
+            this.$nextTick(() => this.loadSlideToCanvas());
             this.isDirty = true;
         },
+
         duplicateSlide(idx) {
-            const dup = JSON.parse(JSON.stringify(this.slides[idx]));
-            dup.id = 'new_' + Date.now();
-            dup.elements = dup.elements.map(e => ({ ...e, id: 'new_' + Date.now() + '_' + Math.random().toString(36).slice(2) }));
-            this.slides.splice(idx + 1, 0, dup);
+            this.saveCurrentCanvas();
+            const dup = { ...JSON.parse(JSON.stringify(this.slides[idx])), id:'new_'+Date.now() };
+            this.slides.splice(idx+1, 0, dup);
             this.currentSlideIndex = idx + 1;
-            this.isDirty = true;
-            this.$nextTick(() => this.renderAllCharts());
-        },
-
-        // ── Element management ──
-        addElement(type) {
-            if (!this.currentSlide) return;
-            const tableDefault = '<table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr>' +
-                '<th style="border:1px solid #e2e8f0;padding:6px 8px;background:#f8fafc;text-align:left">Column 1</th>' +
-                '<th style="border:1px solid #e2e8f0;padding:6px 8px;background:#f8fafc;text-align:left">Column 2</th>' +
-                '<th style="border:1px solid #e2e8f0;padding:6px 8px;background:#f8fafc;text-align:left">Column 3</th>' +
-                '</tr></thead><tbody><tr>' +
-                '<td style="border:1px solid #e2e8f0;padding:6px 8px">Cell</td>' +
-                '<td style="border:1px solid #e2e8f0;padding:6px 8px">Cell</td>' +
-                '<td style="border:1px solid #e2e8f0;padding:6px 8px">Cell</td>' +
-                '</tr><tr>' +
-                '<td style="border:1px solid #e2e8f0;padding:6px 8px">Cell</td>' +
-                '<td style="border:1px solid #e2e8f0;padding:6px 8px">Cell</td>' +
-                '<td style="border:1px solid #e2e8f0;padding:6px 8px">Cell</td>' +
-                '</tr></tbody></table>';
-
-            const defaults = {
-                text:          { x:80, y:80, w:400, h:80,  props:{ content:'<p>Click to edit text</p>', font_size:24, font_weight:'normal', color:'#1a1a1a', align:'left', bg_color:null, italic:false, line_height:1.4 } },
-                table:         { x:80, y:80, w:500, h:200, props:{ content: tableDefault } },
-                kpi:           { x:80, y:80, w:220, h:130, props:{ data_source:'total', label:'Total Tasks', prefix:'', suffix:'', accent:'#4f46e5', bg:'#f5f3ff' } },
-                chart:         { x:80, y:80, w:380, h:280, props:{ chart_type:'doughnut', data_source:'status', title:'Task Status' } },
-                shape:         { x:80, y:80, w:240, h:100, props:{ fill:'#4f46e5', opacity:1, border_radius:8, border_width:0, border_color:'#000000' } },
-                image:         { x:80, y:80, w:300, h:200, props:{ url:null, fit:'cover' } },
-                gantt_mini:    { x:40, y:80, w:880, h:300, props:{ title:'Project Timeline' } },
-                milestone_list:{ x:40, y:80, w:440, h:280, props:{ title:'Milestones' } },
-                team_list:     { x:500, y:80, w:420, h:280, props:{ title:'Team Members' } },
-                blocker_list:  { x:40, y:300, w:880, h:200, props:{ title:'Active Blockers' } },
-                divider:       { x:40, y:260, w:880, h:8,   props:{ color:'#e5e7eb', thickness:2 } },
-            };
-            const d = defaults[type];
-            if (!d) return;
-            const el = { id:'new_'+Date.now(), type, z_index:this.currentSlide.elements.length, ...d, props:{...d.props} };
-            this.currentSlide.elements.push(el);
-            this.selectedId = el.id;
-            this.isDirty = true;
-            if (type === 'chart') this.$nextTick(() => this.renderChart(el));
-        },
-
-        deleteSelected() {
-            if (!this.selectedId || !this.currentSlide) return;
-            const id = this.selectedId;
-            if (this._chartInstances[id]) { this._chartInstances[id].destroy(); delete this._chartInstances[id]; }
-            this.currentSlide.elements = this.currentSlide.elements.filter(e => e.id !== id);
-            this.selectedId = null;
+            this.$nextTick(() => this.loadSlideToCanvas());
             this.isDirty = true;
         },
 
-        // ── Quill Text Editor ──
-        openTextEditor(element) {
-            this._quillBackup = element.props.content;
-            this.quillEditorElement = element;
-            this.quillEditing = true;
-            this.$nextTick(() => {
-                const container = document.getElementById('quill-editor');
-                if (!container) return;
-                // Destroy previous instance if any
-                if (this.quillInstance) {
-                    this.quillInstance = null;
-                    container.innerHTML = '';
-                }
-                this.quillInstance = new Quill(container, {
-                    theme: 'snow',
-                    modules: {
-                        toolbar: [
-                            [{ header: [1, 2, 3, 4, false] }],
-                            [{ font: [] }, { size: ['small', false, 'large', 'huge'] }],
-                            ['bold', 'italic', 'underline', 'strike'],
-                            [{ color: [] }, { background: [] }],
-                            [{ align: [] }],
-                            [{ list: 'ordered' }, { list: 'bullet' }],
-                            ['link', 'blockquote', 'code-block'],
-                            ['clean'],
-                        ],
-                    },
-                });
-                // Load existing content
-                const html = element.props.content || '';
-                if (html) {
-                    this.quillInstance.clipboard.dangerouslyPasteHTML(html);
-                }
-                // Focus editor
-                this.quillInstance.focus();
-            });
-        },
-        saveTextEdit() {
-            if (this.quillInstance && this.quillEditorElement) {
-                const html = this.quillInstance.root.innerHTML;
-                // Store empty string if only empty paragraph
-                this.quillEditorElement.props.content = (html === '<p><br></p>' || html === '<p></p>') ? '' : html;
-                this.isDirty = true;
+        // ── Selection / Floating Toolbar ──
+        onSelectionChange() {
+            const sel = window.getSelection();
+            const canvas = this.$refs.slideCanvas;
+            if (!sel || sel.isCollapsed || !sel.toString().trim() || !canvas?.contains(sel.anchorNode)) {
+                this.showToolbar = false;
+                return;
             }
-            this.quillEditing = false;
-            this.quillEditorElement = null;
-            this.quillInstance = null;
-        },
-        cancelTextEdit() {
-            if (this.quillEditorElement && this._quillBackup !== undefined) {
-                this.quillEditorElement.props.content = this._quillBackup;
-            }
-            this.quillEditing = false;
-            this.quillEditorElement = null;
-            this.quillInstance = null;
+            const rect = sel.getRangeAt(0).getBoundingClientRect();
+            const tbW = 460;
+            this.toolbarX = Math.max(8, Math.min(window.innerWidth - tbW - 8, rect.left + rect.width/2 - tbW/2));
+            this.toolbarY = Math.max(8, rect.top - 54 + window.scrollY);
+            this.showToolbar = true;
         },
 
-        // ── Table HTML Editor ──
-        openTableEditor(element) {
-            this._tableBackup = element.props.content;
-            this.tableEditorElement = element;
-            this.tableEditing = true;
-            this.$nextTick(() => {
-                const ta = document.getElementById('table-editor-area');
-                if (ta) {
-                    ta.value = element.props.content || '';
-                    ta.focus();
-                }
-            });
-        },
-        saveTableEdit() {
-            const ta = document.getElementById('table-editor-area');
-            if (ta && this.tableEditorElement) {
-                this.tableEditorElement.props.content = ta.value;
-                this.isDirty = true;
+        onCanvasKeydown(e) {
+            // Ctrl+S handled globally; allow Tab to insert spaces
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                document.execCommand('insertText', false, '    ');
             }
-            this.tableEditing = false;
-            this.tableEditorElement = null;
-        },
-        cancelTableEdit() {
-            if (this.tableEditorElement && this._tableBackup !== undefined) {
-                this.tableEditorElement.props.content = this._tableBackup;
-            }
-            this.tableEditing = false;
-            this.tableEditorElement = null;
         },
 
-        // ── Drag ──
-        startDrag(e, element) {
-            if (e.target.dataset.h) return;
-            e.preventDefault();
-            this.selectedId = element.id;
-            const sx = e.clientX, sy = e.clientY, ox = element.x, oy = element.y, sc = this.canvasScale;
-            const onMove = (ev) => {
-                element.x = Math.max(0, Math.min(960 - element.w, ox + (ev.clientX - sx) / sc));
-                element.y = Math.max(0, Math.min(540 - element.h, oy + (ev.clientY - sy) / sc));
-            };
-            const onUp = () => { this.isDirty = true; window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
-            window.addEventListener('mousemove', onMove);
-            window.addEventListener('mouseup', onUp);
+        // ── execCommand ──
+        execCmd(cmd, val = null) {
+            this.$refs.slideCanvas?.focus();
+            document.execCommand(cmd, false, val);
+            this.onSlideInput();
         },
 
-        // ── Resize ──
-        startResize(e, element, handle) {
-            e.stopPropagation(); e.preventDefault();
-            const sx = e.clientX, sy = e.clientY, ox = element.x, oy = element.y, ow = element.w, oh = element.h, sc = this.canvasScale;
-            const onMove = (ev) => {
-                const dx = (ev.clientX - sx) / sc, dy = (ev.clientY - sy) / sc;
-                if (handle.includes('e')) element.w = Math.max(30, ow + dx);
-                if (handle.includes('s')) element.h = Math.max(10, oh + dy);
-                if (handle.includes('w')) { const nw = Math.max(30, ow - dx); element.x = ox + ow - nw; element.w = nw; }
-                if (handle.includes('n')) { const nh = Math.max(10, oh - dy); element.y = oy + oh - nh; element.h = nh; }
-            };
-            const onUp = () => { this.isDirty = true; window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
-            window.addEventListener('mousemove', onMove);
-            window.addEventListener('mouseup', onUp);
+        insertLink() {
+            this.$refs.slideCanvas?.focus();
+            const url = prompt('Enter URL:', 'https://');
+            if (url?.trim()) { document.execCommand('createLink', false, url.trim()); this.onSlideInput(); }
         },
 
-        // ── KPI ──
-        kpiValue(src) {
-            const m = { total:PROJECT_KPI.total, done:PROJECT_KPI.done, in_progress:PROJECT_KPI.in_progress,
-                        overdue:PROJECT_KPI.overdue, progress_pct:PROJECT_KPI.progress_pct+'%', members:PROJECT_KPI.members };
-            return m[src] ?? '--';
-        },
-
-        // ── Gantt SVG ──
-        buildGanttSvg(el) {
-            const tasks = PROJECT_DATA.tasks.filter(t => t.start_date && t.due_date);
-            const W = el.w - 4;
-            if (!tasks.length) {
-                return `<svg width="${W}" height="60" xmlns="http://www.w3.org/2000/svg"><text x="${W/2}" y="35" text-anchor="middle" fill="#9ca3af" font-size="11" font-family="sans-serif">No tasks with scheduled dates</text></svg>`;
-            }
-            const allDates = tasks.flatMap(t => [new Date(t.start_date), new Date(t.due_date)]);
-            const minDate = new Date(Math.min(...allDates));
-            const maxDate = new Date(Math.max(...allDates));
-            const totalDays = Math.max(1, (maxDate - minDate) / 86400000 + 1);
-            const labelW = 130, chartW = W - labelW;
-            const rowH = Math.max(16, Math.min(26, (el.h - 36) / Math.max(tasks.length, 1)));
-            const headerH = 28;
-            const H = headerH + tasks.length * rowH + 2;
-            const sc = { done:'#16a34a', in_progress:'#4f46e5', review:'#f59e0b', todo:'#94a3b8', cancelled:'#ef4444' };
-            let s = `<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" style="font-family:sans-serif">`;
-            s += `<rect width="${W}" height="${H}" fill="#f8fafc" rx="3"/>`;
-            s += `<rect width="${W}" height="${headerH}" fill="#e2e8f0" rx="3"/>`;
-            s += `<rect y="${headerH-4}" width="${W}" height="4" fill="#e2e8f0"/>`;
-            // Month grid lines + labels
-            const cur = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
-            while (cur <= maxDate) {
-                const xOff = Math.max(0, ((cur - minDate) / 86400000) / totalDays * chartW);
-                const lx = labelW + xOff;
-                s += `<line x1="${lx}" y1="${headerH}" x2="${lx}" y2="${H}" stroke="#e2e8f0" stroke-width="1"/>`;
-                s += `<text x="${lx+2}" y="19" font-size="9" fill="#64748b">${cur.toLocaleString('default',{month:'short'})} ${String(cur.getFullYear()).slice(-2)}</text>`;
-                cur.setMonth(cur.getMonth() + 1);
-            }
-            // Separator line
-            s += `<line x1="${labelW}" y1="${headerH}" x2="${labelW}" y2="${H}" stroke="#cbd5e1" stroke-width="1"/>`;
-            // Task rows
-            tasks.forEach((t, i) => {
-                const y = headerH + i * rowH;
-                s += `<rect x="0" y="${y}" width="${W}" height="${rowH}" fill="${i%2===0?'#fff':'#f8fafc'}"/>`;
-                const maxC = Math.floor(labelW / 6.2);
-                const lbl = t.title.length > maxC ? t.title.slice(0, maxC-1)+'…' : t.title;
-                s += `<text x="4" y="${y+rowH/2+4}" font-size="9" fill="#374151">${lbl}</text>`;
-                const bx = labelW + ((new Date(t.start_date)-minDate)/86400000)/totalDays*chartW;
-                const bw = Math.max(4, ((new Date(t.due_date)-new Date(t.start_date))/86400000+1)/totalDays*chartW);
-                const color = sc[t.status] || '#94a3b8';
-                s += `<rect x="${bx}" y="${y+3}" width="${bw}" height="${rowH-6}" rx="2" fill="${color}" opacity="0.85"/>`;
-                if (t.progress_pct > 0) {
-                    s += `<rect x="${bx}" y="${y+3}" width="${bw*t.progress_pct/100}" height="${rowH-6}" rx="2" fill="rgba(255,255,255,.3)"/>`;
-                }
-            });
-            // Today line
-            const today = new Date();
-            if (today >= minDate && today <= maxDate) {
-                const tx = labelW + ((today-minDate)/86400000)/totalDays*chartW;
-                s += `<line x1="${tx}" y1="${headerH}" x2="${tx}" y2="${H}" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4,2"/>`;
-                s += `<text x="${tx+2}" y="${headerH-2}" font-size="8" fill="#ef4444">Today</text>`;
-            }
-            s += '</svg>';
-            return s;
-        },
-
-        // ── Charts ──
-        renderAllCharts() {
-            if (!this.currentSlide) return;
-            this.currentSlide.elements.filter(e => e.type === 'chart').forEach(el => {
-                this.$nextTick(() => this.renderChart(el));
-            });
-        },
-        renderChart(el) {
-            const canvas = document.getElementById('chart-' + el.id);
-            if (!canvas) return;
-            if (this._chartInstances[el.id]) { this._chartInstances[el.id].destroy(); }
-            const ds = el.props.data_source ?? 'status';
-            let labels, values, colors;
-            if (ds === 'status') {
-                labels = ['Todo','In Progress','Review','Done','Cancelled'];
-                values = [CHART_DATA.tasksByStatus.todo,CHART_DATA.tasksByStatus.in_progress,CHART_DATA.tasksByStatus.review,CHART_DATA.tasksByStatus.done,CHART_DATA.tasksByStatus.cancelled];
-                colors = ['#94a3b8','#6366f1','#f59e0b','#22c55e','#ef4444'];
-            } else if (ds === 'priority') {
-                labels = ['Critical','High','Medium','Low'];
-                values = [CHART_DATA.tasksByPriority.critical,CHART_DATA.tasksByPriority.high,CHART_DATA.tasksByPriority.medium,CHART_DATA.tasksByPriority.low];
-                colors = ['#ef4444','#f97316','#eab308','#22c55e'];
-            } else {
-                labels = CHART_DATA.tasksByAssignee.map(a => a.name);
-                values = CHART_DATA.tasksByAssignee.map(a => a.count);
-                colors = ['#6366f1','#8b5cf6','#a78bfa','#4f46e5','#818cf8','#c4b5fd'];
-            }
-            const type = el.props.chart_type ?? 'doughnut';
-            this._chartInstances[el.id] = new Chart(canvas, {
-                type,
-                data: { labels, datasets: [{ data:values, backgroundColor:colors, borderWidth:1, borderColor:'#fff', tension:0.4 }] },
-                options: {
-                    responsive:true, maintainAspectRatio:false,
-                    plugins: { legend:{ position:'right', labels:{ font:{size:10}, boxWidth:10 } } },
-                    scales: (type==='bar'||type==='line') ? { y:{ beginAtZero:true, ticks:{stepSize:1} } } : {},
-                },
-            });
-        },
-
-        // ── Image upload with canvas compression ──
+        // ── Image ──
         async compressImage(file) {
-            return new Promise((resolve) => {
+            return new Promise(resolve => {
                 const img = new Image();
                 const url = URL.createObjectURL(file);
                 img.onload = () => {
                     URL.revokeObjectURL(url);
-                    const maxW = 1920, maxH = 1080;
-                    let w = img.width, h = img.height;
-                    if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
-                    if (h > maxH) { w = Math.round(w * maxH / h); h = maxH; }
-                    const canvas = document.createElement('canvas');
-                    canvas.width = w; canvas.height = h;
-                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                    canvas.toBlob(resolve, file.type === 'image/png' ? 'image/png' : 'image/jpeg', 0.85);
+                    let [w, h] = [img.width, img.height];
+                    if (w > 1920) { h = Math.round(h*1920/w); w = 1920; }
+                    if (h > 1200) { w = Math.round(w*1200/h); h = 1200; }
+                    const cv = document.createElement('canvas');
+                    cv.width = w; cv.height = h;
+                    cv.getContext('2d').drawImage(img, 0, 0, w, h);
+                    cv.toBlob(resolve, file.type === 'image/png' ? 'image/png' : 'image/jpeg', 0.82);
                 };
                 img.src = url;
             });
         },
-        async uploadImage(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            e.target.value = '';
-            const compressed = await this.compressImage(file);
-            const fd = new FormData();
-            fd.append('image', compressed, file.name);
-            fd.append('_token', document.querySelector('meta[name="csrf-token"]').content);
-            const res = await fetch(UPLOAD_IMG_URL, { method:'POST', body:fd });
-            const data = await res.json();
-            this.addElement('image');
-            const el = this.currentSlide.elements[this.currentSlide.elements.length - 1];
-            el.props.url = data.url;
-            this.isDirty = true;
+
+        async insertImageFromFile() {
+            const input = document.createElement('input');
+            input.type = 'file'; input.accept = 'image/*';
+            input.onchange = async e => { if (e.target.files[0]) await this.insertImageFile(e.target.files[0]); };
+            input.click();
         },
-        replaceImage(el) { this._replaceTarget = el; this.$refs.replaceImgInput.click(); },
-        async doReplaceImage(e) {
-            const file = e.target.files[0];
-            if (!file || !this._replaceTarget) return;
-            e.target.value = '';
-            const compressed = await this.compressImage(file);
-            const fd = new FormData();
-            fd.append('image', compressed, file.name);
-            fd.append('_token', document.querySelector('meta[name="csrf-token"]').content);
-            const res = await fetch(UPLOAD_IMG_URL, { method:'POST', body:fd });
-            const data = await res.json();
-            this._replaceTarget.props.url = data.url;
-            this._replaceTarget = null;
-            this.isDirty = true;
+
+        async insertImageFile(file) {
+            const blob = await this.compressImage(file);
+            const reader = new FileReader();
+            reader.onload = e => {
+                this.$refs.slideCanvas?.focus();
+                document.execCommand('insertHTML', false,
+                    `<img src="${e.target.result}" style="max-width:100%;height:auto;border-radius:4px;display:block;margin:8px 0">`);
+                this.onSlideInput();
+            };
+            reader.readAsDataURL(blob);
+        },
+
+        async handleDrop(e) {
+            const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+            for (const f of files) await this.insertImageFile(f);
+        },
+
+        // ── Insert Elements ──
+        insertTable(rows = 3, cols = 3) {
+            let h = '<table style="width:100%;border-collapse:collapse;margin:10px 0">';
+            for (let r = 0; r < rows; r++) {
+                h += '<tr>';
+                for (let c = 0; c < cols; c++) {
+                    const isH = r === 0;
+                    const tag = isH ? 'th' : 'td';
+                    h += `<${tag} style="border:1px solid #d1d5db;padding:8px 12px;text-align:left;${isH?'background:#f3f4f6;font-weight:600;':''}">${isH?'Col '+(c+1):''}</${tag}>`;
+                }
+                h += '</tr>';
+            }
+            h += '</table><p><br></p>';
+            this.$refs.slideCanvas?.focus();
+            document.execCommand('insertHTML', false, h);
+            this.onSlideInput();
+        },
+
+        insertDivider() {
+            this.$refs.slideCanvas?.focus();
+            document.execCommand('insertHTML', false, '<hr style="border:none;border-top:2px solid #e5e7eb;margin:18px 0"><p><br></p>');
+            this.onSlideInput();
+        },
+
+        // ── Widgets ──
+        insertWidget(type) {
+            const id = 'w_' + Date.now();
+            const labels = { kpi:'KPI Dashboard', chart:'Task Status Chart', gantt:'Gantt Timeline',
+                             milestone:'Milestones', team:'Team Members', blocker:'Active Blockers' };
+            const html = `<div class="report-widget" data-widget-type="${type}" data-widget-id="${id}" contenteditable="false">` +
+                `<div id="wc-${id}" style="min-height:80px;display:flex;align-items:center;justify-content:center;padding:12px">` +
+                `<span style="color:#9ca3af;font-size:12px">⏳ Loading ${labels[type]||type}...</span></div></div><p><br></p>`;
+            this.$refs.slideCanvas?.focus();
+            document.execCommand('insertHTML', false, html);
+            this.onSlideInput();
+            this.$nextTick(() => this.renderWidget(id, type));
+        },
+
+        renderWidgets() {
+            const c = this.$refs.slideCanvas;
+            if (!c) return;
+            c.querySelectorAll('.report-widget[data-widget-id]').forEach(w => {
+                this.renderWidget(w.dataset.widgetId, w.dataset.widgetType);
+            });
+        },
+
+        renderWidget(id, type) {
+            const el = document.getElementById('wc-' + id);
+            if (!el) return;
+            if (this._chartInstances[id]) { try { this._chartInstances[id].destroy(); } catch(e) {} delete this._chartInstances[id]; }
+            switch (type) {
+                case 'kpi':       el.innerHTML = this._renderKPI(); break;
+                case 'chart':
+                    el.innerHTML = `<div style="padding:12px"><canvas id="chart-${id}" width="420" height="200"></canvas></div>`;
+                    this.$nextTick(() => this._initChart(id));
+                    break;
+                case 'gantt':
+                    el.style.minHeight = '220px';
+                    el.innerHTML = this._renderGantt(el.parentElement?.offsetWidth || 700);
+                    break;
+                case 'milestone': el.innerHTML = this._renderMilestones(); break;
+                case 'team':      el.innerHTML = this._renderTeam(); break;
+                case 'blocker':   el.innerHTML = this._renderBlockers(); break;
+            }
+        },
+
+        _renderKPI() {
+            const k = PROJECT_KPI;
+            const cards = [
+                { label:'Total Tasks',  value:k.total,          color:'#4f46e5', bg:'#f5f3ff' },
+                { label:'Done',         value:k.done,           color:'#16a34a', bg:'#f0fdf4' },
+                { label:'In Progress',  value:k.in_progress,    color:'#2563eb', bg:'#eff6ff' },
+                { label:'Overdue',      value:k.overdue,        color:'#dc2626', bg:'#fef2f2' },
+                { label:'Progress',     value:k.progress_pct+'%', color:'#0891b2', bg:'#ecfeff' },
+                { label:'Members',      value:k.members,        color:'#7c3aed', bg:'#faf5ff' },
+            ];
+            return `<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;padding:12px">
+                ${cards.map(c=>`<div style="background:${c.bg};border-radius:8px;padding:10px;text-align:center;border:1px solid ${c.color}22">
+                    <div style="font-size:1.6em;font-weight:800;color:${c.color};line-height:1">${c.value}</div>
+                    <div style="font-size:9px;color:#6b7280;margin-top:3px">${c.label}</div>
+                </div>`).join('')}
+            </div>`;
+        },
+
+        _initChart(id) {
+            const canvas = document.getElementById('chart-'+id);
+            if (!canvas || typeof Chart==='undefined') return;
+            const d = CHART_DATA.tasksByStatus;
+            this._chartInstances[id] = new Chart(canvas, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Todo','In Progress','Review','Done','Cancelled'],
+                    datasets: [{ data:[d.todo,d.in_progress,d.review,d.done,d.cancelled],
+                        backgroundColor:['#94a3b8','#6366f1','#f59e0b','#22c55e','#ef4444'], borderWidth:1, borderColor:'#fff' }]
+                },
+                options: { responsive:false, plugins:{ legend:{ position:'right', labels:{ font:{size:10} } } } },
+            });
+        },
+
+        _renderGantt(W) {
+            const tasks = PROJECT_DATA.tasks.filter(t => t.start_date && t.due_date);
+            if (!tasks.length) return '<div style="padding:20px;text-align:center;color:#9ca3af;font-size:12px">No tasks with scheduled dates</div>';
+            const all = tasks.flatMap(t => [new Date(t.start_date), new Date(t.due_date)]);
+            const minD = new Date(Math.min(...all)), maxD = new Date(Math.max(...all));
+            const totalDays = Math.max(1, (maxD-minD)/86400000+1);
+            const lW = 120, cW = Math.max(300, W-lW-4), rH = 22, hH = 26;
+            const H = hH + tasks.length * rH + 2;
+            const sc = { done:'#16a34a', in_progress:'#4f46e5', review:'#f59e0b', todo:'#94a3b8', cancelled:'#ef4444' };
+            let s = `<svg width="${lW+cW}" height="${H}" xmlns="http://www.w3.org/2000/svg" style="font-family:sans-serif;display:block">`;
+            s += `<rect width="${lW+cW}" height="${H}" fill="#f8fafc" rx="2"/>`;
+            s += `<rect width="${lW+cW}" height="${hH}" fill="#e2e8f0" rx="2"/>`;
+            const cur = new Date(minD.getFullYear(), minD.getMonth(), 1);
+            while (cur <= maxD) {
+                const x = lW + ((cur-minD)/86400000)/totalDays*cW;
+                s += `<line x1="${x}" y1="${hH}" x2="${x}" y2="${H}" stroke="#e2e8f0" stroke-width="1"/>`;
+                s += `<text x="${x+3}" y="18" font-size="9" fill="#64748b">${cur.toLocaleString('default',{month:'short'})} ${cur.getFullYear()}</text>`;
+                cur.setMonth(cur.getMonth()+1);
+            }
+            s += `<line x1="${lW}" y1="0" x2="${lW}" y2="${H}" stroke="#cbd5e1" stroke-width="1"/>`;
+            tasks.forEach((t,i) => {
+                const y = hH + i*rH;
+                s += `<rect x="0" y="${y}" width="${lW+cW}" height="${rH}" fill="${i%2?'#f8fafc':'#fff'}"/>`;
+                const maxCh = Math.floor(lW/6.2);
+                const lbl = t.title.length>maxCh ? t.title.slice(0,maxCh-1)+'…' : t.title;
+                s += `<text x="4" y="${y+rH/2+4}" font-size="9" fill="#374151">${lbl}</text>`;
+                const bx = lW + ((new Date(t.start_date)-minD)/86400000)/totalDays*cW;
+                const bw = Math.max(4, ((new Date(t.due_date)-new Date(t.start_date))/86400000+1)/totalDays*cW);
+                s += `<rect x="${bx}" y="${y+3}" width="${bw}" height="${rH-6}" rx="2" fill="${sc[t.status]||'#94a3b8'}" opacity="0.85"/>`;
+                if (t.progress_pct>0) s += `<rect x="${bx}" y="${y+3}" width="${bw*t.progress_pct/100}" height="${rH-6}" rx="2" fill="rgba(255,255,255,.25)"/>`;
+            });
+            const today = new Date();
+            if (today>=minD && today<=maxD) {
+                const tx = lW + ((today-minD)/86400000)/totalDays*cW;
+                s += `<line x1="${tx}" y1="${hH}" x2="${tx}" y2="${H}" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4,2"/>`;
+                s += `<text x="${tx+2}" y="${hH-2}" font-size="8" fill="#ef4444">Today</text>`;
+            }
+            return s + '</svg>';
+        },
+
+        _renderMilestones() {
+            const ms = PROJECT_DATA.milestones;
+            if (!ms.length) return '<div style="padding:16px;text-align:center;color:#9ca3af;font-size:12px">No milestones</div>';
+            return '<div>' + ms.map(m =>
+                `<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid #f1f5f9">
+                    <span style="font-size:14px">${m.is_completed?'✅':'⭕'}</span>
+                    <span style="flex:1;font-size:12px;color:#374151">${m.name}</span>
+                    <span style="font-size:11px;color:#9ca3af;flex-shrink:0">${m.due_date||'—'}</span>
+                </div>`
+            ).join('') + '</div>';
+        },
+
+        _renderTeam() {
+            const m = PROJECT_DATA.members;
+            if (!m.length) return '<div style="padding:16px;text-align:center;color:#9ca3af;font-size:12px">No members</div>';
+            return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;padding:12px">` +
+                m.map(mb =>
+                    `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0">
+                        <div style="width:28px;height:28px;border-radius:50%;background:#4f46e5;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">${mb.name.charAt(0).toUpperCase()}</div>
+                        <div style="min-width:0"><div style="font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${mb.name}</div><div style="font-size:9px;color:#9ca3af;text-transform:capitalize">${mb.role}</div></div>
+                    </div>`
+                ).join('') + '</div>';
+        },
+
+        _renderBlockers() {
+            const bl = PROJECT_DATA.active_blockers_list;
+            if (!bl.length) return '<div style="padding:16px;text-align:center;color:#16a34a;font-size:12px;background:#f0fdf4">✅ No active blockers</div>';
+            return '<div style="background:#fef2f2">' + bl.map(b =>
+                `<div style="display:flex;align-items:flex-start;gap:8px;padding:10px 14px;border-bottom:1px solid #fee2e2">
+                    <span style="font-size:14px;flex-shrink:0">🚨</span>
+                    <div><div style="font-size:11px;font-weight:600;color:#dc2626">${b.task_title}</div>
+                    <div style="font-size:10px;color:#6b7280;margin-top:2px">${b.description}</div></div>
+                </div>`
+            ).join('') + '</div>';
         },
 
         // ── Save ──
         async save() {
+            this.saveCurrentCanvas();
             this.isSaving = true;
             try {
+                const slides = this.slides.map((s, i) => ({
+                    id: s.id,
+                    slide_order: i,
+                    bg_color: s.bg_color || '#ffffff',
+                    notes: s.notes || '',
+                    html_content: s.html_content || '',
+                    elements: [],
+                }));
                 const res = await fetch(SAVE_URL, {
-                    method:'PUT',
-                    headers:{ 'Content-Type':'application/json', 'X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]').content },
-                    body: JSON.stringify({ slides: this.slides }),
+                    method: 'PUT',
+                    headers: { 'Content-Type':'application/json', 'X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]').content },
+                    body: JSON.stringify({ slides }),
                 });
                 const data = await res.json();
-                if (data.success) { this.slides = data.slides; this.isDirty = false; this.$nextTick(() => this.renderAllCharts()); }
+                if (data.success) {
+                    this.slides = data.slides.map(s => ({ ...s }));
+                    this.isDirty = false;
+                    this.$nextTick(() => this.loadSlideToCanvas());
+                }
             } catch(err) { console.error('Save failed', err); }
             this.isSaving = false;
         },
@@ -1097,8 +770,8 @@ function reportBuilder() {
                 headers:{ 'Content-Type':'application/json', 'X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]').content },
                 body: JSON.stringify({ template_name: this.templateName }),
             });
-            const data = await res.json();
-            if (data.success) this.showTemplateSave = false;
+            const d = await res.json();
+            if (d.success) this.showTemplateSave = false;
         },
     };
 }
