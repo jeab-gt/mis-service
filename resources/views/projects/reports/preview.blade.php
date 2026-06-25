@@ -111,9 +111,9 @@ function previewApp() {
         slides: SLIDES,
         current: 0,
         scale: 1,
-        frameW: 794,
-        frameH: 1123,
-        framePad: 60,
+        frameW: 960,
+        frameH: 540,
+        framePad: 48,
         _charts: {},
 
         get total() { return this.slides.length; },

@@ -416,7 +416,7 @@ function reportBuilder() {
         currentSlideIndex: 0,
         isDirty: false,
         isSaving: false,
-        slideLayout: 'a4',
+        slideLayout: 'slide',
         showToolbar: false,
         toolbarX: 0,
         toolbarY: 0,
