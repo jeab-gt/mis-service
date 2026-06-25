@@ -315,18 +315,57 @@ main { padding:0 !important; overflow:hidden !important; }
         <div class="props-panel">
             <div class="props-panel-header">
                 <h3 class="text-xs font-semibold text-gray-600">
-                    <span x-show="!selectedWidget">Properties</span>
+                    <span x-show="!selectedWidget && !selectedImageEl">Properties</span>
                     <span x-show="selectedWidget" x-text="selectedWidget ? selectedWidget.type.toUpperCase()+' Widget' : ''"></span>
+                    <span x-show="selectedImageEl && !selectedWidget">Image</span>
                 </h3>
             </div>
 
-            <template x-if="!selectedWidget">
+            {{-- Nothing selected --}}
+            <template x-if="!selectedWidget && !selectedImageEl">
                 <div class="flex flex-col items-center justify-center p-4 text-center text-gray-400" style="min-height:120px">
                     <div style="font-size:24px;margin-bottom:6px">🖱️</div>
-                    <div class="text-xs">Click a widget to configure</div>
+                    <div class="text-xs">Click a widget or image to configure</div>
                 </div>
             </template>
 
+            {{-- Image properties --}}
+            <template x-if="selectedImageEl && !selectedWidget">
+                <div class="p-3 space-y-3">
+                    <p class="text-xs font-medium text-gray-500">Size</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-xs text-gray-400 block mb-0.5">Width (px)</label>
+                            <input type="number" :value="selectedImageEl?.offsetWidth"
+                                   @input="selectedImageEl.style.width=$event.target.value+'px';selectedImageEl.style.height='auto';onSlideInput()"
+                                   class="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-indigo-400">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-400 block mb-0.5">Height (px)</label>
+                            <input type="number" :value="selectedImageEl?.offsetHeight"
+                                   @input="selectedImageEl.style.height=$event.target.value+'px';selectedImageEl.style.width='auto';onSlideInput()"
+                                   class="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-indigo-400">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-400 block mb-1">Alignment</label>
+                        <div class="flex gap-1">
+                            <button @click="selectedImageEl.style.float='left';selectedImageEl.style.margin='8px 16px 8px 0';onSlideInput()"
+                                    class="flex-1 border border-gray-200 rounded text-xs py-1 hover:bg-gray-50">⬅</button>
+                            <button @click="selectedImageEl.style.float='none';selectedImageEl.style.margin='8px auto';selectedImageEl.style.display='block';onSlideInput()"
+                                    class="flex-1 border border-gray-200 rounded text-xs py-1 hover:bg-gray-50">↔</button>
+                            <button @click="selectedImageEl.style.float='right';selectedImageEl.style.margin='8px 0 8px 16px';onSlideInput()"
+                                    class="flex-1 border border-gray-200 rounded text-xs py-1 hover:bg-gray-50">➡</button>
+                        </div>
+                    </div>
+                    <button @click="selectedImageEl.remove();selectedImageEl=null;onSlideInput()"
+                            class="w-full bg-red-50 text-red-600 border border-red-200 rounded-lg py-1.5 text-xs hover:bg-red-100 transition-colors">
+                        🗑 Delete Image
+                    </button>
+                </div>
+            </template>
+
+            {{-- Widget config --}}
             <template x-if="selectedWidget">
                 <div class="p-3 space-y-3">
 
@@ -512,6 +551,7 @@ function reportBuilder() {
         slides: [],
         currentSlideIndex: 0,
         selectedWidget: null,
+        selectedImageEl: null,
         isDirty: false,
         isSaving: false,
         slideLayout: 'slide',
@@ -570,6 +610,22 @@ function reportBuilder() {
                 if (tb && !tb.contains(e.target)) {
                     const sel = window.getSelection();
                     if (!sel || sel.isCollapsed) this.showToolbar = false;
+                }
+            });
+            // Image selection handler
+            document.addEventListener('click', e => {
+                const canvas = this.$refs.slideCanvas;
+                if (!canvas) return;
+                if (e.target.tagName === 'IMG' && canvas.contains(e.target)) {
+                    canvas.querySelectorAll('img').forEach(img => img.style.outline = 'none');
+                    e.target.style.outline = '2px solid #6366f1';
+                    this.selectedImageEl = e.target;
+                    this.selectedWidget = null;
+                } else if (!e.target.closest('.props-panel')) {
+                    if (this.selectedImageEl) {
+                        canvas.querySelectorAll('img').forEach(img => img.style.outline = 'none');
+                        this.selectedImageEl = null;
+                    }
                 }
             });
             setInterval(() => { if (this.isDirty && !this.isSaving) this.save(); }, 90000);
@@ -654,6 +710,7 @@ function reportBuilder() {
             this.saveCurrentCanvas();
             this.currentSlideIndex = idx;
             this.selectedWidget = null;
+            this.selectedImageEl = null;
             this.showToolbar = false;
             this._savedRange = null;
             this.$nextTick(() => this.loadSlideToCanvas());
@@ -665,6 +722,7 @@ function reportBuilder() {
             this.slides.push(slide);
             this.currentSlideIndex = this.slides.length - 1;
             this.selectedWidget = null;
+            this.selectedImageEl = null;
             this.isDirty = true;
             this._savedRange = null;
             this.$nextTick(() => this.loadSlideToCanvas());
@@ -675,6 +733,7 @@ function reportBuilder() {
             this.slides.splice(idx, 1);
             if (this.currentSlideIndex >= this.slides.length) this.currentSlideIndex = this.slides.length - 1;
             this.selectedWidget = null;
+            this.selectedImageEl = null;
             this.isDirty = true;
             this._savedRange = null;
             this.$nextTick(() => this.loadSlideToCanvas());
@@ -686,6 +745,7 @@ function reportBuilder() {
             this.slides.splice(idx+1, 0, dup);
             this.currentSlideIndex = idx + 1;
             this.selectedWidget = null;
+            this.selectedImageEl = null;
             this.isDirty = true;
             this._savedRange = null;
             this.$nextTick(() => this.loadSlideToCanvas());
@@ -781,7 +841,7 @@ function reportBuilder() {
                 this.restoreSelection();
                 const img = document.createElement('img');
                 img.src = e.target.result;
-                img.style.cssText = 'max-width:100%;height:auto;border-radius:4px;display:block;margin:8px 0';
+                img.style.cssText = 'max-width:100%;height:auto;border-radius:4px;display:block;margin:8px auto;resize:both;overflow:auto;outline:none;cursor:default';
                 const range = this._getInsertRange();
                 range.deleteContents();
                 range.insertNode(img);
@@ -886,6 +946,8 @@ function reportBuilder() {
 
         selectWidget(widget) {
             this.selectedWidget = widget;
+            this.selectedImageEl = null;
+            this.$refs.slideCanvas?.querySelectorAll('img').forEach(img => img.style.outline = 'none');
             this.renderWidget(widget.id, widget.type);
         },
 

@@ -66,6 +66,7 @@ body { background:#0a0a0f; color:#fff; font-family:sans-serif; overflow:hidden; 
                       transform:translate(-50%,-50%) scale(${scale});
                       transform-origin:center center;`">
             <div id="slide-content" :style="`padding:${framePad}px;width:100%;height:100%;box-sizing:border-box`"></div>
+            <div id="widget-overlay" style="position:absolute;inset:0;pointer-events:none;z-index:2"></div>
         </div>
     </div>
 
@@ -89,9 +90,8 @@ $slidesJson = $report->slides->map(function($s) {
         'id'           => $s->id,
         'bg_color'     => $s->bg_color ?? '#ffffff',
         'html_content' => $s->html_content ?? '',
-        'elements'     => $s->elements->map(function($e) {
-            return ['id'=>$e->id,'type'=>$e->type,'x'=>$e->x,'y'=>$e->y,'w'=>$e->w,'h'=>$e->h,'z_index'=>$e->z_index,'props'=>$e->props];
-        })->values(),
+        'widgets_data' => $s->widgets_data ?? [],
+        'elements'     => [],
     ];
 })->values();
 @endphp
@@ -146,29 +146,35 @@ function previewApp() {
             const slide = this.currentSlide;
             if (!slide) return;
             const el = document.getElementById('slide-content');
+            const overlay = document.getElementById('widget-overlay');
             if (!el) return;
 
             // Destroy old charts
             Object.values(this._charts).forEach(c => { try { c.destroy(); } catch(e) {} });
             this._charts = {};
 
-            if (slide.html_content) {
-                el.innerHTML = slide.html_content;
-                this.$nextTick(() => this.renderWidgets(el));
-            } else if (slide.elements && slide.elements.length) {
-                // Legacy element-based rendering
-                el.innerHTML = this._renderElements(slide);
-                this.$nextTick(() => this._renderLegacyCharts(slide));
-            } else {
+            // Render text/image/table content
+            el.innerHTML = slide.html_content || '';
+
+            // Render widgets from widgets_data as absolute overlay
+            if (overlay) {
+                overlay.innerHTML = '';
+                const widgets = Array.isArray(slide.widgets_data) ? slide.widgets_data : [];
+                widgets.forEach(w => {
+                    const div = document.createElement('div');
+                    div.id = 'wc-' + w.id;
+                    div.style.cssText = `position:absolute;left:${w.x||0}px;top:${w.y||0}px;` +
+                        `width:${w.w||200}px;height:${w.h||150}px;` +
+                        `background:white;border-radius:8px;overflow:hidden;`;
+                    overlay.appendChild(div);
+                });
+                this.$nextTick(() => widgets.forEach(w => this.renderWidget(w.id, w.type)));
+            }
+
+            // Fallback empty message
+            if (!slide.html_content && (!Array.isArray(slide.widgets_data) || !slide.widgets_data.length)) {
                 el.innerHTML = '<p style="color:#ccc;text-align:center;padding:60px;font-size:14px">Empty slide</p>';
             }
-        },
-
-        // ── Widget rendering ──
-        renderWidgets(container) {
-            container.querySelectorAll('.report-widget[data-widget-id]').forEach(w => {
-                this.renderWidget(w.dataset.widgetId, w.dataset.widgetType);
-            });
         },
 
         renderWidget(id, type) {
