@@ -231,7 +231,7 @@ const {
     ClassicEditor, Essentials, Bold, Italic, Underline, Strikethrough,
     Paragraph, Heading, Alignment, FontFamily, FontSize,
     FontColor, FontBackgroundColor, List, Table, TableToolbar,
-    TableProperties, TableCellProperties, Image, SimpleUploadAdapter,
+    TableProperties, TableCellProperties, Image, ImageUpload, SimpleUploadAdapter,
     ImageResize, ImageStyle, ImageToolbar, Link,
     HorizontalLine, Indent, IndentBlock, BlockQuote, Undo,
     GeneralHtmlSupport
@@ -246,7 +246,7 @@ async function initEditor(htmlContent = '') {
             Essentials, Bold, Italic, Underline, Strikethrough,
             Paragraph, Heading, Alignment, FontFamily, FontSize,
             FontColor, FontBackgroundColor, List, Table, TableToolbar,
-            TableProperties, TableCellProperties, Image, SimpleUploadAdapter,
+            TableProperties, TableCellProperties, Image, ImageUpload, SimpleUploadAdapter,
             ImageResize, ImageStyle, ImageToolbar, Link,
             HorizontalLine, Indent, IndentBlock, BlockQuote, Undo,
             GeneralHtmlSupport,
@@ -392,7 +392,26 @@ function insertWidget(type) {
 }
 
 function insertImage() {
-    if (editor) editor.execute('uploadImage');
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/jpeg,image/png,image/gif,image/webp,image/svg+xml';
+    input.onchange = async () => {
+        const file = input.files[0];
+        if (!file) return;
+        const form = new FormData();
+        form.append('upload', file);
+        form.append('_token', CSRF);
+        try {
+            const res  = await fetch(UPLOAD_URL, { method: 'POST', body: form });
+            const json = await res.json();
+            const url  = json.urls?.default || json.url;
+            if (!url) throw new Error(json.error?.message || 'Upload failed');
+            editor.execute('insertImage', { source: url });
+        } catch (e) {
+            alert('Upload failed: ' + e.message);
+        }
+    };
+    input.click();
 }
 
 function insertHR() {
