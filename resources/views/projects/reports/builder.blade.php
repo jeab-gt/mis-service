@@ -422,6 +422,78 @@ main { padding:0 !important; overflow:hidden !important; }
                         </div>
                     </template>
 
+                    {{-- Table widget config --}}
+                    <template x-if="selectedWidget.type==='table'">
+                        <div class="space-y-2">
+                            {{-- Headers --}}
+                            <div>
+                                <p class="text-xs font-medium text-gray-500 mb-1">Headers</p>
+                                <template x-for="(h, i) in selectedWidget.config.headers" :key="i">
+                                    <input type="text" x-model="selectedWidget.config.headers[i]"
+                                           @input="renderWidget(selectedWidget.id,'table')"
+                                           class="w-full border border-gray-200 rounded px-2 py-1 text-xs mt-0.5 focus:outline-none focus:border-indigo-400"
+                                           :placeholder="'Header '+(i+1)">
+                                </template>
+                            </div>
+                            {{-- Col controls --}}
+                            <div class="flex gap-1">
+                                <button @click="addTableCol()"
+                                        class="flex-1 border border-gray-200 rounded text-xs py-1 hover:bg-gray-50">+ Col</button>
+                                <button @click="removeTableCol()"
+                                        class="flex-1 border border-gray-200 rounded text-xs py-1 hover:bg-gray-50 text-red-500">- Col</button>
+                            </div>
+                            {{-- Row controls --}}
+                            <div class="flex gap-1">
+                                <button @click="addTableRow()"
+                                        class="flex-1 border border-gray-200 rounded text-xs py-1 hover:bg-gray-50">+ Row</button>
+                                <button @click="removeTableRow()"
+                                        class="flex-1 border border-gray-200 rounded text-xs py-1 hover:bg-gray-50 text-red-500">- Row</button>
+                            </div>
+                            {{-- Cell data --}}
+                            <div>
+                                <p class="text-xs font-medium text-gray-500 mb-1">Cell Data</p>
+                                <template x-for="(row, ri) in selectedWidget.config.data" :key="ri">
+                                    <div class="flex gap-1 mt-1 items-center">
+                                        <span class="text-xs text-gray-400 w-4 shrink-0" x-text="ri+1"></span>
+                                        <template x-for="(cell, ci) in row" :key="ci">
+                                            <input type="text" x-model="selectedWidget.config.data[ri][ci]"
+                                                   @input="renderWidget(selectedWidget.id,'table')"
+                                                   class="flex-1 border border-gray-200 rounded px-1 py-0.5 text-xs min-w-0 focus:outline-none focus:border-indigo-400">
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+                            {{-- Style --}}
+                            <div class="grid grid-cols-2 gap-2 pt-1">
+                                <div>
+                                    <label class="text-xs text-gray-500 block mb-0.5">Font Size</label>
+                                    <input type="number" x-model.number="selectedWidget.config.fontSize"
+                                           @input="renderWidget(selectedWidget.id,'table')"
+                                           class="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-indigo-400"
+                                           min="8" max="24">
+                                </div>
+                                <div>
+                                    <label class="text-xs text-gray-500 block mb-0.5">Border</label>
+                                    <input type="color" x-model="selectedWidget.config.borderColor"
+                                           @input="renderWidget(selectedWidget.id,'table')"
+                                           class="w-full h-7 rounded border cursor-pointer">
+                                </div>
+                                <div>
+                                    <label class="text-xs text-gray-500 block mb-0.5">Header BG</label>
+                                    <input type="color" x-model="selectedWidget.config.headerBg"
+                                           @input="renderWidget(selectedWidget.id,'table')"
+                                           class="w-full h-7 rounded border cursor-pointer">
+                                </div>
+                                <div>
+                                    <label class="text-xs text-gray-500 block mb-0.5">Header Text</label>
+                                    <input type="color" x-model="selectedWidget.config.headerColor"
+                                           @input="renderWidget(selectedWidget.id,'table')"
+                                           class="w-full h-7 rounded border cursor-pointer">
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
                     {{-- Image widget config --}}
                     <template x-if="selectedWidget.type==='image'">
                         <div class="space-y-2">
@@ -885,40 +957,73 @@ function reportBuilder() {
             for (const f of files) await this.insertImageFile(f);
         },
 
-        // ── Insert Table ──
-        insertTable(rows = 3, cols = 3) {
-            const canvas = this.$refs.slideCanvas;
-            canvas.focus();
+        // ── Table widget helpers ──
+        addTableRow() {
+            const w = this.selectedWidget; if (!w) return;
+            const cols = w.config.headers.length;
+            w.config.data.push(Array.from({length: cols}, () => 'Cell'));
+            w.h += 40;
+            this.isDirty = true;
+            this.renderWidget(w.id, 'table');
+        },
+        removeTableRow() {
+            const w = this.selectedWidget; if (!w || w.config.data.length < 1) return;
+            w.config.data.pop();
+            w.h = Math.max(80, w.h - 40);
+            this.isDirty = true;
+            this.renderWidget(w.id, 'table');
+        },
+        addTableCol() {
+            const w = this.selectedWidget; if (!w) return;
+            w.config.headers.push('Header ' + (w.config.headers.length + 1));
+            w.config.data.forEach(row => row.push('Cell'));
+            w.w += 100;
+            this.isDirty = true;
+            this.renderWidget(w.id, 'table');
+        },
+        removeTableCol() {
+            const w = this.selectedWidget; if (!w || w.config.headers.length < 2) return;
+            w.config.headers.pop();
+            w.config.data.forEach(row => row.pop());
+            w.w = Math.max(100, w.w - 100);
+            this.isDirty = true;
+            this.renderWidget(w.id, 'table');
+        },
 
-            let tableHTML = '<table style="width:100%;border-collapse:collapse;margin:12px 0;">';
-            for (let r = 0; r < rows; r++) {
-                tableHTML += '<tr>';
-                for (let c = 0; c < cols; c++) {
-                    const isH = r === 0;
-                    tableHTML += `<${isH?'th':'td'} contenteditable="true" style="border:1px solid #d1d5db;padding:8px 12px;text-align:left;min-width:80px;${isH?'background:#f3f4f6;font-weight:600;':''}">${isH?'Header '+(c+1):'Cell'}</${isH?'th':'td'}>`;
-                }
-                tableHTML += '</tr>';
-            }
-            tableHTML += '</table>';
+        // ── Insert Table (as widget) ──
+        insertTable(rows, cols) {
+            rows = parseInt(rows) || 3;
+            cols = parseInt(cols) || 3;
+            if (!this.currentSlide) return;
 
-            const sel = window.getSelection();
-            if (sel && sel.rangeCount > 0 && canvas.contains(sel.anchorNode)) {
-                const range = sel.getRangeAt(0);
-                range.deleteContents();
-                const div = document.createElement('div');
-                div.innerHTML = tableHTML + '<p><br></p>';
-                const frag = document.createDocumentFragment();
-                let child;
-                while ((child = div.firstChild)) frag.appendChild(child);
-                range.insertNode(frag);
-                range.collapse(false);
-                sel.removeAllRanges();
-                sel.addRange(range);
-            } else {
-                canvas.innerHTML += tableHTML + '<p><br></p>';
-            }
+            const headers = Array.from({length: cols}, (_, i) => `Header ${i+1}`);
+            const data    = Array.from({length: rows-1}, (_, r) =>
+                Array.from({length: cols}, (_, c) => `Row ${r+1} Col ${c+1}`)
+            );
 
-            this.onSlideInput();
+            const widget = {
+                id: 'w_' + Date.now(),
+                type: 'table',
+                x: 80, y: 80,
+                w: Math.min(700, cols * 120 + 20),
+                h: Math.min(400, rows * 44 + 20),
+                config: {
+                    headers,
+                    data,
+                    headerBg:    '#f3f4f6',
+                    headerColor: '#111827',
+                    borderColor: '#d1d5db',
+                    fontSize:    13,
+                },
+                data_mode: 'static',
+                snapshot_data: null,
+            };
+
+            this.currentSlide.widgets.push(widget);
+            this.selectedWidget = widget;
+            this.tableOpen = false;
+            this.isDirty = true;
+            this.$nextTick(() => setTimeout(() => this.renderWidget(widget.id, 'table'), 30));
         },
 
         // ── Insert Divider ──
@@ -1058,6 +1163,33 @@ function reportBuilder() {
                     el.innerHTML = src
                         ? `<img src="${src}" style="width:100%;height:100%;object-fit:${fit};display:block;border-radius:4px" draggable="false">`
                         : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:12px;background:#f9fafb;border-radius:4px">No image</div>`;
+                    break;
+                }
+                case 'table': {
+                    const widget = (this.currentSlide?.widgets || []).find(w => w.id === id);
+                    const cfg = widget?.config || {};
+                    const headers = cfg.headers || ['Header 1', 'Header 2', 'Header 3'];
+                    const rows    = cfg.data    || [['Cell', 'Cell', 'Cell']];
+                    const fs  = cfg.fontSize    || 13;
+                    const bc  = cfg.borderColor || '#d1d5db';
+                    const hbg = cfg.headerBg    || '#f3f4f6';
+                    const hc  = cfg.headerColor || '#111827';
+                    let tbl = `<table style="width:100%;height:100%;border-collapse:collapse;font-size:${fs}px;table-layout:fixed;">`;
+                    tbl += '<thead><tr>';
+                    headers.forEach(h => {
+                        tbl += `<th style="border:1px solid ${bc};padding:6px 8px;background:${hbg};color:${hc};font-weight:600;text-align:left;overflow:hidden;word-break:break-word;">${h}</th>`;
+                    });
+                    tbl += '</tr></thead><tbody>';
+                    rows.forEach((row, ri) => {
+                        const bg = ri % 2 === 0 ? '#ffffff' : '#f9fafb';
+                        tbl += `<tr style="background:${bg};">`;
+                        row.forEach(cell => {
+                            tbl += `<td style="border:1px solid ${bc};padding:6px 8px;text-align:left;overflow:hidden;word-break:break-word;">${cell}</td>`;
+                        });
+                        tbl += '</tr>';
+                    });
+                    tbl += '</tbody></table>';
+                    el.innerHTML = tbl;
                     break;
                 }
             }

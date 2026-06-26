@@ -204,6 +204,34 @@ function previewApp() {
                         : '';
                     break;
                 }
+                case 'table': {
+                    const widgets = Array.isArray(this.currentSlide?.widgets_data) ? this.currentSlide.widgets_data : [];
+                    const w = widgets.find(x => x.id === id);
+                    const cfg = w?.config || {};
+                    const headers = cfg.headers || ['Header 1', 'Header 2'];
+                    const rows    = cfg.data    || [];
+                    const fs  = cfg.fontSize    || 13;
+                    const bc  = cfg.borderColor || '#d1d5db';
+                    const hbg = cfg.headerBg    || '#f3f4f6';
+                    const hc  = cfg.headerColor || '#111827';
+                    let tbl = `<table style="width:100%;height:100%;border-collapse:collapse;font-size:${fs}px;table-layout:fixed;">`;
+                    tbl += '<thead><tr>';
+                    headers.forEach(h => {
+                        tbl += `<th style="border:1px solid ${bc};padding:6px 8px;background:${hbg};color:${hc};font-weight:600;text-align:left;overflow:hidden;word-break:break-word;">${h}</th>`;
+                    });
+                    tbl += '</tr></thead><tbody>';
+                    rows.forEach((row, ri) => {
+                        const bg = ri % 2 === 0 ? '#ffffff' : '#f9fafb';
+                        tbl += `<tr style="background:${bg};">`;
+                        row.forEach(cell => {
+                            tbl += `<td style="border:1px solid ${bc};padding:6px 8px;text-align:left;overflow:hidden;word-break:break-word;">${cell}</td>`;
+                        });
+                        tbl += '</tr>';
+                    });
+                    tbl += '</tbody></table>';
+                    el.innerHTML = tbl;
+                    break;
+                }
             }
         },
 
