@@ -277,13 +277,27 @@ class ProjectReportController extends Controller
 
     public function uploadImage(Request $request, Project $project, ProjectReport $report)
     {
-        $request->validate(['image' => 'required|file|max:10240|mimes:jpg,jpeg,png,gif,webp,svg']);
+        // SimpleUploadAdapter sends field "upload"; fallback to "image" for direct calls
+        $file = $request->file('upload') ?? $request->file('image');
 
-        $file     = $request->file('image');
+        if (!$file) {
+            return response()->json(['error' => ['message' => 'No file received']], 400);
+        }
+
+        $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+        if (!in_array(strtolower($file->getClientOriginalExtension()), $allowed)) {
+            return response()->json(['error' => ['message' => 'Invalid file type']], 422);
+        }
+        if ($file->getSize() > 10 * 1024 * 1024) {
+            return response()->json(['error' => ['message' => 'File too large (max 10 MB)']], 422);
+        }
+
         $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
         $file->storeAs('report-images', $filename, 'public');
+        $url = asset('storage/report-images/' . $filename);
 
-        return response()->json(['url' => asset('storage/report-images/' . $filename)]);
+        // SimpleUploadAdapter expects { urls: { default: '...' } }
+        return response()->json(['urls' => ['default' => $url]]);
     }
 
     public function destroy(Project $project, ProjectReport $report)
