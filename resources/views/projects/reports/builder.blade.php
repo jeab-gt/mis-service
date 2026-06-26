@@ -780,7 +780,22 @@ function reportBuilder() {
 
         // ── Init ──
         init() {
-            window.__reportBuilder = this;
+            window.__reportBuilderInstance = this;
+            window.__reportBuilder = {
+                insertTable:  (r,c) => this.insertTable(r,c),
+                insertShape:  (t)   => this.insertShape(t),
+                insertWidget: (t)   => this.insertWidget(t),
+                insertDivider:()    => this.insertDivider(),
+                save:         ()    => this.save(),
+                renderWidget: (id,type) => this.renderWidget(id,type),
+            };
+            window.__rbDebug = () => {
+                console.log('slides:', this.slides.length);
+                console.log('currentSlideIndex:', this.currentSlideIndex);
+                console.log('currentSlide:', this.currentSlide);
+                console.log('widgets:', this.currentSlide?.widgets?.length);
+                console.log('selectedWidget:', this.selectedWidget);
+            };
             this.slides = (REPORT_DATA.slides || []).map(s => ({
                 ...s,
                 widgets: Array.isArray(s.widgets_data)
@@ -1026,10 +1041,10 @@ function reportBuilder() {
                     data_mode: 'live',
                     snapshot_data: null,
                 };
-                this.currentSlide.widgets.push(widget);
+                this.currentSlide.widgets = [...this.currentSlide.widgets, widget];
                 this.selectedWidget = widget;
                 this.isDirty = true;
-                this.$nextTick(() => setTimeout(() => this.renderWidget(widget.id, 'image'), 30));
+                this.$nextTick(() => this.$nextTick(() => setTimeout(() => this.renderWidget(widget.id, 'image'), 50)));
             };
             reader.readAsDataURL(blob);
         },
@@ -1076,10 +1091,10 @@ function reportBuilder() {
                 data_mode: 'static',
                 snapshot_data: null,
             };
-            this.currentSlide.widgets.push(widget);
+            this.currentSlide.widgets = [...this.currentSlide.widgets, widget];
             this.selectedWidget = widget;
             this.isDirty = true;
-            this.$nextTick(() => setTimeout(() => this.renderWidget(widget.id, 'shape'), 30));
+            this.$nextTick(() => this.$nextTick(() => setTimeout(() => this.renderWidget(widget.id, 'shape'), 50)));
         },
 
         _renderShape(widget) {
@@ -1214,7 +1229,11 @@ function reportBuilder() {
         insertTable(rows, cols) {
             rows = parseInt(rows) || 3;
             cols = parseInt(cols) || 3;
-            if (!this.currentSlide) return;
+            if (!this.currentSlide) {
+                if (!this.slides.length) this.addSlide();
+                else this.currentSlideIndex = 0;
+                if (!this.currentSlide) return;
+            }
 
             const headers = Array.from({length: cols}, (_, i) => `Header ${i+1}`);
             const data    = Array.from({length: rows-1}, (_, r) =>
@@ -1239,11 +1258,11 @@ function reportBuilder() {
                 snapshot_data: null,
             };
 
-            this.currentSlide.widgets.push(widget);
+            this.currentSlide.widgets = [...this.currentSlide.widgets, widget];
             this.selectedWidget = widget;
             this.tableOpen = false;
             this.isDirty = true;
-            this.$nextTick(() => setTimeout(() => this.renderWidget(widget.id, 'table'), 30));
+            this.$nextTick(() => this.$nextTick(() => setTimeout(() => this.renderWidget(widget.id, 'table'), 50)));
         },
 
         // ── Insert Divider ──
@@ -1285,11 +1304,10 @@ function reportBuilder() {
                 data_mode: 'live',
                 snapshot_data: null,
             };
-            this.currentSlide.widgets.push(widget);
+            this.currentSlide.widgets = [...this.currentSlide.widgets, widget];
             this.selectedWidget = widget;
             this.isDirty = true;
-            // Wait for Alpine.js x-for to render the new widget DOM node
-            this.$nextTick(() => setTimeout(() => this.renderWidget(widget.id, type), 30));
+            this.$nextTick(() => this.$nextTick(() => setTimeout(() => this.renderWidget(widget.id, type), 50)));
         },
 
         selectWidget(widget) {
