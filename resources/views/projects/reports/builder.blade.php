@@ -883,29 +883,37 @@ function reportBuilder() {
         },
 
         // ── Insert Table ──
-        insertTable(rows, cols) {
-            rows = parseInt(rows) || 3;
-            cols = parseInt(cols) || 3;
-
-            let html = '<br><table style="width:100%;border-collapse:collapse;margin:8px 0;">';
-            for (let r = 0; r < rows; r++) {
-                html += '<tr>';
-                for (let c = 0; c < cols; c++) {
-                    if (r === 0) {
-                        html += `<th style="border:1px solid #d1d5db;padding:8px;background:#f3f4f6;font-weight:600;min-width:60px;">Header ${c+1}</th>`;
-                    } else {
-                        html += `<td style="border:1px solid #d1d5db;padding:8px;min-width:60px;">Cell</td>`;
-                    }
-                }
-                html += '</tr>';
-            }
-            html += '</table><br>';
-
+        insertTable(rows = 3, cols = 3) {
             const canvas = this.$refs.slideCanvas;
             canvas.focus();
 
-            const ok = document.execCommand('insertHTML', false, html);
-            if (!ok) canvas.innerHTML += html;
+            let tableHTML = '<table style="width:100%;border-collapse:collapse;margin:12px 0;">';
+            for (let r = 0; r < rows; r++) {
+                tableHTML += '<tr>';
+                for (let c = 0; c < cols; c++) {
+                    const isH = r === 0;
+                    tableHTML += `<${isH?'th':'td'} contenteditable="true" style="border:1px solid #d1d5db;padding:8px 12px;text-align:left;min-width:80px;${isH?'background:#f3f4f6;font-weight:600;':''}">${isH?'Header '+(c+1):'Cell'}</${isH?'th':'td'}>`;
+                }
+                tableHTML += '</tr>';
+            }
+            tableHTML += '</table>';
+
+            const sel = window.getSelection();
+            if (sel && sel.rangeCount > 0 && canvas.contains(sel.anchorNode)) {
+                const range = sel.getRangeAt(0);
+                range.deleteContents();
+                const div = document.createElement('div');
+                div.innerHTML = tableHTML + '<p><br></p>';
+                const frag = document.createDocumentFragment();
+                let child;
+                while ((child = div.firstChild)) frag.appendChild(child);
+                range.insertNode(frag);
+                range.collapse(false);
+                sel.removeAllRanges();
+                sel.addRange(range);
+            } else {
+                canvas.innerHTML += tableHTML + '<p><br></p>';
+            }
 
             this.onSlideInput();
         },
