@@ -277,27 +277,37 @@ class ProjectReportController extends Controller
 
     public function uploadImage(Request $request, Project $project, ProjectReport $report)
     {
-        // SimpleUploadAdapter sends field "upload"; fallback to "image" for direct calls
-        $file = $request->file('upload') ?? $request->file('image');
+        try {
+            $file = $request->file('upload') ?? $request->file('image');
 
-        if (!$file) {
-            return response()->json(['error' => ['message' => 'No file received']], 400);
+            if (!$file) {
+                return response()->json(['error' => ['message' => 'No file received']], 400);
+            }
+
+            $ext     = strtolower($file->getClientOriginalExtension());
+            $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+            if (!in_array($ext, $allowed)) {
+                return response()->json(['error' => ['message' => 'Invalid file type: ' . $ext]], 422);
+            }
+            if ($file->getSize() > 10 * 1024 * 1024) {
+                return response()->json(['error' => ['message' => 'File too large (max 10 MB)']], 422);
+            }
+
+            $filename = Str::uuid() . '.' . $ext;
+            $path     = Storage::disk('public')->putFileAs('report-images', $file, $filename);
+
+            if (!$path) {
+                return response()->json(['error' => ['message' => 'Failed to write file to storage']], 500);
+            }
+
+            $url = Storage::disk('public')->url('report-images/' . $filename);
+
+            return response()->json(['urls' => ['default' => $url]]);
+
+        } catch (\Throwable $e) {
+            \Log::error('uploadImage error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return response()->json(['error' => ['message' => $e->getMessage()]], 500);
         }
-
-        $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
-        if (!in_array(strtolower($file->getClientOriginalExtension()), $allowed)) {
-            return response()->json(['error' => ['message' => 'Invalid file type']], 422);
-        }
-        if ($file->getSize() > 10 * 1024 * 1024) {
-            return response()->json(['error' => ['message' => 'File too large (max 10 MB)']], 422);
-        }
-
-        $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
-        $file->storeAs('report-images', $filename, 'public');
-        $url = asset('storage/report-images/' . $filename);
-
-        // SimpleUploadAdapter expects { urls: { default: '...' } }
-        return response()->json(['urls' => ['default' => $url]]);
     }
 
     public function destroy(Project $project, ProjectReport $report)
