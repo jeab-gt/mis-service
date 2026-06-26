@@ -428,8 +428,8 @@ main { padding:0 !important; overflow:hidden !important; }
                         </div>
                     </div>
 
-                    {{-- Data Mode (not for image) --}}
-                    <template x-if="selectedWidget.type!=='image'">
+                    {{-- Data Mode (live data widgets only) --}}
+                    <template x-if="selectedWidget.type!=='image'&&selectedWidget.type!=='shape'&&selectedWidget.type!=='table'">
                         <div>
                             <label class="text-xs text-gray-500 block mb-0.5">Data Mode</label>
                             <select x-model="selectedWidget.data_mode"
@@ -1164,7 +1164,6 @@ function reportBuilder() {
                     shapeSVG = `<rect x="${p}" y="${p}" width="${sw-p*2}" height="${sh-p*2}" rx="${(sh-p*2)/2}" ry="${(sh-p*2)/2}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
                     break;
                 case 'flow_data':
-                    shapeSVG = `<parallelogram/>`;
                     shapeSVG = `<polygon points="${sw*0.12},${p} ${sw-p},${p} ${sw*0.88},${sh-p} ${p},${sh-p}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
                     break;
                 case 'flow_connector':

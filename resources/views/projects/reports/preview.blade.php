@@ -232,7 +232,100 @@ function previewApp() {
                     el.innerHTML = tbl;
                     break;
                 }
+                case 'shape': {
+                    const widgets = Array.isArray(this.currentSlide?.widgets_data) ? this.currentSlide.widgets_data : [];
+                    const w = widgets.find(x => x.id === id);
+                    el.innerHTML = this._renderShape(w);
+                    break;
+                }
             }
+        },
+
+        _renderShape(widget) {
+            if (!widget) return '';
+            const sc = widget.config || {};
+            const sw = widget.w, sh = widget.h;
+            const fill = sc.fill || '#6366f1';
+            const stroke = sc.stroke || '#4338ca';
+            const strokeW = sc.stroke_width ?? 2;
+            const text = sc.text || '';
+            const tc = sc.text_color || '#ffffff';
+            const fs = sc.font_size || 14;
+            const p = strokeW;
+            let shapeSVG = '';
+            switch (sc.shape_type) {
+                case 'rounded_rect':
+                    shapeSVG = `<rect x="${p}" y="${p}" width="${sw-p*2}" height="${sh-p*2}" rx="12" ry="12" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
+                    break;
+                case 'circle':
+                    shapeSVG = `<ellipse cx="${sw/2}" cy="${sh/2}" rx="${sw/2-p}" ry="${sh/2-p}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
+                    break;
+                case 'triangle':
+                    shapeSVG = `<polygon points="${sw/2},${p} ${sw-p},${sh-p} ${p},${sh-p}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
+                    break;
+                case 'diamond':
+                    shapeSVG = `<polygon points="${sw/2},${p} ${sw-p},${sh/2} ${sw/2},${sh-p} ${p},${sh/2}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
+                    break;
+                case 'hexagon': {
+                    const hx = sw/2, hy = sh/2, hr = Math.min(sw,sh)/2-p;
+                    const hpts = Array.from({length:6},(_,i)=>{const a=(i*60-30)*Math.PI/180;return `${hx+hr*Math.cos(a)},${hy+hr*Math.sin(a)}`;}).join(' ');
+                    shapeSVG = `<polygon points="${hpts}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
+                    break;
+                }
+                case 'star': {
+                    const pts = Array.from({length:10},(_,i)=>{const a=(i*36-90)*Math.PI/180,r=i%2===0?Math.min(sw,sh)/2-p:Math.min(sw,sh)/4;return `${sw/2+r*Math.cos(a)},${sh/2+r*Math.sin(a)}`;}).join(' ');
+                    shapeSVG = `<polygon points="${pts}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
+                    break;
+                }
+                case 'heart': {
+                    const hW=sw-p*2, hH2=sh-p*2, ox=p, oy=p;
+                    shapeSVG = `<path d="M${ox+hW/2},${oy+hH2*0.35} C${ox+hW/2},${oy+hH2*0.12} ${ox},${oy+hH2*0.12} ${ox},${oy+hH2*0.35} C${ox},${oy+hH2*0.65} ${ox+hW/2},${oy+hH2*0.9} ${ox+hW/2},${oy+hH2} C${ox+hW/2},${oy+hH2*0.9} ${ox+hW},${oy+hH2*0.65} ${ox+hW},${oy+hH2*0.35} C${ox+hW},${oy+hH2*0.12} ${ox+hW/2},${oy+hH2*0.12} ${ox+hW/2},${oy+hH2*0.35}Z" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
+                    break;
+                }
+                case 'line':
+                    shapeSVG = `<line x1="${p}" y1="${sh/2}" x2="${sw-p}" y2="${sh/2}" stroke="${stroke}" stroke-width="${strokeW+1}"/>`;
+                    break;
+                case 'arrow_right':
+                    shapeSVG = `<line x1="${p}" y1="${sh/2}" x2="${sw-p-10}" y2="${sh/2}" stroke="${stroke}" stroke-width="${strokeW+1}"/><polygon points="${sw-p},${sh/2} ${sw-p-12},${sh/2-6} ${sw-p-12},${sh/2+6}" fill="${stroke}"/>`;
+                    break;
+                case 'arrow_left':
+                    shapeSVG = `<line x1="${p+10}" y1="${sh/2}" x2="${sw-p}" y2="${sh/2}" stroke="${stroke}" stroke-width="${strokeW+1}"/><polygon points="${p},${sh/2} ${p+12},${sh/2-6} ${p+12},${sh/2+6}" fill="${stroke}"/>`;
+                    break;
+                case 'arrow_both':
+                    shapeSVG = `<line x1="${p+10}" y1="${sh/2}" x2="${sw-p-10}" y2="${sh/2}" stroke="${stroke}" stroke-width="${strokeW+1}"/><polygon points="${p},${sh/2} ${p+12},${sh/2-6} ${p+12},${sh/2+6}" fill="${stroke}"/><polygon points="${sw-p},${sh/2} ${sw-p-12},${sh/2-6} ${sw-p-12},${sh/2+6}" fill="${stroke}"/>`;
+                    break;
+                case 'arrow_up':
+                    shapeSVG = `<line x1="${sw/2}" y1="${sh-p}" x2="${sw/2}" y2="${p+10}" stroke="${stroke}" stroke-width="${strokeW+1}"/><polygon points="${sw/2},${p} ${sw/2-6},${p+12} ${sw/2+6},${p+12}" fill="${stroke}"/>`;
+                    break;
+                case 'arrow_down':
+                    shapeSVG = `<line x1="${sw/2}" y1="${p}" x2="${sw/2}" y2="${sh-p-10}" stroke="${stroke}" stroke-width="${strokeW+1}"/><polygon points="${sw/2},${sh-p} ${sw/2-6},${sh-p-12} ${sw/2+6},${sh-p-12}" fill="${stroke}"/>`;
+                    break;
+                case 'block_right':
+                    shapeSVG = `<polygon points="${p},${sh*0.3} ${sw*0.65},${sh*0.3} ${sw*0.65},${p} ${sw-p},${sh/2} ${sw*0.65},${sh-p} ${sw*0.65},${sh*0.7} ${p},${sh*0.7}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
+                    break;
+                case 'block_left':
+                    shapeSVG = `<polygon points="${sw-p},${sh*0.3} ${sw*0.35},${sh*0.3} ${sw*0.35},${p} ${p},${sh/2} ${sw*0.35},${sh-p} ${sw*0.35},${sh*0.7} ${sw-p},${sh*0.7}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
+                    break;
+                case 'block_up':
+                    shapeSVG = `<polygon points="${sw*0.3},${sh-p} ${sw*0.3},${sh*0.35} ${p},${sh*0.35} ${sw/2},${p} ${sw-p},${sh*0.35} ${sw*0.7},${sh*0.35} ${sw*0.7},${sh-p}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
+                    break;
+                case 'block_down':
+                    shapeSVG = `<polygon points="${sw*0.3},${p} ${sw*0.3},${sh*0.65} ${p},${sh*0.65} ${sw/2},${sh-p} ${sw-p},${sh*0.65} ${sw*0.7},${sh*0.65} ${sw*0.7},${p}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
+                    break;
+                case 'flow_terminal':
+                    shapeSVG = `<rect x="${p}" y="${p}" width="${sw-p*2}" height="${sh-p*2}" rx="${(sh-p*2)/2}" ry="${(sh-p*2)/2}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
+                    break;
+                case 'flow_data':
+                    shapeSVG = `<polygon points="${sw*0.12},${p} ${sw-p},${p} ${sw*0.88},${sh-p} ${p},${sh-p}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
+                    break;
+                case 'flow_connector':
+                    shapeSVG = `<ellipse cx="${sw/2}" cy="${sh/2}" rx="${Math.min(sw,sh)/2-p}" ry="${Math.min(sw,sh)/2-p}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
+                    break;
+                default:
+                    shapeSVG = `<rect x="${p}" y="${p}" width="${sw-p*2}" height="${sh-p*2}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
+            }
+            const textEl = text ? `<text x="${sw/2}" y="${sh/2}" text-anchor="middle" dominant-baseline="middle" fill="${tc}" font-size="${fs}" font-family="sans-serif">${text}</text>` : '';
+            return `<svg width="100%" height="100%" viewBox="0 0 ${sw} ${sh}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">${shapeSVG}${textEl}</svg>`;
         },
 
         _renderKPI() {
