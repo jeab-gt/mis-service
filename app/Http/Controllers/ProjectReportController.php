@@ -278,47 +278,43 @@ class ProjectReportController extends Controller
 
     public function uploadImage(Request $request, Project $project, ProjectReport $report)
     {
-        try {
-            $file = $request->file('upload') ?? $request->file('image');
+        \Log::info('uploadImage called', [
+            'method'       => $request->method(),
+            'files'        => array_keys($request->allFiles()),
+            'has_upload'   => $request->hasFile('upload'),
+            'has_image'    => $request->hasFile('image'),
+            'all_keys'     => array_keys($request->all()),
+            'content_type' => $request->header('Content-Type'),
+        ]);
 
-            if (!$file || !$file->isValid()) {
-                return response()->json(['error' => ['message' => 'No valid file received']], 400);
-            }
+        $file = $request->file('upload') ?? $request->file('image');
 
-            $ext     = strtolower($file->getClientOriginalExtension());
-            $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
-            if (!in_array($ext, $allowed)) {
-                return response()->json(['error' => ['message' => 'Invalid file type: ' . $ext]], 422);
-            }
-            if ($file->getSize() > 5 * 1024 * 1024) {
-                return response()->json(['error' => ['message' => 'File too large (max 5 MB)']], 422);
-            }
-
-            // file_get_contents(getPathname()) is reliable on Windows;
-            // fall back to Laravel's get() if the path read fails
-            $binary = file_get_contents($file->getPathname());
-            if ($binary === false) {
-                $binary = $file->get();
-            }
-            $mime   = $file->getMimeType() ?: 'image/' . $ext;
-            $base64 = base64_encode($binary);
-
-            ReportImage::create([
-                'report_id' => $report->id,
-                'filename'  => $file->getClientOriginalName(),
-                'mime_type' => $mime,
-                'data'      => $base64,
-                'size'      => $file->getSize(),
+        if ($file) {
+            \Log::info('file info', [
+                'valid'    => $file->isValid(),
+                'error'    => $file->getError(),
+                'error_msg'=> $file->getErrorMessage(),
+                'size'     => $file->getSize(),
+                'pathname' => $file->getPathname(),
+                'tmp_name' => $_FILES['upload']['tmp_name'] ?? $_FILES['image']['tmp_name'] ?? 'none',
             ]);
-
-            return response()->json([
-                'urls' => ['default' => 'data:' . $mime . ';base64,' . $base64],
-            ]);
-
-        } catch (\Throwable $e) {
-            \Log::error('uploadImage error: ' . $e->getMessage() . ' | path: ' . ($file?->getPathname() ?? 'null'));
-            return response()->json(['error' => ['message' => $e->getMessage()]], 500);
         }
+
+        return response()->json([
+            'debug' => [
+                'files'      => array_keys($request->allFiles()),
+                'has_upload' => $request->hasFile('upload'),
+                'has_image'  => $request->hasFile('image'),
+                'file_valid' => $file?->isValid(),
+                'file_error' => $file?->getError(),
+                'php_files'  => array_map(fn($f) => [
+                    'name'     => $f['name'],
+                    'error'    => $f['error'],
+                    'size'     => $f['size'],
+                    'tmp_name' => $f['tmp_name'],
+                ], $_FILES),
+            ],
+        ]);
     }
 
     public function destroy(Project $project, ProjectReport $report)
