@@ -7,6 +7,7 @@ use App\Models\ProjectReport;
 use App\Models\ProjectReportSlide;
 use App\Models\ProjectReportElement;
 use App\Models\ProjectTaskBlocker;
+use App\Models\ReportImage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -289,23 +290,22 @@ class ProjectReportController extends Controller
             if (!in_array($ext, $allowed)) {
                 return response()->json(['error' => ['message' => 'Invalid file type: ' . $ext]], 422);
             }
-            if ($file->getSize() > 10 * 1024 * 1024) {
-                return response()->json(['error' => ['message' => 'File too large (max 10 MB)']], 422);
+            if ($file->getSize() > 5 * 1024 * 1024) {
+                return response()->json(['error' => ['message' => 'File too large (max 5 MB)']], 422);
             }
 
-            $filename = Str::uuid() . '.' . $ext;
-            $path     = Storage::disk('public')->putFileAs('report-images', $file, $filename);
+            $image = ReportImage::create([
+                'report_id' => $report->id,
+                'filename'  => $file->getClientOriginalName(),
+                'mime_type' => $file->getMimeType(),
+                'data'      => base64_encode(file_get_contents($file->getRealPath())),
+                'size'      => $file->getSize(),
+            ]);
 
-            if (!$path) {
-                return response()->json(['error' => ['message' => 'Failed to write file to storage']], 500);
-            }
-
-            $url = Storage::disk('public')->url('report-images/' . $filename);
-
-            return response()->json(['urls' => ['default' => $url]]);
+            return response()->json(['urls' => ['default' => $image->toDataUrl()]]);
 
         } catch (\Throwable $e) {
-            \Log::error('uploadImage error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            \Log::error('uploadImage error: ' . $e->getMessage());
             return response()->json(['error' => ['message' => $e->getMessage()]], 500);
         }
     }
