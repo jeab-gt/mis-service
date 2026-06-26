@@ -138,6 +138,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     border-radius: 2px; cursor: se-resize; z-index: 20;
     pointer-events: all; opacity: 0; transition: opacity .15s;
 }
+.widget-el {
+    will-change: left, top, width, height;
+    user-select: none;
+    -webkit-user-select: none;
+}
 </style>
 </head>
 <body>
@@ -412,36 +417,16 @@ function renderAllWidgets() {
 }
 
 function buildWidgetEl(widget) {
-    const isSelected = selectedWidgetId === widget.id;
-
     const el = document.createElement('div');
-    el.id = 'wb-' + widget.id;
-    el.className = 'rb-widget';
+    el.id = 'widget-' + widget.id;
+    el.className = 'rb-widget widget-el';
     el.style.cssText = `
         left:${widget.x}px; top:${widget.y}px;
         width:${widget.w}px; height:${widget.h}px;
-        border: 2px ${isSelected ? 'solid #2563eb' : 'dashed #6366f1'};
-        box-shadow: ${isSelected ? '0 0 0 3px rgba(37,99,235,.15)' : 'none'};
-        z-index: ${isSelected ? 10 : 1};
+        border: 2px dashed #6366f1;
+        box-shadow: none; z-index: 1;
         pointer-events: all; cursor: move;
     `;
-
-    // Toolbar (selected only)
-    if (isSelected) {
-        const tb = document.createElement('div');
-        tb.className = 'widget-toolbar';
-        tb.innerHTML = `
-            <span style="color:#64748b;font-size:9px;text-transform:uppercase;letter-spacing:.5px">
-                ${widget.type}
-            </span>
-            <button class="widget-del-btn" id="wdel-${widget.id}">✕ Delete</button>
-        `;
-        el.appendChild(tb);
-        tb.querySelector('#wdel-' + widget.id).addEventListener('mousedown', e => {
-            e.preventDefault(); e.stopPropagation();
-            deleteWidget(widget.id);
-        });
-    }
 
     // Content
     const content = document.createElement('div');
@@ -456,18 +441,25 @@ function buildWidgetEl(widget) {
 
     // ── Drag ──
     el.addEventListener('mousedown', e => {
-        if (e.target === handle || e.target.closest('.widget-toolbar')) return;
+        if (e.target === handle || e.target.closest('.widget-tb')) return;
         e.preventDefault();
         selectWidget(widget.id);
         const startX = e.clientX - widget.x;
         const startY = e.clientY - widget.y;
+        let rafId = null;
         const onMove = e => {
-            widget.x = Math.max(0, e.clientX - startX);
-            widget.y = Math.max(0, e.clientY - startY);
-            el.style.left = widget.x + 'px';
-            el.style.top  = widget.y + 'px';
+            const nx = Math.max(0, e.clientX - startX);
+            const ny = Math.max(0, e.clientY - startY);
+            if (rafId) cancelAnimationFrame(rafId);
+            rafId = requestAnimationFrame(() => {
+                widget.x = nx;
+                widget.y = ny;
+                el.style.left = nx + 'px';
+                el.style.top  = ny + 'px';
+            });
         };
         const onUp = () => {
+            if (rafId) cancelAnimationFrame(rafId);
             document.removeEventListener('mousemove', onMove);
             document.removeEventListener('mouseup', onUp);
         };
@@ -480,13 +472,20 @@ function buildWidgetEl(widget) {
         e.preventDefault(); e.stopPropagation();
         const startX = e.clientX, startY = e.clientY;
         const startW = widget.w,  startH = widget.h;
+        let rafId = null;
         const onMove = e => {
-            widget.w = Math.max(120, startW + e.clientX - startX);
-            widget.h = Math.max(80,  startH + e.clientY - startY);
-            el.style.width  = widget.w + 'px';
-            el.style.height = widget.h + 'px';
+            const nw = Math.max(120, startW + e.clientX - startX);
+            const nh = Math.max(80,  startH + e.clientY - startY);
+            if (rafId) cancelAnimationFrame(rafId);
+            rafId = requestAnimationFrame(() => {
+                widget.w = nw;
+                widget.h = nh;
+                el.style.width  = nw + 'px';
+                el.style.height = nh + 'px';
+            });
         };
         const onUp = () => {
+            if (rafId) cancelAnimationFrame(rafId);
             document.removeEventListener('mousemove', onMove);
             document.removeEventListener('mouseup', onUp);
             content.innerHTML = renderWidgetContent(widget);
@@ -498,22 +497,63 @@ function buildWidgetEl(widget) {
     return el;
 }
 
+function deselectCurrent() {
+    if (!selectedWidgetId) return;
+    const prev = document.getElementById('widget-' + selectedWidgetId);
+    if (prev) {
+        prev.style.border = '2px dashed #6366f1';
+        prev.style.boxShadow = 'none';
+        prev.style.zIndex = '1';
+        const tb = prev.querySelector('.widget-tb');
+        if (tb) tb.remove();
+    }
+    selectedWidgetId = null;
+}
+
 function selectWidget(id) {
+    if (selectedWidgetId === id) return;
+    deselectCurrent();
     selectedWidgetId = id;
-    renderAllWidgets();
+
+    const el = document.getElementById('widget-' + id);
+    if (!el) return;
+    el.style.border = '2px solid #2563eb';
+    el.style.boxShadow = '0 0 0 3px rgba(37,99,235,.15)';
+    el.style.zIndex = '10';
+
+    const widget = widgets.find(w => w.id === id);
+    if (!widget) return;
+    const tb = document.createElement('div');
+    tb.className = 'widget-tb';
+    tb.style.cssText = `
+        position:absolute; top:-32px; left:0; background:#1e293b; color:white;
+        border-radius:6px; padding:3px 8px; display:flex; align-items:center;
+        gap:8px; z-index:20; font-size:11px; white-space:nowrap;
+        box-shadow:0 2px 8px rgba(0,0,0,.5); pointer-events:all;
+    `;
+    tb.innerHTML = `
+        <span style="color:#64748b;font-size:9px;text-transform:uppercase;letter-spacing:.5px">${widget.type}</span>
+        <button style="background:#dc2626;border:none;color:white;padding:2px 7px;
+                       border-radius:4px;cursor:pointer;font-size:11px">✕ Delete</button>
+    `;
+    tb.querySelector('button').addEventListener('mousedown', e => {
+        e.preventDefault(); e.stopPropagation();
+        deleteWidget(id);
+    });
+    el.appendChild(tb);
 }
 
 function deleteWidget(id) {
     widgets = widgets.filter(w => w.id !== id);
     selectedWidgetId = null;
-    renderAllWidgets();
+    const el = document.getElementById('widget-' + id);
+    if (el) el.remove();
 }
 
 // Deselect on outside click
 document.addEventListener('mousedown', e => {
     if (selectedWidgetId && !e.target.closest('#widget-overlay')) {
-        selectedWidgetId = null;
-        renderAllWidgets();
+        deselectCurrent();
     }
 });
 
