@@ -400,14 +400,24 @@ function insertImage() {
         if (!file) return;
         const form = new FormData();
         form.append('upload', file);
-        form.append('_token', CSRF);
+        // ไม่ append _token ใน body — ส่งผ่าน header แทน
         try {
-            const res  = await fetch(UPLOAD_URL, { method: 'POST', body: form });
+            const res = await fetch(UPLOAD_URL, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': CSRF },
+                body: form,
+                // ไม่ set Content-Type — ให้ browser กำหนด boundary เอง
+            });
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error(`Server ${res.status}: ${text.substring(0, 200)}`);
+            }
             const json = await res.json();
             const url  = json.urls?.default || json.url;
-            if (!url) throw new Error(json.error?.message || 'Upload failed');
+            if (!url) throw new Error('No URL in response');
             editor.execute('insertImage', { source: url });
         } catch (e) {
+            console.error('Upload error:', e);
             alert('Upload failed: ' + e.message);
         }
     };
