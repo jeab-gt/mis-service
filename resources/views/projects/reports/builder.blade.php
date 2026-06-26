@@ -90,6 +90,12 @@ main { padding:0 !important; overflow:hidden !important; }
 .save-dot.dirty  { background:#f59e0b; }
 .save-dot.saved  { background:#22c55e; }
 .save-dot.saving { background:#6366f1; animation:pulse 1s infinite; }
+
+/* ── Shape Picker ── */
+.shape-btn { width:28px; height:28px; display:flex; align-items:center; justify-content:center;
+    border:1px solid #e5e7eb; border-radius:4px; cursor:pointer; font-size:13px; background:#fff;
+    flex-shrink:0; transition:background .1s,border-color .1s; }
+.shape-btn:hover { background:#f3f4f6; border-color:#6366f1; }
 </style>
 @endpush
 
@@ -195,6 +201,51 @@ main { padding:0 !important; overflow:hidden !important; }
         <button class="rb-btn" @mousedown.prevent @click="insertWidget('milestone')"><i class="ti ti-flag"></i> Milestone</button>
         <button class="rb-btn" @mousedown.prevent @click="insertWidget('team')"><i class="ti ti-users"></i> Team</button>
         <button class="rb-btn" @mousedown.prevent @click="insertWidget('blocker')"><i class="ti ti-alert-triangle"></i> Blocker</button>
+
+        {{-- Shape Picker --}}
+        <div class="relative">
+            <button class="rb-btn" @mousedown.prevent @click="shapeOpen=!shapeOpen" title="Insert Shape">
+                <i class="ti ti-shapes"></i> Shape
+            </button>
+            <div x-show="shapeOpen" @click.outside="shapeOpen=false" x-cloak
+                 class="absolute top-11 left-0 bg-white border border-gray-200 rounded-xl shadow-xl p-3 z-50 w-72">
+                <p class="text-xs font-semibold text-gray-500 mb-1">Lines</p>
+                <div class="flex flex-wrap gap-1 mb-2">
+                    <button @mousedown.prevent @click="insertShape('line');shapeOpen=false"         class="shape-btn" title="Line">─</button>
+                    <button @mousedown.prevent @click="insertShape('arrow_right');shapeOpen=false"  class="shape-btn" title="Arrow →">→</button>
+                    <button @mousedown.prevent @click="insertShape('arrow_left');shapeOpen=false"   class="shape-btn" title="Arrow ←">←</button>
+                    <button @mousedown.prevent @click="insertShape('arrow_both');shapeOpen=false"   class="shape-btn" title="Both">↔</button>
+                    <button @mousedown.prevent @click="insertShape('arrow_up');shapeOpen=false"     class="shape-btn" title="Up">↑</button>
+                    <button @mousedown.prevent @click="insertShape('arrow_down');shapeOpen=false"   class="shape-btn" title="Down">↓</button>
+                </div>
+                <p class="text-xs font-semibold text-gray-500 mb-1">Basic Shapes</p>
+                <div class="flex flex-wrap gap-1 mb-2">
+                    <button @mousedown.prevent @click="insertShape('rectangle');shapeOpen=false"    class="shape-btn" title="Rectangle">▭</button>
+                    <button @mousedown.prevent @click="insertShape('rounded_rect');shapeOpen=false" class="shape-btn" title="Rounded">▢</button>
+                    <button @mousedown.prevent @click="insertShape('circle');shapeOpen=false"       class="shape-btn" title="Circle">○</button>
+                    <button @mousedown.prevent @click="insertShape('triangle');shapeOpen=false"     class="shape-btn" title="Triangle">△</button>
+                    <button @mousedown.prevent @click="insertShape('diamond');shapeOpen=false"      class="shape-btn" title="Diamond">◇</button>
+                    <button @mousedown.prevent @click="insertShape('hexagon');shapeOpen=false"      class="shape-btn" title="Hexagon">⬡</button>
+                    <button @mousedown.prevent @click="insertShape('star');shapeOpen=false"         class="shape-btn" title="Star">★</button>
+                    <button @mousedown.prevent @click="insertShape('heart');shapeOpen=false"        class="shape-btn" title="Heart">♥</button>
+                </div>
+                <p class="text-xs font-semibold text-gray-500 mb-1">Block Arrows</p>
+                <div class="flex flex-wrap gap-1 mb-2">
+                    <button @mousedown.prevent @click="insertShape('block_right');shapeOpen=false"  class="shape-btn" title="Block →">⇒</button>
+                    <button @mousedown.prevent @click="insertShape('block_left');shapeOpen=false"   class="shape-btn" title="Block ←">⇐</button>
+                    <button @mousedown.prevent @click="insertShape('block_up');shapeOpen=false"     class="shape-btn" title="Block ↑">⇑</button>
+                    <button @mousedown.prevent @click="insertShape('block_down');shapeOpen=false"   class="shape-btn" title="Block ↓">⇓</button>
+                </div>
+                <p class="text-xs font-semibold text-gray-500 mb-1">Flowchart</p>
+                <div class="flex flex-wrap gap-1">
+                    <button @mousedown.prevent @click="insertShape('flow_process');shapeOpen=false"  class="shape-btn" title="Process">▭</button>
+                    <button @mousedown.prevent @click="insertShape('flow_decision');shapeOpen=false" class="shape-btn" title="Decision">◇</button>
+                    <button @mousedown.prevent @click="insertShape('flow_terminal');shapeOpen=false" class="shape-btn" title="Terminal">⬭</button>
+                    <button @mousedown.prevent @click="insertShape('flow_data');shapeOpen=false"     class="shape-btn" title="Data">▱</button>
+                    <button @mousedown.prevent @click="insertShape('flow_connector');shapeOpen=false" class="shape-btn" title="Connector">○</button>
+                </div>
+            </div>
+        </div>
 
         <div class="flex-1"></div>
 
@@ -494,6 +545,53 @@ main { padding:0 !important; overflow:hidden !important; }
                         </div>
                     </template>
 
+                    {{-- Shape widget config --}}
+                    <template x-if="selectedWidget.type==='shape'">
+                        <div class="space-y-2">
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-xs text-gray-500 block mb-0.5">Fill</label>
+                                    <input type="color" x-model="selectedWidget.config.fill"
+                                           @input="renderWidget(selectedWidget.id,'shape')"
+                                           class="w-full h-7 rounded border cursor-pointer">
+                                </div>
+                                <div>
+                                    <label class="text-xs text-gray-500 block mb-0.5">Border</label>
+                                    <input type="color" x-model="selectedWidget.config.stroke"
+                                           @input="renderWidget(selectedWidget.id,'shape')"
+                                           class="w-full h-7 rounded border cursor-pointer">
+                                </div>
+                                <div>
+                                    <label class="text-xs text-gray-500 block mb-0.5">Border W</label>
+                                    <input type="number" x-model.number="selectedWidget.config.stroke_width"
+                                           @input="renderWidget(selectedWidget.id,'shape')"
+                                           class="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-indigo-400"
+                                           min="0" max="10">
+                                </div>
+                                <div>
+                                    <label class="text-xs text-gray-500 block mb-0.5">Font Size</label>
+                                    <input type="number" x-model.number="selectedWidget.config.font_size"
+                                           @input="renderWidget(selectedWidget.id,'shape')"
+                                           class="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-indigo-400"
+                                           min="8" max="48">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500 block mb-0.5">Text ในรูป</label>
+                                <input type="text" x-model="selectedWidget.config.text"
+                                       @input="renderWidget(selectedWidget.id,'shape')"
+                                       class="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-indigo-400"
+                                       placeholder="ข้อความในรูป...">
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500 block mb-0.5">Text Color</label>
+                                <input type="color" x-model="selectedWidget.config.text_color"
+                                       @input="renderWidget(selectedWidget.id,'shape')"
+                                       class="w-full h-7 rounded border cursor-pointer">
+                            </div>
+                        </div>
+                    </template>
+
                     {{-- Image widget config --}}
                     <template x-if="selectedWidget.type==='image'">
                         <div class="space-y-2">
@@ -653,6 +751,7 @@ function reportBuilder() {
         tableOpen: false,
         tableHr: 1,
         tableHc: 1,
+        shapeOpen: false,
 
         get canvasWrapperStyle() {
             const base = {
@@ -957,6 +1056,128 @@ function reportBuilder() {
             for (const f of files) await this.insertImageFile(f);
         },
 
+        // ── Shape widget ──
+        insertShape(shapeType) {
+            if (!this.currentSlide) return;
+            const widget = {
+                id: 'w_' + Date.now(),
+                type: 'shape',
+                x: 100, y: 100,
+                w: 200, h: 120,
+                config: {
+                    shape_type:   shapeType,
+                    fill:         '#6366f1',
+                    stroke:       '#4338ca',
+                    stroke_width: 2,
+                    text:         '',
+                    text_color:   '#ffffff',
+                    font_size:    14,
+                },
+                data_mode: 'static',
+                snapshot_data: null,
+            };
+            this.currentSlide.widgets.push(widget);
+            this.selectedWidget = widget;
+            this.isDirty = true;
+            this.$nextTick(() => setTimeout(() => this.renderWidget(widget.id, 'shape'), 30));
+        },
+
+        _renderShape(widget) {
+            if (!widget) return '';
+            const sc  = widget.config || {};
+            const sw  = widget.w, sh = widget.h;
+            const fill = sc.fill || '#6366f1';
+            const stroke = sc.stroke || '#4338ca';
+            const strokeW = sc.stroke_width ?? 2;
+            const text = sc.text || '';
+            const tc   = sc.text_color || '#ffffff';
+            const fs   = sc.font_size || 14;
+            const p    = strokeW;
+
+            let shapeSVG = '';
+            switch (sc.shape_type) {
+                case 'rounded_rect':
+                    shapeSVG = `<rect x="${p}" y="${p}" width="${sw-p*2}" height="${sh-p*2}" rx="12" ry="12" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
+                    break;
+                case 'circle':
+                    shapeSVG = `<ellipse cx="${sw/2}" cy="${sh/2}" rx="${sw/2-p}" ry="${sh/2-p}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
+                    break;
+                case 'triangle':
+                    shapeSVG = `<polygon points="${sw/2},${p} ${sw-p},${sh-p} ${p},${sh-p}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
+                    break;
+                case 'diamond':
+                    shapeSVG = `<polygon points="${sw/2},${p} ${sw-p},${sh/2} ${sw/2},${sh-p} ${p},${sh/2}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
+                    break;
+                case 'hexagon': {
+                    const hx = sw/2, hy = sh/2, hr = Math.min(sw,sh)/2-p;
+                    const hpts = Array.from({length:6},(_,i)=>{const a=(i*60-30)*Math.PI/180;return `${hx+hr*Math.cos(a)},${hy+hr*Math.sin(a)}`;}).join(' ');
+                    shapeSVG = `<polygon points="${hpts}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
+                    break;
+                }
+                case 'star': {
+                    const pts = Array.from({length:10},(_,i)=>{const a=(i*36-90)*Math.PI/180,r=i%2===0?Math.min(sw,sh)/2-p:Math.min(sw,sh)/4;return `${sw/2+r*Math.cos(a)},${sh/2+r*Math.sin(a)}`;}).join(' ');
+                    shapeSVG = `<polygon points="${pts}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
+                    break;
+                }
+                case 'heart': {
+                    const hW=sw-p*2, hH2=sh-p*2, ox=p, oy=p;
+                    shapeSVG = `<path d="M${ox+hW/2},${oy+hH2*0.35} C${ox+hW/2},${oy+hH2*0.12} ${ox},${oy+hH2*0.12} ${ox},${oy+hH2*0.35} C${ox},${oy+hH2*0.65} ${ox+hW/2},${oy+hH2*0.9} ${ox+hW/2},${oy+hH2} C${ox+hW/2},${oy+hH2*0.9} ${ox+hW},${oy+hH2*0.65} ${ox+hW},${oy+hH2*0.35} C${ox+hW},${oy+hH2*0.12} ${ox+hW/2},${oy+hH2*0.12} ${ox+hW/2},${oy+hH2*0.35}Z" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
+                    break;
+                }
+                case 'line':
+                    shapeSVG = `<line x1="${p}" y1="${sh/2}" x2="${sw-p}" y2="${sh/2}" stroke="${stroke}" stroke-width="${strokeW+1}"/>`;
+                    break;
+                case 'arrow_right':
+                    shapeSVG = `<line x1="${p}" y1="${sh/2}" x2="${sw-p-10}" y2="${sh/2}" stroke="${stroke}" stroke-width="${strokeW+1}"/>
+                        <polygon points="${sw-p},${sh/2} ${sw-p-12},${sh/2-6} ${sw-p-12},${sh/2+6}" fill="${stroke}"/>`;
+                    break;
+                case 'arrow_left':
+                    shapeSVG = `<line x1="${p+10}" y1="${sh/2}" x2="${sw-p}" y2="${sh/2}" stroke="${stroke}" stroke-width="${strokeW+1}"/>
+                        <polygon points="${p},${sh/2} ${p+12},${sh/2-6} ${p+12},${sh/2+6}" fill="${stroke}"/>`;
+                    break;
+                case 'arrow_both':
+                    shapeSVG = `<line x1="${p+10}" y1="${sh/2}" x2="${sw-p-10}" y2="${sh/2}" stroke="${stroke}" stroke-width="${strokeW+1}"/>
+                        <polygon points="${p},${sh/2} ${p+12},${sh/2-6} ${p+12},${sh/2+6}" fill="${stroke}"/>
+                        <polygon points="${sw-p},${sh/2} ${sw-p-12},${sh/2-6} ${sw-p-12},${sh/2+6}" fill="${stroke}"/>`;
+                    break;
+                case 'arrow_up':
+                    shapeSVG = `<line x1="${sw/2}" y1="${sh-p}" x2="${sw/2}" y2="${p+10}" stroke="${stroke}" stroke-width="${strokeW+1}"/>
+                        <polygon points="${sw/2},${p} ${sw/2-6},${p+12} ${sw/2+6},${p+12}" fill="${stroke}"/>`;
+                    break;
+                case 'arrow_down':
+                    shapeSVG = `<line x1="${sw/2}" y1="${p}" x2="${sw/2}" y2="${sh-p-10}" stroke="${stroke}" stroke-width="${strokeW+1}"/>
+                        <polygon points="${sw/2},${sh-p} ${sw/2-6},${sh-p-12} ${sw/2+6},${sh-p-12}" fill="${stroke}"/>`;
+                    break;
+                case 'block_right':
+                    shapeSVG = `<polygon points="${p},${sh*0.3} ${sw*0.65},${sh*0.3} ${sw*0.65},${p} ${sw-p},${sh/2} ${sw*0.65},${sh-p} ${sw*0.65},${sh*0.7} ${p},${sh*0.7}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
+                    break;
+                case 'block_left':
+                    shapeSVG = `<polygon points="${sw-p},${sh*0.3} ${sw*0.35},${sh*0.3} ${sw*0.35},${p} ${p},${sh/2} ${sw*0.35},${sh-p} ${sw*0.35},${sh*0.7} ${sw-p},${sh*0.7}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
+                    break;
+                case 'block_up':
+                    shapeSVG = `<polygon points="${sw*0.3},${sh-p} ${sw*0.3},${sh*0.35} ${p},${sh*0.35} ${sw/2},${p} ${sw-p},${sh*0.35} ${sw*0.7},${sh*0.35} ${sw*0.7},${sh-p}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
+                    break;
+                case 'block_down':
+                    shapeSVG = `<polygon points="${sw*0.3},${p} ${sw*0.3},${sh*0.65} ${p},${sh*0.65} ${sw/2},${sh-p} ${sw-p},${sh*0.65} ${sw*0.7},${sh*0.65} ${sw*0.7},${p}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
+                    break;
+                case 'flow_terminal':
+                    shapeSVG = `<rect x="${p}" y="${p}" width="${sw-p*2}" height="${sh-p*2}" rx="${(sh-p*2)/2}" ry="${(sh-p*2)/2}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
+                    break;
+                case 'flow_data':
+                    shapeSVG = `<parallelogram/>`;
+                    shapeSVG = `<polygon points="${sw*0.12},${p} ${sw-p},${p} ${sw*0.88},${sh-p} ${p},${sh-p}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
+                    break;
+                case 'flow_connector':
+                    shapeSVG = `<ellipse cx="${sw/2}" cy="${sh/2}" rx="${Math.min(sw,sh)/2-p}" ry="${Math.min(sw,sh)/2-p}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
+                    break;
+                default: // rectangle, flow_process
+                    shapeSVG = `<rect x="${p}" y="${p}" width="${sw-p*2}" height="${sh-p*2}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
+            }
+
+            const textEl = text ? `<text x="${sw/2}" y="${sh/2}" text-anchor="middle" dominant-baseline="middle" fill="${tc}" font-size="${fs}" font-family="sans-serif">${text}</text>` : '';
+            return `<svg width="100%" height="100%" viewBox="0 0 ${sw} ${sh}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">${shapeSVG}${textEl}</svg>`;
+        },
+
         // ── Table widget helpers ──
         addTableRow() {
             const w = this.selectedWidget; if (!w) return;
@@ -1141,11 +1362,12 @@ function reportBuilder() {
                     el.innerHTML = this._renderKPI();
                     break;
                 case 'chart':
-                    el.innerHTML = `<div style="padding:8px"><canvas id="chart-${id}" width="340" height="180"></canvas></div>`;
+                    el.style.padding = '8px';
+                    el.innerHTML = `<canvas id="chart-${id}" style="width:100%;height:100%"></canvas>`;
                     this.$nextTick(() => this._initChart(id));
                     break;
                 case 'gantt':
-                    el.innerHTML = this._renderGantt(el.parentElement?.offsetWidth || 600);
+                    el.innerHTML = this._renderGantt();
                     break;
                 case 'milestone':
                     el.innerHTML = this._renderMilestones();
@@ -1163,6 +1385,11 @@ function reportBuilder() {
                     el.innerHTML = src
                         ? `<img src="${src}" style="width:100%;height:100%;object-fit:${fit};display:block;border-radius:4px" draggable="false">`
                         : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:12px;background:#f9fafb;border-radius:4px">No image</div>`;
+                    break;
+                }
+                case 'shape': {
+                    const widget = (this.currentSlide?.widgets || []).find(w => w.id === id);
+                    el.innerHTML = this._renderShape(widget);
                     break;
                 }
                 case 'table': {
@@ -1217,56 +1444,138 @@ function reportBuilder() {
         _initChart(id) {
             const canvas = document.getElementById('chart-' + id);
             if (!canvas || typeof Chart === 'undefined') return;
+            const widget = (this.currentSlide?.widgets || []).find(w => w.id === id);
+            const chartType = widget?.config?.chart_type || 'tasks_by_status';
             const d = CHART_DATA.tasksByStatus;
-            this._chartInstances[id] = new Chart(canvas, {
-                type: 'doughnut',
-                data: {
+            let type = 'doughnut', data, options = {};
+
+            if (chartType === 'workload') {
+                type = 'bar';
+                const members = PROJECT_DATA.members.slice(0, 8);
+                data = {
+                    labels: members.map(m => m.name.split(' ')[0]),
+                    datasets: [{ label:'Tasks', data: members.map(m => m.task_count || 0),
+                        backgroundColor:'#6366f1', borderRadius:4 }]
+                };
+                options = { indexAxis:'y', responsive:true, maintainAspectRatio:false,
+                    plugins:{ legend:{ display:false } }, scales:{ x:{ ticks:{font:{size:9}} }, y:{ ticks:{font:{size:9}} } } };
+            } else if (chartType === 'burndown') {
+                type = 'line';
+                data = {
+                    labels: ['W1','W2','W3','W4','W5','W6'],
+                    datasets: [
+                        { label:'Ideal',  data:[100,80,60,40,20,0],  borderColor:'#94a3b8', borderDash:[4,2], pointRadius:0, tension:0 },
+                        { label:'Actual', data:[100,85,65,50,35,null], borderColor:'#6366f1', fill:false, tension:0.3, pointRadius:3 },
+                    ]
+                };
+                options = { responsive:true, maintainAspectRatio:false,
+                    plugins:{ legend:{ position:'bottom', labels:{ font:{size:9} } } },
+                    scales:{ y:{ min:0, max:100, ticks:{font:{size:9}} }, x:{ ticks:{font:{size:9}} } } };
+            } else {
+                data = {
                     labels: ['Todo','In Progress','Review','Done','Cancelled'],
                     datasets: [{ data:[d.todo,d.in_progress,d.review,d.done,d.cancelled],
                         backgroundColor:['#94a3b8','#6366f1','#f59e0b','#22c55e','#ef4444'],
                         borderWidth:1, borderColor:'#fff' }]
-                },
-                options: { responsive:false, plugins:{ legend:{ position:'right', labels:{ font:{size:10} } } } },
-            });
+                };
+                options = { responsive:true, maintainAspectRatio:false,
+                    plugins:{ legend:{ position:'right', labels:{ font:{size:9}, boxWidth:10 } } } };
+            }
+
+            this._chartInstances[id] = new Chart(canvas, { type, data, options });
         },
 
-        _renderGantt(W) {
-            const tasks = PROJECT_DATA.tasks.filter(t => t.start_date && t.due_date);
-            if (!tasks.length) return '<div style="padding:20px;text-align:center;color:#9ca3af;font-size:12px">No tasks with scheduled dates</div>';
-            const all = tasks.flatMap(t => [new Date(t.start_date), new Date(t.due_date)]);
-            const minD = new Date(Math.min(...all)), maxD = new Date(Math.max(...all));
-            const totalDays = Math.max(1, (maxD - minD) / 86400000 + 1);
-            const lW = 120, cW = Math.max(200, W - lW - 20), rH = 22, hH = 26;
-            const H = hH + tasks.length * rH + 2;
-            const sc = { done:'#16a34a', in_progress:'#4f46e5', review:'#f59e0b', todo:'#94a3b8', cancelled:'#ef4444' };
-            let s = `<svg width="${lW+cW}" height="${H}" xmlns="http://www.w3.org/2000/svg" style="font-family:sans-serif;display:block">`;
-            s += `<rect width="${lW+cW}" height="${H}" fill="#f8fafc" rx="2"/>`;
-            s += `<rect width="${lW+cW}" height="${hH}" fill="#e2e8f0" rx="2"/>`;
-            const cur = new Date(minD.getFullYear(), minD.getMonth(), 1);
-            while (cur <= maxD) {
-                const x = lW + ((cur - minD) / 86400000) / totalDays * cW;
-                s += `<line x1="${x}" y1="${hH}" x2="${x}" y2="${H}" stroke="#e2e8f0" stroke-width="1"/>`;
-                s += `<text x="${x+2}" y="18" font-size="9" fill="#64748b">${cur.toLocaleString('default',{month:'short'})} ${cur.getFullYear()}</text>`;
-                cur.setMonth(cur.getMonth() + 1);
-            }
-            s += `<line x1="${lW}" y1="0" x2="${lW}" y2="${H}" stroke="#cbd5e1" stroke-width="1"/>`;
-            tasks.forEach((t, i) => {
-                const y = hH + i * rH;
-                s += `<rect x="0" y="${y}" width="${lW+cW}" height="${rH}" fill="${i%2?'#f8fafc':'#fff'}"/>`;
-                const maxCh = Math.floor(lW / 6.5);
-                const lbl = t.title.length > maxCh ? t.title.slice(0, maxCh-1)+'…' : t.title;
-                s += `<text x="4" y="${y+rH/2+4}" font-size="9" fill="#374151">${lbl}</text>`;
-                const bx = lW + ((new Date(t.start_date) - minD) / 86400000) / totalDays * cW;
-                const bw = Math.max(4, ((new Date(t.due_date) - new Date(t.start_date)) / 86400000 + 1) / totalDays * cW);
-                s += `<rect x="${bx}" y="${y+3}" width="${bw}" height="${rH-6}" rx="2" fill="${sc[t.status]||'#94a3b8'}" opacity="0.85"/>`;
-                if (t.progress_pct > 0)
-                    s += `<rect x="${bx}" y="${y+3}" width="${bw * t.progress_pct / 100}" height="${rH-6}" rx="2" fill="rgba(255,255,255,.3)"/>`;
+        _renderGantt() {
+            const allTasks = PROJECT_DATA.tasks.filter(t => t.start_date && t.due_date);
+            if (!allTasks.length) return '<div style="padding:20px;text-align:center;color:#9ca3af;font-size:12px">No tasks with scheduled dates</div>';
+
+            const LABEL_W = 190, ROW_H = 26, HEADER_H = 30, TOTAL_W = 800;
+            const CHART_W = TOTAL_W - LABEL_W;
+            const colors = { done:'#16a34a', in_progress:'#2563eb', review:'#d97706', todo:'#9ca3af', cancelled:'#ef4444' };
+
+            // Group by milestone
+            const msMap = {};
+            (PROJECT_DATA.milestones || []).forEach(m => { msMap[m.id] = m; });
+            const grouped = {};
+            allTasks.forEach(t => {
+                const mid = t.milestone_id || '__none__';
+                if (!grouped[mid]) grouped[mid] = [];
+                grouped[mid].push(t);
             });
-            const today = new Date();
-            if (today >= minD && today <= maxD) {
-                const tx = lW + ((today - minD) / 86400000) / totalDays * cW;
-                s += `<line x1="${tx}" y1="${hH}" x2="${tx}" y2="${H}" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4,2"/>`;
-                s += `<text x="${tx+2}" y="${hH-2}" font-size="8" fill="#ef4444">Today</text>`;
+
+            const rows = [];
+            Object.keys(grouped).forEach(mid => {
+                const m = mid === '__none__' ? { name:'No Phase', due_date:'' } : msMap[mid];
+                if (m) rows.push({ isMilestone:true, data:m });
+                grouped[mid].forEach(t => rows.push({ isMilestone:false, data:t }));
+            });
+
+            const TOTAL_H = HEADER_H + rows.length * ROW_H + 4;
+            const dates = allTasks.flatMap(t => [new Date(t.start_date), new Date(t.due_date)]);
+            const minD = new Date(Math.min(...dates)), maxD = new Date(Math.max(...dates));
+            const totalMs = Math.max(1, maxD - minD);
+
+            let s = `<svg viewBox="0 0 ${TOTAL_W} ${TOTAL_H}" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style="font-family:sans-serif;">`;
+            s += `<rect width="${TOTAL_W}" height="${TOTAL_H}" fill="white"/>`;
+
+            // Header
+            s += `<rect x="0" y="0" width="${TOTAL_W}" height="${HEADER_H}" fill="#f8fafc"/>`;
+            s += `<text x="6" y="${HEADER_H/2+4}" font-size="10" fill="#64748b" font-weight="600">Task</text>`;
+            s += `<text x="${LABEL_W+6}" y="${HEADER_H/2+4}" font-size="10" fill="#64748b" font-weight="600">Timeline</text>`;
+
+            // Month grid lines
+            let cur = new Date(minD.getFullYear(), minD.getMonth(), 1);
+            while (cur <= maxD) {
+                const x = LABEL_W + (cur - minD) / totalMs * CHART_W;
+                s += `<line x1="${x}" y1="${HEADER_H}" x2="${x}" y2="${TOTAL_H}" stroke="#e2e8f0" stroke-width="0.5"/>`;
+                s += `<text x="${x+3}" y="${HEADER_H/2+4}" font-size="8" fill="#94a3b8">${cur.toLocaleDateString('en',{month:'short',year:'2-digit'})}</text>`;
+                cur = new Date(cur.getFullYear(), cur.getMonth()+1, 1);
+            }
+
+            // Dividers
+            s += `<line x1="${LABEL_W}" y1="0" x2="${LABEL_W}" y2="${TOTAL_H}" stroke="#e2e8f0" stroke-width="1"/>`;
+            s += `<line x1="0" y1="${HEADER_H}" x2="${TOTAL_W}" y2="${HEADER_H}" stroke="#e2e8f0" stroke-width="1"/>`;
+
+            rows.forEach((row, i) => {
+                const y = HEADER_H + i * ROW_H;
+                if (row.isMilestone) {
+                    s += `<rect x="0" y="${y}" width="${TOTAL_W}" height="${ROW_H}" fill="#1e3a5f"/>`;
+                    const name = (row.data.name || '').substring(0, 28);
+                    s += `<text x="6" y="${y+ROW_H/2+4}" font-size="9" fill="white" font-weight="700">⚑ ${name}</text>`;
+                    if (row.data.due_date) {
+                        s += `<text x="${TOTAL_W-5}" y="${y+ROW_H/2+4}" font-size="8" fill="#94a3b8" text-anchor="end">${row.data.due_date}</text>`;
+                    }
+                } else {
+                    const t = row.data;
+                    const bg = i % 2 === 0 ? '#ffffff' : '#f8fafc';
+                    const color = colors[t.status] || '#9ca3af';
+                    s += `<rect x="0" y="${y}" width="${TOTAL_W}" height="${ROW_H}" fill="${bg}"/>`;
+                    s += `<line x1="0" y1="${y+ROW_H}" x2="${TOTAL_W}" y2="${y+ROW_H}" stroke="#f1f5f9" stroke-width="0.5"/>`;
+                    s += `<circle cx="10" cy="${y+ROW_H/2}" r="3.5" fill="${color}"/>`;
+                    const lbl = (t.title || '').substring(0, 22);
+                    s += `<text x="18" y="${y+ROW_H/2+4}" font-size="9" fill="#374151">${lbl}</text>`;
+                    if (t.start_date && t.due_date) {
+                        const bx = LABEL_W + (new Date(t.start_date) - minD) / totalMs * CHART_W;
+                        const bw = Math.max(4, (new Date(t.due_date) - new Date(t.start_date)) / totalMs * CHART_W);
+                        const barY = y + 5, barH = ROW_H - 10;
+                        s += `<rect x="${bx}" y="${barY}" width="${bw}" height="${barH}" rx="2" fill="${color}" opacity="0.22"/>`;
+                        if ((t.progress_pct || 0) > 0) {
+                            s += `<rect x="${bx}" y="${barY}" width="${bw*(t.progress_pct/100)}" height="${barH}" rx="2" fill="${color}"/>`;
+                        }
+                        if (bw > 28) {
+                            s += `<text x="${bx+bw/2}" y="${barY+barH/2+3}" text-anchor="middle" font-size="7" fill="white" font-weight="600">${t.progress_pct||0}%</text>`;
+                        }
+                    }
+                }
+            });
+
+            // Today line
+            const now = new Date();
+            if (now >= minD && now <= maxD) {
+                const tx = LABEL_W + (now - minD) / totalMs * CHART_W;
+                s += `<line x1="${tx}" y1="0" x2="${tx}" y2="${TOTAL_H}" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4,2"/>`;
+                s += `<rect x="${tx-10}" y="0" width="20" height="13" rx="2" fill="#ef4444"/>`;
+                s += `<text x="${tx}" y="9" text-anchor="middle" font-size="6.5" fill="white" font-weight="700">TODAY</text>`;
             }
             return s + '</svg>';
         },
