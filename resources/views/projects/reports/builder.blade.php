@@ -164,18 +164,18 @@ main { padding:0 !important; overflow:hidden !important; }
         <button class="rb-btn" @click="insertLink()" title="Insert Link"><i class="ti ti-link"></i></button>
 
         {{-- Table Picker --}}
-        <div class="relative" x-data="{ open:false, hr:1, hc:1 }">
-            <button class="rb-btn" @mousedown.prevent @click="open=!open" title="Insert Table">
+        <div class="relative">
+            <button class="rb-btn" @mousedown.prevent @click="tableOpen=!tableOpen" title="Insert Table">
                 <i class="ti ti-table"></i> Table
             </button>
-            <div x-show="open" @click.outside="open=false" x-cloak
+            <div x-show="tableOpen" @click.outside="tableOpen=false" x-cloak
                  class="absolute top-11 left-0 bg-white border border-gray-200 rounded-xl shadow-xl p-3 z-50 w-40">
-                <p class="text-xs text-gray-400 text-center mb-2" x-text="hr+'×'+hc"></p>
+                <p class="text-xs text-gray-400 text-center mb-2" x-text="tableHr+'×'+tableHc"></p>
                 <div class="grid gap-0.5" style="grid-template-columns:repeat(6,1fr)">
                     <template x-for="cell in tableCells" :key="cell.key">
-                        <div @mousedown.prevent @click="insertTable(cell.r,cell.c);open=false"
-                             @mouseenter="hr=cell.r;hc=cell.c"
-                             :class="cell.r<=hr&&cell.c<=hc?'on':''"
+                        <div @mousedown.prevent @click="insertTable(cell.r,cell.c);tableOpen=false"
+                             @mouseenter="tableHr=cell.r;tableHc=cell.c"
+                             :class="cell.r<=tableHr&&cell.c<=tableHc?'on':''"
                              class="tp-cell"></div>
                     </template>
                 </div>
@@ -578,6 +578,9 @@ function reportBuilder() {
         _chartInstances: {},
         _savedRange: null,
         tableCells: Array.from({length:36}, (_,i) => ({ r:Math.floor(i/6)+1, c:(i%6)+1, key:i })),
+        tableOpen: false,
+        tableHr: 1,
+        tableHc: 1,
 
         get canvasWrapperStyle() {
             const base = {
