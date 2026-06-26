@@ -73,8 +73,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     justify-content: center; padding: 24px;
 }
 #page-container {
-    position: relative; width: 794px; min-height: 1123px; background: white;
-    box-shadow: 0 8px 40px rgba(0,0,0,.6); flex-shrink: 0; align-self: flex-start;
+    position: relative; width: 1280px; height: 720px; min-height: unset; background: white;
+    box-shadow: 0 8px 40px rgba(0,0,0,.6); flex-shrink: 0; overflow: hidden;
 }
 #widget-overlay {
     position: absolute; inset: 0; pointer-events: none; z-index: 10;
@@ -84,8 +84,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .ck.ck-editor { display: flex; flex-direction: column; }
 .ck.ck-editor__top { position: sticky; top: 0; z-index: 100; }
 .ck.ck-editor__editable {
-    min-height: 1080px; padding: 60px 72px !important; border: none !important;
-    box-shadow: none !important; outline: none !important;
+    height: 672px; min-height: unset; padding: 40px 56px !important; border: none !important;
+    box-shadow: none !important; outline: none !important; overflow: hidden;
     font-size: 14px; line-height: 1.7; color: #1a1a1a; background: white;
 }
 .ck.ck-editor__editable:focus { outline: none !important; box-shadow: none !important; }
@@ -231,7 +231,7 @@ const {
     ClassicEditor, Essentials, Bold, Italic, Underline, Strikethrough,
     Paragraph, Heading, Alignment, FontFamily, FontSize,
     FontColor, FontBackgroundColor, List, Table, TableToolbar,
-    TableProperties, TableCellProperties, Image, ImageUpload,
+    TableProperties, TableCellProperties, Image, SimpleUploadAdapter,
     ImageResize, ImageStyle, ImageToolbar, Link,
     HorizontalLine, Indent, IndentBlock, BlockQuote, Undo,
     GeneralHtmlSupport
@@ -246,7 +246,7 @@ async function initEditor(htmlContent = '') {
             Essentials, Bold, Italic, Underline, Strikethrough,
             Paragraph, Heading, Alignment, FontFamily, FontSize,
             FontColor, FontBackgroundColor, List, Table, TableToolbar,
-            TableProperties, TableCellProperties, Image, ImageUpload,
+            TableProperties, TableCellProperties, Image, SimpleUploadAdapter,
             ImageResize, ImageStyle, ImageToolbar, Link,
             HorizontalLine, Indent, IndentBlock, BlockQuote, Undo,
             GeneralHtmlSupport,
@@ -292,21 +292,11 @@ async function initEditor(htmlContent = '') {
         htmlSupport: {
             allow: [{ name: /.*/, attributes: true, classes: true, styles: true }],
         },
-        initialData: htmlContent,
-    });
-
-    // Image upload adapter
-    editor.plugins.get('FileRepository').createUploadAdapter = (loader) => ({
-        upload: async () => {
-            const file = await loader.file;
-            const form = new FormData();
-            form.append('image', file);
-            form.append('_token', CSRF);
-            const res  = await fetch(UPLOAD_URL, { method: 'POST', body: form });
-            const json = await res.json();
-            return { default: json.url };
+        simpleUpload: {
+            uploadUrl: UPLOAD_URL,
+            headers: { 'X-CSRF-TOKEN': CSRF },
         },
-        abort: () => {},
+        initialData: htmlContent,
     });
 }
 
@@ -380,12 +370,12 @@ function renderSlideList() {
 
 // ── Widget manager ─────────────────────────────────────────────────────────
 const WIDGET_DEFAULTS = {
-    kpi:       { w: 500, h: 180 },
-    chart:     { w: 420, h: 280 },
-    gantt:     { w: 700, h: 260 },
-    milestone: { w: 340, h: 220 },
-    team:      { w: 380, h: 240 },
-    blocker:   { w: 360, h: 200 },
+    kpi:       { w: 560, h: 180 },
+    chart:     { w: 460, h: 300 },
+    gantt:     { w: 800, h: 260 },
+    milestone: { w: 380, h: 240 },
+    team:      { w: 420, h: 260 },
+    blocker:   { w: 400, h: 220 },
 };
 
 function insertWidget(type) {

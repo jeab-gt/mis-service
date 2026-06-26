@@ -90,7 +90,7 @@ const PROJECT_KPI  = @json($kpi);
 const CHART_DATA   = @json($chartData);
 const PROJECT_DATA = @json($projectData);
 
-const FRAME_W = 960, FRAME_H = 540;
+const FRAME_W = 1280, FRAME_H = 720;
 let current = 0;
 
 // ── Layout ────────────────────────────────────────────────────────────────
