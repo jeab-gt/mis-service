@@ -119,12 +119,26 @@ class ProjectReportController extends Controller
 
     public function builder(Project $project, ProjectReport $report)
     {
-        $report->load(['slides', 'attachments']);
+        $report->load(['slides']);
         $kpi         = $this->buildKpi($project);
         $chartData   = $this->buildChartData($project);
         $projectData = $this->buildProjectData($project);
 
-        return view('projects.reports.builder', compact('project', 'report', 'kpi', 'chartData', 'projectData'));
+        $reportJson = [
+            'id'     => $report->id,
+            'title'  => $report->title,
+            'slides' => $report->slides->sortBy('slide_order')->map(fn($s) => [
+                'id'           => $s->id,
+                'slide_order'  => $s->slide_order,
+                'bg_color'     => $s->bg_color ?? '#ffffff',
+                'notes'        => $s->notes ?? '',
+                'html_content' => $s->html_content ?? '',
+                'widgets_data' => $s->widgets_data ?? [],
+            ])->values(),
+        ];
+
+        return view('projects.reports.builder',
+            compact('project', 'report', 'reportJson', 'kpi', 'chartData', 'projectData'));
     }
 
     public function save(Request $request, Project $project, ProjectReport $report)
