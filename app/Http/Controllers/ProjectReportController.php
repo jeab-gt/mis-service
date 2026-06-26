@@ -281,8 +281,8 @@ class ProjectReportController extends Controller
         try {
             $file = $request->file('upload') ?? $request->file('image');
 
-            if (!$file) {
-                return response()->json(['error' => ['message' => 'No file received']], 400);
+            if (!$file || !$file->isValid()) {
+                return response()->json(['error' => ['message' => 'No valid file received']], 400);
             }
 
             $ext     = strtolower($file->getClientOriginalExtension());
@@ -294,18 +294,29 @@ class ProjectReportController extends Controller
                 return response()->json(['error' => ['message' => 'File too large (max 5 MB)']], 422);
             }
 
-            $image = ReportImage::create([
+            // file_get_contents(getPathname()) is reliable on Windows;
+            // fall back to Laravel's get() if the path read fails
+            $binary = file_get_contents($file->getPathname());
+            if ($binary === false) {
+                $binary = $file->get();
+            }
+            $mime   = $file->getMimeType() ?: 'image/' . $ext;
+            $base64 = base64_encode($binary);
+
+            ReportImage::create([
                 'report_id' => $report->id,
                 'filename'  => $file->getClientOriginalName(),
-                'mime_type' => $file->getMimeType(),
-                'data'      => base64_encode(file_get_contents($file->getRealPath())),
+                'mime_type' => $mime,
+                'data'      => $base64,
                 'size'      => $file->getSize(),
             ]);
 
-            return response()->json(['urls' => ['default' => $image->toDataUrl()]]);
+            return response()->json([
+                'urls' => ['default' => 'data:' . $mime . ';base64,' . $base64],
+            ]);
 
         } catch (\Throwable $e) {
-            \Log::error('uploadImage error: ' . $e->getMessage());
+            \Log::error('uploadImage error: ' . $e->getMessage() . ' | path: ' . ($file?->getPathname() ?? 'null'));
             return response()->json(['error' => ['message' => $e->getMessage()]], 500);
         }
     }
