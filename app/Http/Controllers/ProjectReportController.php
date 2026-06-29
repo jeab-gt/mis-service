@@ -278,43 +278,59 @@ class ProjectReportController extends Controller
 
     public function uploadImage(Request $request, Project $project, ProjectReport $report)
     {
-        \Log::info('uploadImage called', [
-            'method'       => $request->method(),
-            'files'        => array_keys($request->allFiles()),
-            'has_upload'   => $request->hasFile('upload'),
-            'has_image'    => $request->hasFile('image'),
-            'all_keys'     => array_keys($request->all()),
-            'content_type' => $request->header('Content-Type'),
-        ]);
+        try {
+            $key = isset($_FILES['upload']) ? 'upload' : (isset($_FILES['image']) ? 'image' : null);
 
-        $file = $request->file('upload') ?? $request->file('image');
+            if (!$key || $_FILES[$key]['error'] !== UPLOAD_ERR_OK) {
+                $errCode = $_FILES[$key]['error'] ?? -1;
+                $errMsg  = [
+                    UPLOAD_ERR_INI_SIZE   => 'File too large (php.ini)',
+                    UPLOAD_ERR_FORM_SIZE  => 'File too large (form)',
+                    UPLOAD_ERR_PARTIAL    => 'Partial upload',
+                    UPLOAD_ERR_NO_FILE    => 'No file uploaded',
+                    UPLOAD_ERR_NO_TMP_DIR => 'No temp directory',
+                    UPLOAD_ERR_CANT_WRITE => 'Cannot write temp file',
+                ][$errCode] ?? "Upload error code: $errCode";
+                return response()->json(['error' => ['message' => $errMsg]], 400);
+            }
 
-        if ($file) {
-            \Log::info('file info', [
-                'valid'    => $file->isValid(),
-                'error'    => $file->getError(),
-                'error_msg'=> $file->getErrorMessage(),
-                'size'     => $file->getSize(),
-                'pathname' => $file->getPathname(),
-                'tmp_name' => $_FILES['upload']['tmp_name'] ?? $_FILES['image']['tmp_name'] ?? 'none',
+            $tmpPath  = $_FILES[$key]['tmp_name'];
+            $origName = $_FILES[$key]['name'];
+            $size     = $_FILES[$key]['size'];
+
+            $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+            $ext     = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
+            if (!in_array($ext, $allowed)) {
+                return response()->json(['error' => ['message' => 'Invalid file type: ' . $ext]], 422);
+            }
+            if ($size > 5 * 1024 * 1024) {
+                return response()->json(['error' => ['message' => 'File too large (max 5MB)']], 422);
+            }
+
+            $binary = file_get_contents($tmpPath);
+            if ($binary === false) {
+                return response()->json(['error' => ['message' => 'Cannot read uploaded file']], 500);
+            }
+
+            $mime   = mime_content_type($tmpPath) ?: 'image/' . $ext;
+            $base64 = base64_encode($binary);
+
+            ReportImage::create([
+                'report_id' => $report->id,
+                'filename'  => $origName,
+                'mime_type' => $mime,
+                'data'      => $base64,
+                'size'      => $size,
             ]);
-        }
 
-        return response()->json([
-            'debug' => [
-                'files'      => array_keys($request->allFiles()),
-                'has_upload' => $request->hasFile('upload'),
-                'has_image'  => $request->hasFile('image'),
-                'file_valid' => $file?->isValid(),
-                'file_error' => $file?->getError(),
-                'php_files'  => array_map(fn($f) => [
-                    'name'     => $f['name'],
-                    'error'    => $f['error'],
-                    'size'     => $f['size'],
-                    'tmp_name' => $f['tmp_name'],
-                ], $_FILES),
-            ],
-        ]);
+            return response()->json([
+                'urls' => ['default' => 'data:' . $mime . ';base64,' . $base64],
+            ]);
+
+        } catch (\Throwable $e) {
+            \Log::error('uploadImage: ' . $e->getMessage());
+            return response()->json(['error' => ['message' => $e->getMessage()]], 500);
+        }
     }
 
     public function destroy(Project $project, ProjectReport $report)

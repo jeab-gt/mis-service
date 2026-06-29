@@ -231,7 +231,8 @@ const {
     ClassicEditor, Essentials, Bold, Italic, Underline, Strikethrough,
     Paragraph, Heading, Alignment, FontFamily, FontSize,
     FontColor, FontBackgroundColor, List, Table, TableToolbar,
-    TableProperties, TableCellProperties, Image, ImageUpload, SimpleUploadAdapter,
+    TableProperties, TableCellProperties, TableColumnResize,
+    Image, ImageUpload, SimpleUploadAdapter,
     ImageResize, ImageStyle, ImageToolbar, Link,
     HorizontalLine, Indent, IndentBlock, BlockQuote, Undo,
     GeneralHtmlSupport
@@ -246,7 +247,8 @@ async function initEditor(htmlContent = '') {
             Essentials, Bold, Italic, Underline, Strikethrough,
             Paragraph, Heading, Alignment, FontFamily, FontSize,
             FontColor, FontBackgroundColor, List, Table, TableToolbar,
-            TableProperties, TableCellProperties, Image, ImageUpload, SimpleUploadAdapter,
+            TableProperties, TableCellProperties, TableColumnResize,
+            Image, ImageUpload, SimpleUploadAdapter,
             ImageResize, ImageStyle, ImageToolbar, Link,
             HorizontalLine, Indent, IndentBlock, BlockQuote, Undo,
             GeneralHtmlSupport,
@@ -394,34 +396,56 @@ function insertWidget(type) {
 function insertImage() {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = 'image/jpeg,image/png,image/gif,image/webp,image/svg+xml';
+    input.accept = 'image/jpeg,image/png,image/gif,image/webp';
     input.onchange = async () => {
         const file = input.files[0];
         if (!file) return;
-        const form = new FormData();
-        form.append('upload', file);
-        // ไม่ append _token ใน body — ส่งผ่าน header แทน
-        try {
-            const res = await fetch(UPLOAD_URL, {
-                method: 'POST',
-                headers: { 'X-CSRF-TOKEN': CSRF },
-                body: form,
-                // ไม่ set Content-Type — ให้ browser กำหนด boundary เอง
-            });
-            if (!res.ok) {
-                const text = await res.text();
-                throw new Error(`Server ${res.status}: ${text.substring(0, 200)}`);
-            }
-            const json = await res.json();
-            const url  = json.urls?.default || json.url;
-            if (!url) throw new Error('No URL in response');
-            editor.execute('insertImage', { source: url });
-        } catch (e) {
-            console.error('Upload error:', e);
-            alert('Upload failed: ' + e.message);
-        }
+        const compressed = await compressImage(file, 1200, 0.85);
+        await uploadToEditor(compressed);
     };
     input.click();
+}
+
+async function compressImage(file, maxWidth, quality) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+            URL.revokeObjectURL(url);
+            const canvas = document.createElement('canvas');
+            let w = img.width, h = img.height;
+            if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            canvas.toBlob(blob => resolve(
+                new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' })
+            ), 'image/jpeg', quality);
+        };
+        img.src = url;
+    });
+}
+
+async function uploadToEditor(file) {
+    const form = new FormData();
+    form.append('upload', file);
+    try {
+        const res = await fetch(UPLOAD_URL, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': CSRF },
+            body: form,
+        });
+        if (!res.ok) {
+            const json = await res.json().catch(() => ({}));
+            throw new Error(json.error?.message || `Server ${res.status}`);
+        }
+        const json = await res.json();
+        const url  = json.urls?.default || json.url;
+        if (!url) throw new Error('No URL in response');
+        editor.execute('insertImage', { source: url });
+    } catch (e) {
+        console.error('Upload error:', e);
+        alert('Upload failed: ' + e.message);
+    }
 }
 
 function insertHR() {
