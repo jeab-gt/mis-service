@@ -232,7 +232,7 @@ const {
     Paragraph, Heading, Alignment, FontFamily, FontSize,
     FontColor, FontBackgroundColor, List, Table, TableToolbar,
     TableProperties, TableCellProperties, TableColumnResize,
-    Image, ImageResize, ImageStyle, ImageToolbar, Link,
+    Image: CKImage, ImageResize, ImageStyle, ImageToolbar, Link,
     HorizontalLine, Indent, IndentBlock, BlockQuote, Undo,
     GeneralHtmlSupport
 } = CKEDITOR;
@@ -247,7 +247,7 @@ async function initEditor(htmlContent = '') {
             Paragraph, Heading, Alignment, FontFamily, FontSize,
             FontColor, FontBackgroundColor, List, Table, TableToolbar,
             TableProperties, TableCellProperties, TableColumnResize,
-            Image, ImageResize, ImageStyle, ImageToolbar, Link,
+            CKImage, ImageResize, ImageStyle, ImageToolbar, Link,
             HorizontalLine, Indent, IndentBlock, BlockQuote, Undo,
             GeneralHtmlSupport,
         ],
@@ -406,7 +406,7 @@ function insertImage() {
 
 function compressImage(file, maxWidth = 1280, quality = 0.82) {
     return new Promise((resolve, reject) => {
-        const img = new Image();
+        const img = new window.Image();
         const url = URL.createObjectURL(file);
 
         img.onload = () => {
