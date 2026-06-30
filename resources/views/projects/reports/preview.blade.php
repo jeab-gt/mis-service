@@ -160,6 +160,12 @@ function loadSlide() {
     });
 }
 
+function formatGanttDate(dateStr) {
+    if (!dateStr) return '-';
+    const d = new Date(dateStr);
+    return `${d.getDate()}/${d.getMonth()+1}`;
+}
+
 // ── Widget content (same logic as builder) ─────────────────────────────────
 function renderWidgetContent(widget) {
     switch (widget.type) {
@@ -355,42 +361,105 @@ function renderWidgetContent(widget) {
         }
 
         case 'gantt': {
-            const tasks = (PROJECT_DATA.tasks || []).filter(t => t.start_date && t.due_date);
-            if (!tasks.length) return '<div style="padding:20px;color:#9ca3af;font-size:11px;text-align:center">No tasks with dates</div>';
-            const dates = tasks.flatMap(t => [new Date(t.start_date), new Date(t.due_date)]);
+            const tasks = PROJECT_DATA.tasks || [];
+            if (!tasks.length) return '<div style="padding:16px;color:#9ca3af;font-size:12px;text-align:center">No tasks</div>';
+
+            const gs = widget.style || {};
+            const showStart  = gs.showStart  !== false;
+            const showEnd    = gs.showEnd    !== false;
+            const showPct    = gs.showPct    !== false;
+            const showStatus = gs.showStatus !== false;
+
+            const dates = tasks.flatMap(t => [t.start_date, t.due_date]).filter(Boolean).map(d => new Date(d));
             const minD = new Date(Math.min(...dates));
             const maxD = new Date(Math.max(...dates));
-            const totalMs = Math.max(maxD - minD, 86400000);
-            const lW = 130, rowH = 26, hdrH = 22, chartW = 700 - lW;
+            const rangeStart = new Date(minD.getFullYear(), minD.getMonth(), 1);
+            const rangeEnd   = new Date(maxD.getFullYear(), maxD.getMonth() + 1, 0);
+            const totalMs = Math.max(rangeEnd - rangeStart, 86400000);
+
+            const statusColor = { todo:'#6b7280', in_progress:'#2563eb', review:'#d97706', done:'#16a34a', cancelled:'#dc2626' };
+            const statusLabel = { todo:'รอดำเนินการ', in_progress:'กำลังทำ', review:'รีวิว', done:'เสร็จแล้ว', cancelled:'ยกเลิก' };
+            const thMonths = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+
+            const baseW = 800, baseH = 260;
+            const scaleX = (widget.w || baseW) / baseW;
+            const scaleY = (widget.h || baseH) / baseH;
+            const fontScale = Math.min(scaleX, scaleY);
+
+            const colName   = 110 * scaleX;
+            const colStartW = showStart ? 48 * scaleX : 0;
+            const colEndW   = showEnd   ? 48 * scaleX : 0;
+            const colPctW   = showPct   ? 42 * scaleX : 0;
+            const colStatW  = showStatus? 58 * scaleX : 0;
+            const labelW = colName + colStartW + colEndW + colPctW + colStatW;
+
+            const rowH = 26 * scaleY, hdrH = 24 * scaleY;
+            const fontBase = 10 * fontScale;
+            const totalW = (widget.w || baseW);
+            const chartW = Math.max(totalW - labelW, 100);
             const svgH = hdrH + tasks.length * rowH;
-            const sc = { todo:'#6b7280',in_progress:'#2563eb',review:'#d97706',done:'#16a34a',cancelled:'#dc2626' };
-            let s = `<svg width="100%" height="${svgH}" viewBox="0 0 700 ${svgH}"
-                         xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"
-                         style="font-family:sans-serif;display:block">`;
-            s += `<rect width="700" height="${svgH}" fill="#f8fafc" rx="2"/>`;
-            s += `<rect width="700" height="${hdrH}" fill="#e2e8f0"/>`;
-            const cur = new Date(minD.getFullYear(), minD.getMonth(), 1);
-            while (cur <= maxD) {
-                const x = lW + (cur - minD) / totalMs * chartW;
-                s += `<line x1="${x}" y1="${hdrH}" x2="${x}" y2="${svgH}" stroke="#e2e8f0" stroke-width="1"/>`;
-                s += `<text x="${x+3}" y="16" font-size="8" fill="#64748b">${cur.toLocaleString('default',{month:'short'})} ${cur.getFullYear()}</text>`;
-                cur.setMonth(cur.getMonth() + 1);
-            }
-            s += `<line x1="${lW}" y1="0" x2="${lW}" y2="${svgH}" stroke="#cbd5e1" stroke-width="1"/>`;
+
+            const months = [];
+            let cur = new Date(rangeStart);
+            while (cur <= rangeEnd) { months.push(new Date(cur)); cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 1); }
+
+            let svg = `<svg width="100%" height="100%" viewBox="0 0 ${totalW} ${svgH}"
+                            preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"
+                            style="font-family:sans-serif;display:block">`;
+
+            months.forEach((m, i) => {
+                const mStart = new Date(m.getFullYear(), m.getMonth(), 1);
+                const mEnd   = new Date(m.getFullYear(), m.getMonth() + 1, 0);
+                const x0 = labelW + (mStart - rangeStart) / totalMs * chartW;
+                const x1 = labelW + Math.min((mEnd - rangeStart) / totalMs * chartW + 1, chartW);
+                svg += `<rect x="${x0}" y="0" width="${x1-x0}" height="${hdrH}" fill="${i%2 ? '#f9fafb' : '#f3f4f6'}"/>`;
+                svg += `<text x="${(x0+x1)/2}" y="${hdrH*0.68}" font-size="${fontBase*0.85}" fill="#6b7280" text-anchor="middle" font-weight="600">${thMonths[m.getMonth()]} ${(m.getFullYear()+543).toString().slice(-2)}</text>`;
+                svg += `<line x1="${x0}" y1="0" x2="${x0}" y2="${svgH}" stroke="#e5e7eb" stroke-width="1"/>`;
+            });
+            svg += `<line x1="${labelW+chartW}" y1="0" x2="${labelW+chartW}" y2="${svgH}" stroke="#e5e7eb" stroke-width="1"/>`;
+
+            svg += `<rect x="0" y="0" width="${labelW}" height="${hdrH}" fill="#f3f4f6"/>`;
+            let hx = 0;
+            svg += `<text x="6" y="${hdrH*0.68}" font-size="${fontBase*0.9}" fill="#6b7280" font-weight="600">งาน</text>`;
+            hx += colName;
+            if (showStart)  { svg += `<text x="${hx+4}" y="${hdrH*0.68}" font-size="${fontBase*0.85}" fill="#6b7280" font-weight="600">เริ่ม</text>`;    hx += colStartW; }
+            if (showEnd)    { svg += `<text x="${hx+4}" y="${hdrH*0.68}" font-size="${fontBase*0.85}" fill="#6b7280" font-weight="600">สิ้นสุด</text>`;   hx += colEndW;   }
+            if (showPct)    { svg += `<text x="${hx+4}" y="${hdrH*0.68}" font-size="${fontBase*0.85}" fill="#6b7280" font-weight="600">%</text>`;          hx += colPctW;   }
+            if (showStatus) { svg += `<text x="${hx+4}" y="${hdrH*0.68}" font-size="${fontBase*0.85}" fill="#6b7280" font-weight="600">สถานะ</text>`;     }
+
+            svg += `<line x1="0" y1="${hdrH}" x2="${totalW}" y2="${hdrH}" stroke="#d1d5db" stroke-width="1"/>`;
+            svg += `<line x1="${labelW}" y1="0" x2="${labelW}" y2="${svgH}" stroke="#d1d5db" stroke-width="1.5"/>`;
+
             tasks.forEach((t, i) => {
                 const y = hdrH + i * rowH;
-                const color = sc[t.status] || '#6366f1';
-                s += `<rect x="0" y="${y}" width="${lW}" height="${rowH}" fill="${i%2?'#f9fafb':'white'}"/>`;
-                const lbl = t.title.length > 18 ? t.title.slice(0,17)+'…' : t.title;
-                s += `<text x="5" y="${y+rowH/2+3}" font-size="8" fill="#374151">${lbl}</text>`;
-                const bx = lW + (new Date(t.start_date) - minD) / totalMs * chartW;
-                const bw = Math.max(4, (new Date(t.due_date) - new Date(t.start_date)) / totalMs * chartW);
-                s += `<rect x="${bx}" y="${y+4}" width="${bw}" height="${rowH-8}" rx="3" fill="${color}" opacity=".7"/>`;
-                if (t.progress_pct > 0)
-                    s += `<rect x="${bx}" y="${y+4}" width="${bw*t.progress_pct/100}" height="${rowH-8}" rx="3" fill="${color}"/>`;
+                const color = statusColor[t.status] || '#6366f1';
+                const rowBg = i % 2 ? '#f9fafb' : 'white';
+
+                svg += `<rect x="0" y="${y}" width="${totalW}" height="${rowH}" fill="${rowBg}"/>`;
+                svg += `<line x1="0" y1="${y}" x2="${totalW}" y2="${y}" stroke="#f3f4f6" stroke-width="1"/>`;
+
+                let cx = 0;
+                const maxChars = Math.round(14 / Math.max(fontScale, 0.5));
+                svg += `<text x="6" y="${y+rowH*0.65}" font-size="${fontBase}" fill="#374151">${(t.title||'').substring(0, maxChars)}</text>`;
+                cx += colName;
+                if (showStart)  { svg += `<text x="${cx+4}" y="${y+rowH*0.65}" font-size="${fontBase*0.85}" fill="#6b7280">${formatGanttDate(t.start_date)}</text>`;                                    cx += colStartW; }
+                if (showEnd)    { svg += `<text x="${cx+4}" y="${y+rowH*0.65}" font-size="${fontBase*0.85}" fill="#6b7280">${formatGanttDate(t.due_date)}</text>`;                                      cx += colEndW;   }
+                if (showPct)    { svg += `<text x="${cx+4}" y="${y+rowH*0.65}" font-size="${fontBase*0.85}" fill="${color}" font-weight="600">${t.progress_pct ?? 0}%</text>`;                          cx += colPctW;   }
+                if (showStatus) { svg += `<text x="${cx+4}" y="${y+rowH*0.65}" font-size="${fontBase*0.8}"  fill="${color}">${statusLabel[t.status] || t.status || ''}</text>`;                         }
+
+                if (t.start_date && t.due_date) {
+                    const bx = labelW + (new Date(t.start_date) - rangeStart) / totalMs * chartW;
+                    const bw = Math.max(4, (new Date(t.due_date) - new Date(t.start_date)) / totalMs * chartW);
+                    const barH = rowH - 8 * scaleY;
+                    svg += `<rect x="${bx}" y="${y+4*scaleY}" width="${bw}" height="${barH}" rx="${3*scaleX}" fill="${color}" opacity=".35"/>`;
+                    if (t.progress_pct > 0)
+                        svg += `<rect x="${bx}" y="${y+4*scaleY}" width="${bw*t.progress_pct/100}" height="${barH}" rx="${3*scaleX}" fill="${color}"/>`;
+                }
             });
-            s += '</svg>';
-            return s;
+
+            svg += `<line x1="0" y1="${svgH}" x2="${totalW}" y2="${svgH}" stroke="#e5e7eb" stroke-width="1"/>`;
+            svg += '</svg>';
+            return svg;
         }
 
         case 'milestone': {

@@ -479,7 +479,10 @@ function insertWidget(type) {
         x: 40, y: 40,
         w: d.w, h: d.h,
         rotation: 0,
-        style: { shadow: false, borderColor: '#e5e7eb', borderRadius: 8 },
+        style: type === 'gantt'
+            ? { shadow:false, borderColor:'#e5e7eb', borderRadius:8,
+                showStart:true, showEnd:true, showPct:true, showStatus:true }
+            : { shadow:false, borderColor:'#e5e7eb', borderRadius:8 },
     };
     widgets.push(widget);
     renderAllWidgets();
@@ -815,7 +818,9 @@ function buildWidgetEl(widget) {
     // ── Context menu ──
     el.addEventListener('contextmenu', e => {
         e.preventDefault();
+        e.stopPropagation();
         selectWidget(widget.id);
+        renderSettingsPanel();
         showContextMenu(e.clientX, e.clientY);
     });
 
@@ -905,9 +910,12 @@ function deleteWidget(id) {
 
 function showContextMenu(x, y) {
     const menu = document.getElementById('context-menu');
-    menu.style.left = x + 'px';
-    menu.style.top  = y + 'px';
     menu.style.display = 'block';
+    const menuRect = menu.getBoundingClientRect();
+    const maxX = window.innerWidth  - menuRect.width  - 10;
+    const maxY = window.innerHeight - menuRect.height - 10;
+    menu.style.left = Math.min(x, maxX) + 'px';
+    menu.style.top  = Math.min(y, maxY) + 'px';
 }
 
 function hideContextMenu() {
@@ -962,7 +970,8 @@ function sendBackward() {
 
 // Deselect on outside click
 document.addEventListener('mousedown', e => {
-    if (!e.target.closest('#widget-overlay') && !e.target.closest('#settings-panel')) {
+    if (e.button === 2) return;
+    if (!e.target.closest('#widget-overlay') && !e.target.closest('#settings-panel') && !e.target.closest('#context-menu')) {
         if (selectedWidgetId) {
             deselectCurrent();
             document.getElementById('settings-panel').style.display = 'none';
@@ -1196,55 +1205,95 @@ function renderWidgetContent(widget) {
             const tasks = PROJECT_DATA.tasks || [];
             if (!tasks.length) return '<div style="padding:16px;color:#9ca3af;font-size:12px;text-align:center">No tasks</div>';
 
+            const gs = widget.style || {};
+            const showStart  = gs.showStart  !== false;
+            const showEnd    = gs.showEnd    !== false;
+            const showPct    = gs.showPct    !== false;
+            const showStatus = gs.showStatus !== false;
+
             const dates = tasks.flatMap(t => [t.start_date, t.due_date]).filter(Boolean).map(d => new Date(d));
             const minD = new Date(Math.min(...dates));
             const maxD = new Date(Math.max(...dates));
-            const totalMs = Math.max(maxD - minD, 86400000);
+            const rangeStart = new Date(minD.getFullYear(), minD.getMonth(), 1);
+            const rangeEnd   = new Date(maxD.getFullYear(), maxD.getMonth() + 1, 0);
+            const totalMs = Math.max(rangeEnd - rangeStart, 86400000);
 
             const statusColor = { todo:'#6b7280', in_progress:'#2563eb', review:'#d97706', done:'#16a34a', cancelled:'#dc2626' };
             const statusLabel = { todo:'รอดำเนินการ', in_progress:'กำลังทำ', review:'รีวิว', done:'เสร็จแล้ว', cancelled:'ยกเลิก' };
+            const thMonths = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 
             const baseW = 800, baseH = 260;
             const scaleX = (widget.w || baseW) / baseW;
             const scaleY = (widget.h || baseH) / baseH;
             const fontScale = Math.min(scaleX, scaleY);
 
-            const colName = 130 * scaleX, colDate = 50 * scaleX, colPct = 50 * scaleX, colStatus = 60 * scaleX;
-            const labelW = colName + colDate * 2 + colPct + colStatus;
-            const rowH = 26 * scaleY, hdrH = 22 * scaleY;
+            const colName   = 110 * scaleX;
+            const colStartW = showStart ? 48 * scaleX : 0;
+            const colEndW   = showEnd   ? 48 * scaleX : 0;
+            const colPctW   = showPct   ? 42 * scaleX : 0;
+            const colStatW  = showStatus? 58 * scaleX : 0;
+            const labelW = colName + colStartW + colEndW + colPctW + colStatW;
+
+            const rowH = 26 * scaleY, hdrH = 24 * scaleY;
             const fontBase = 10 * fontScale;
             const totalW = (widget.w || baseW);
             const chartW = Math.max(totalW - labelW, 100);
             const svgH = hdrH + tasks.length * rowH;
 
+            // Month markers
+            const months = [];
+            let cur = new Date(rangeStart);
+            while (cur <= rangeEnd) { months.push(new Date(cur)); cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 1); }
+
             let svg = `<svg width="100%" height="100%" viewBox="0 0 ${totalW} ${svgH}"
                             preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"
                             style="font-family:sans-serif;display:block">`;
 
+            // Month header backgrounds + labels + vertical grid lines
+            months.forEach((m, i) => {
+                const mStart = new Date(m.getFullYear(), m.getMonth(), 1);
+                const mEnd   = new Date(m.getFullYear(), m.getMonth() + 1, 0);
+                const x0 = labelW + (mStart - rangeStart) / totalMs * chartW;
+                const x1 = labelW + Math.min((mEnd - rangeStart) / totalMs * chartW + 1, chartW);
+                svg += `<rect x="${x0}" y="0" width="${x1-x0}" height="${hdrH}" fill="${i%2 ? '#f9fafb' : '#f3f4f6'}"/>`;
+                svg += `<text x="${(x0+x1)/2}" y="${hdrH*0.68}" font-size="${fontBase*0.85}" fill="#6b7280" text-anchor="middle" font-weight="600">${thMonths[m.getMonth()]} ${(m.getFullYear()+543).toString().slice(-2)}</text>`;
+                svg += `<line x1="${x0}" y1="0" x2="${x0}" y2="${svgH}" stroke="#e5e7eb" stroke-width="1"/>`;
+            });
+            svg += `<line x1="${labelW+chartW}" y1="0" x2="${labelW+chartW}" y2="${svgH}" stroke="#e5e7eb" stroke-width="1"/>`;
+
+            // Header row — task list columns
             svg += `<rect x="0" y="0" width="${labelW}" height="${hdrH}" fill="#f3f4f6"/>`;
-            svg += `<text x="6" y="${hdrH*0.72}" font-size="${fontBase*0.9}" fill="#6b7280" font-weight="600">งาน</text>`;
-            svg += `<text x="${colName+4}" y="${hdrH*0.72}" font-size="${fontBase*0.9}" fill="#6b7280" font-weight="600">เริ่ม</text>`;
-            svg += `<text x="${colName+colDate+4}" y="${hdrH*0.72}" font-size="${fontBase*0.9}" fill="#6b7280" font-weight="600">สิ้นสุด</text>`;
-            svg += `<text x="${colName+colDate*2+4}" y="${hdrH*0.72}" font-size="${fontBase*0.9}" fill="#6b7280" font-weight="600">%</text>`;
-            svg += `<text x="${colName+colDate*2+colPct+4}" y="${hdrH*0.72}" font-size="${fontBase*0.9}" fill="#6b7280" font-weight="600">สถานะ</text>`;
-            svg += `<line x1="${labelW}" y1="0" x2="${labelW}" y2="${svgH}" stroke="#e2e8f0" stroke-width="1"/>`;
+            let hx = 0;
+            svg += `<text x="6" y="${hdrH*0.68}" font-size="${fontBase*0.9}" fill="#6b7280" font-weight="600">งาน</text>`;
+            hx += colName;
+            if (showStart)  { svg += `<text x="${hx+4}" y="${hdrH*0.68}" font-size="${fontBase*0.85}" fill="#6b7280" font-weight="600">เริ่ม</text>`;    hx += colStartW; }
+            if (showEnd)    { svg += `<text x="${hx+4}" y="${hdrH*0.68}" font-size="${fontBase*0.85}" fill="#6b7280" font-weight="600">สิ้นสุด</text>`;   hx += colEndW;   }
+            if (showPct)    { svg += `<text x="${hx+4}" y="${hdrH*0.68}" font-size="${fontBase*0.85}" fill="#6b7280" font-weight="600">%</text>`;          hx += colPctW;   }
+            if (showStatus) { svg += `<text x="${hx+4}" y="${hdrH*0.68}" font-size="${fontBase*0.85}" fill="#6b7280" font-weight="600">สถานะ</text>`;     }
+
+            // Dividers
+            svg += `<line x1="0"      y1="${hdrH}" x2="${totalW}" y2="${hdrH}"  stroke="#d1d5db" stroke-width="1"/>`;
+            svg += `<line x1="${labelW}" y1="0"    x2="${labelW}" y2="${svgH}"  stroke="#d1d5db" stroke-width="1.5"/>`;
 
             tasks.forEach((t, i) => {
                 const y = hdrH + i * rowH;
                 const color = statusColor[t.status] || '#6366f1';
                 const rowBg = i % 2 ? '#f9fafb' : 'white';
 
-                svg += `<rect x="0" y="${y}" width="${labelW}" height="${rowH}" fill="${rowBg}"/>`;
-                const maxChars = Math.round(16 / Math.max(fontScale, 0.5));
-                const title = (t.title||'').substring(0, maxChars);
-                svg += `<text x="6" y="${y+rowH*0.65}" font-size="${fontBase}" fill="#374151">${title}</text>`;
-                svg += `<text x="${colName+4}" y="${y+rowH*0.65}" font-size="${fontBase*0.85}" fill="#6b7280">${formatGanttDate(t.start_date)}</text>`;
-                svg += `<text x="${colName+colDate+4}" y="${y+rowH*0.65}" font-size="${fontBase*0.85}" fill="#6b7280">${formatGanttDate(t.due_date)}</text>`;
-                svg += `<text x="${colName+colDate*2+4}" y="${y+rowH*0.65}" font-size="${fontBase*0.85}" fill="${color}" font-weight="600">${t.progress_pct ?? 0}%</text>`;
-                svg += `<text x="${colName+colDate*2+colPct+4}" y="${y+rowH*0.65}" font-size="${fontBase*0.8}" fill="${color}">${statusLabel[t.status] || t.status || ''}</text>`;
+                svg += `<rect x="0" y="${y}" width="${totalW}" height="${rowH}" fill="${rowBg}"/>`;
+                svg += `<line x1="0" y1="${y}" x2="${totalW}" y2="${y}" stroke="#f3f4f6" stroke-width="1"/>`;
+
+                let cx = 0;
+                const maxChars = Math.round(14 / Math.max(fontScale, 0.5));
+                svg += `<text x="6" y="${y+rowH*0.65}" font-size="${fontBase}" fill="#374151">${(t.title||'').substring(0, maxChars)}</text>`;
+                cx += colName;
+                if (showStart)  { svg += `<text x="${cx+4}" y="${y+rowH*0.65}" font-size="${fontBase*0.85}" fill="#6b7280">${formatGanttDate(t.start_date)}</text>`;                                        cx += colStartW; }
+                if (showEnd)    { svg += `<text x="${cx+4}" y="${y+rowH*0.65}" font-size="${fontBase*0.85}" fill="#6b7280">${formatGanttDate(t.due_date)}</text>`;                                          cx += colEndW;   }
+                if (showPct)    { svg += `<text x="${cx+4}" y="${y+rowH*0.65}" font-size="${fontBase*0.85}" fill="${color}" font-weight="600">${t.progress_pct ?? 0}%</text>`;                              cx += colPctW;   }
+                if (showStatus) { svg += `<text x="${cx+4}" y="${y+rowH*0.65}" font-size="${fontBase*0.8}"  fill="${color}">${statusLabel[t.status] || t.status || ''}</text>`; }
 
                 if (t.start_date && t.due_date) {
-                    const bx = labelW + (new Date(t.start_date) - minD) / totalMs * chartW;
+                    const bx = labelW + (new Date(t.start_date) - rangeStart) / totalMs * chartW;
                     const bw = Math.max(4, (new Date(t.due_date) - new Date(t.start_date)) / totalMs * chartW);
                     const barH = rowH - 8 * scaleY;
                     svg += `<rect x="${bx}" y="${y+4*scaleY}" width="${bw}" height="${barH}" rx="${3*scaleX}" fill="${color}" opacity=".35"/>`;
@@ -1253,6 +1302,7 @@ function renderWidgetContent(widget) {
                 }
             });
 
+            svg += `<line x1="0" y1="${svgH}" x2="${totalW}" y2="${svgH}" stroke="#e5e7eb" stroke-width="1"/>`;
             svg += '</svg>';
             return svg;
         }
@@ -1364,6 +1414,29 @@ function renderSettingsPanel() {
             <input type="range" min="0" max="24" value="${s.borderRadius ?? 8}"
                    oninput="document.getElementById('sp-dw-br').textContent=this.value;updateWidgetStyle('borderRadius',parseInt(this.value))"
                    style="width:100%;margin-bottom:4px">
+            ${widget.type === 'gantt' ? `
+            <p style="color:#9ca3af;font-size:10px;font-weight:600;letter-spacing:.5px;margin:12px 0 8px">SHOW COLUMNS</p>
+            <label style="display:flex;align-items:center;gap:8px;color:#d1d5db;font-size:11px;margin-bottom:6px;cursor:pointer">
+                <input type="checkbox" ${s.showStart !== false ? 'checked' : ''}
+                       onchange="updateWidgetStyle('showStart', this.checked)" style="cursor:pointer">
+                วันเริ่ม
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;color:#d1d5db;font-size:11px;margin-bottom:6px;cursor:pointer">
+                <input type="checkbox" ${s.showEnd !== false ? 'checked' : ''}
+                       onchange="updateWidgetStyle('showEnd', this.checked)" style="cursor:pointer">
+                วันสิ้นสุด
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;color:#d1d5db;font-size:11px;margin-bottom:6px;cursor:pointer">
+                <input type="checkbox" ${s.showPct !== false ? 'checked' : ''}
+                       onchange="updateWidgetStyle('showPct', this.checked)" style="cursor:pointer">
+                เปอร์เซ็นต์ (%)
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;color:#d1d5db;font-size:11px;margin-bottom:10px;cursor:pointer">
+                <input type="checkbox" ${s.showStatus !== false ? 'checked' : ''}
+                       onchange="updateWidgetStyle('showStatus', this.checked)" style="cursor:pointer">
+                สถานะ
+            </label>
+            ` : ''}
         `;
         return;
     }
