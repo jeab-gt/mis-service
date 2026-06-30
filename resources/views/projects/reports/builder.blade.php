@@ -449,11 +449,15 @@ async function uploadAndInsert(file) {
     const form = new FormData();
     form.append('upload', file);
 
+    console.log('[upload] sending file', file.name, file.size);
+
     const res = await fetch(UPLOAD_URL, {
         method: 'POST',
         headers: { 'X-CSRF-TOKEN': CSRF },
         body: form,
     });
+
+    console.log('[upload] response status', res.status);
 
     if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
@@ -461,10 +465,25 @@ async function uploadAndInsert(file) {
     }
 
     const json = await res.json();
-    const url  = json.urls?.default || json.url;
+    console.log('[upload] response json', json);
+
+    const url = json.urls?.default || json.url;
     if (!url) throw new Error('ไม่ได้รับ URL จาก server');
 
+    console.log('[upload] url length', url.length);
+    console.log('[upload] editor exists?', !!editor);
+    console.log('[upload] insertImage command exists?', editor.commands.get('insertImage') ? 'YES' : 'NO');
+
+    if (!editor.commands.get('insertImage')) {
+        console.log('[upload] using fallback HTML insert');
+        const viewFragment = editor.data.processor.toView(`<img src="${url}">`);
+        const modelFragment = editor.data.toModel(viewFragment);
+        editor.model.insertContent(modelFragment);
+        return;
+    }
+
     editor.execute('insertImage', { source: url });
+    console.log('[upload] insertImage executed');
 }
 
 function insertHR() {
