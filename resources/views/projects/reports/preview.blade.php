@@ -144,6 +144,12 @@ function loadSlide() {
 function renderWidgetContent(widget) {
     switch (widget.type) {
 
+        case 'image': {
+            return `<img src="${widget.imageUrl}"
+                         style="width:100%;height:100%;object-fit:contain;
+                                border-radius:4px;display:block" />`;
+        }
+
         case 'kpi': {
             const k = PROJECT_KPI;
             const cards = [

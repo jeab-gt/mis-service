@@ -371,6 +371,7 @@ const WIDGET_DEFAULTS = {
     milestone: { w: 380, h: 240 },
     team:      { w: 420, h: 260 },
     blocker:   { w: 400, h: 220 },
+    image:     { w: 400, h: 300 },
 };
 
 function insertWidget(type) {
@@ -395,7 +396,8 @@ function insertImage() {
         if (!file) return;
         try {
             const compressedFile = await compressImage(file, 1280, 0.82);
-            await uploadAndInsert(compressedFile);
+            const url = await uploadImageFile(compressedFile);
+            insertImageWidget(url, compressedFile);
         } catch (e) {
             console.error('Image processing error:', e);
             alert('ไม่สามารถประมวลผลรูปได้: ' + e.message);
@@ -445,11 +447,9 @@ function compressImage(file, maxWidth = 1280, quality = 0.82) {
     });
 }
 
-async function uploadAndInsert(file) {
+async function uploadImageFile(file) {
     const form = new FormData();
     form.append('upload', file);
-
-    console.log('[upload] sending file', file.name, file.size);
 
     const res = await fetch(UPLOAD_URL, {
         method: 'POST',
@@ -457,33 +457,40 @@ async function uploadAndInsert(file) {
         body: form,
     });
 
-    console.log('[upload] response status', res.status);
-
     if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
         throw new Error(errJson.error?.message || `Server error ${res.status}`);
     }
 
     const json = await res.json();
-    console.log('[upload] response json', json);
-
-    const url = json.urls?.default || json.url;
+    const url  = json.urls?.default || json.url;
     if (!url) throw new Error('ไม่ได้รับ URL จาก server');
 
-    console.log('[upload] url length', url.length);
-    console.log('[upload] editor exists?', !!editor);
-    console.log('[upload] insertImage command exists?', editor.commands.get('insertImage') ? 'YES' : 'NO');
+    return url;
+}
 
-    if (!editor.commands.get('insertImage')) {
-        console.log('[upload] using fallback HTML insert');
-        const viewFragment = editor.data.processor.toView(`<img src="${url}">`);
-        const modelFragment = editor.data.toModel(viewFragment);
-        editor.model.insertContent(modelFragment);
-        return;
-    }
-
-    editor.execute('insertImage', { source: url });
-    console.log('[upload] insertImage executed');
+function insertImageWidget(url, file) {
+    const img = new window.Image();
+    img.onload = () => {
+        const maxW = 400;
+        let w = img.naturalWidth;
+        let h = img.naturalHeight;
+        if (w > maxW) {
+            h = Math.round(h * (maxW / w));
+            w = maxW;
+        }
+        const widget = {
+            id: 'w_' + Date.now(),
+            type: 'image',
+            x: 40, y: 40,
+            w: w, h: h,
+            imageUrl: url,
+        };
+        widgets.push(widget);
+        renderAllWidgets();
+        selectWidget(widget.id);
+    };
+    img.src = url;
 }
 
 function insertHR() {
@@ -501,10 +508,11 @@ function buildWidgetEl(widget) {
     const el = document.createElement('div');
     el.id = 'widget-' + widget.id;
     el.className = 'rb-widget widget-el';
+    const isImg = widget.type === 'image';
     el.style.cssText = `
         left:${widget.x}px; top:${widget.y}px;
         width:${widget.w}px; height:${widget.h}px;
-        border: 2px dashed #6366f1;
+        border: ${isImg ? '1px solid transparent' : '2px dashed #6366f1'};
         box-shadow: none; z-index: 1;
         pointer-events: all; cursor: move;
     `;
@@ -641,6 +649,12 @@ document.addEventListener('mousedown', e => {
 // ── Widget content ─────────────────────────────────────────────────────────
 function renderWidgetContent(widget) {
     switch (widget.type) {
+
+        case 'image': {
+            return `<img src="${widget.imageUrl}"
+                         style="width:100%;height:100%;object-fit:contain;
+                                border-radius:4px;display:block;pointer-events:none" />`;
+        }
 
         case 'kpi': {
             const k = PROJECT_KPI;
