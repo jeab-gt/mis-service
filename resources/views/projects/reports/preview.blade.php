@@ -129,12 +129,23 @@ function loadSlide() {
 
     const overlay = document.getElementById('widget-overlay');
     overlay.innerHTML = '';
+    const SHAPE_TYPES = [
+        'image','rectangle','circle','line','arrow',
+        'rounded-rectangle','triangle','diamond','pentagon',
+        'hexagon','star','arrow-right','arrow-left',
+        'arrow-up','arrow-down','double-arrow','textbox',
+    ];
     (slide.widgets_data || []).forEach(w => {
+        const isShape   = SHAPE_TYPES.includes(w.type);
+        const shadowCss = w.style?.shadow ? '0 8px 16px rgba(0,0,0,.25)' : 'none';
         const el = document.createElement('div');
         el.style.cssText = `position:absolute;left:${w.x||0}px;top:${w.y||0}px;`
             + `width:${w.w||200}px;height:${w.h||150}px;`
-            + `background:white;border-radius:8px;overflow:hidden;`
-            + `border:1px solid #e5e7eb;box-sizing:border-box;`;
+            + `background:${isShape ? 'transparent' : 'white'};`
+            + `border-radius:${isShape ? '0' : '8px'};overflow:${isShape ? 'visible' : 'hidden'};`
+            + `border:${isShape ? 'none' : '1px solid #e5e7eb'};box-sizing:border-box;`
+            + `box-shadow:${shadowCss};`
+            + `transform:rotate(${w.rotation||0}deg);transform-origin:center center;`;
         el.innerHTML = renderWidgetContent(w);
         overlay.appendChild(el);
     });
@@ -155,22 +166,119 @@ function renderWidgetContent(widget) {
 
         case 'rectangle': {
             const s = widget.style || {};
-            return `<div style="width:100%;height:100%;
-                        background:${s.fill || '#6366f1'};
-                        opacity:${(s.opacity ?? 100) / 100};
+            const fillColor = s.fillTransparent ? 'transparent' : (s.fill || '#6366f1');
+            return `<div style="width:100%;height:100%;background:${fillColor};
                         border:${s.borderWidth ?? 2}px solid ${s.borderColor || '#4f46e5'};
-                        border-radius:${s.borderRadius ?? 4}px;
-                        box-sizing:border-box"></div>`;
+                        border-radius:${s.borderRadius ?? 4}px;box-sizing:border-box"></div>`;
+        }
+
+        case 'rounded-rectangle': {
+            const s = widget.style || {};
+            const fillColor = s.fillTransparent ? 'transparent' : (s.fill || '#6366f1');
+            return `<div style="width:100%;height:100%;background:${fillColor};
+                        border:${s.borderWidth ?? 2}px solid ${s.borderColor || '#4f46e5'};
+                        border-radius:16px;box-sizing:border-box"></div>`;
         }
 
         case 'circle': {
             const s = widget.style || {};
-            return `<div style="width:100%;height:100%;
-                        background:${s.fill || '#6366f1'};
-                        opacity:${(s.opacity ?? 100) / 100};
+            const fillColor = s.fillTransparent ? 'transparent' : (s.fill || '#6366f1');
+            return `<div style="width:100%;height:100%;background:${fillColor};
                         border:${s.borderWidth ?? 2}px solid ${s.borderColor || '#4f46e5'};
-                        border-radius:50%;
-                        box-sizing:border-box"></div>`;
+                        border-radius:50%;box-sizing:border-box"></div>`;
+        }
+
+        case 'triangle': {
+            const s = widget.style || {};
+            const fillColor = s.fillTransparent ? 'none' : (s.fill || '#6366f1');
+            return `<svg width="100%" height="100%" viewBox="0 0 160 140" preserveAspectRatio="none" style="display:block">
+                        <polygon points="80,5 155,135 5,135" fill="${fillColor}"
+                            stroke="${s.borderColor || '#4f46e5'}" stroke-width="${s.borderWidth ?? 2}" stroke-linejoin="round"/>
+                    </svg>`;
+        }
+
+        case 'diamond': {
+            const s = widget.style || {};
+            const fillColor = s.fillTransparent ? 'none' : (s.fill || '#6366f1');
+            return `<svg width="100%" height="100%" viewBox="0 0 160 160" preserveAspectRatio="none" style="display:block">
+                        <polygon points="80,5 155,80 80,155 5,80" fill="${fillColor}"
+                            stroke="${s.borderColor || '#4f46e5'}" stroke-width="${s.borderWidth ?? 2}" stroke-linejoin="round"/>
+                    </svg>`;
+        }
+
+        case 'pentagon': {
+            const s = widget.style || {};
+            const fillColor = s.fillTransparent ? 'none' : (s.fill || '#6366f1');
+            return `<svg width="100%" height="100%" viewBox="0 0 160 160" preserveAspectRatio="none" style="display:block">
+                        <polygon points="80,5 155,62 127,155 33,155 5,62" fill="${fillColor}"
+                            stroke="${s.borderColor || '#4f46e5'}" stroke-width="${s.borderWidth ?? 2}" stroke-linejoin="round"/>
+                    </svg>`;
+        }
+
+        case 'hexagon': {
+            const s = widget.style || {};
+            const fillColor = s.fillTransparent ? 'none' : (s.fill || '#6366f1');
+            return `<svg width="100%" height="100%" viewBox="0 0 180 160" preserveAspectRatio="none" style="display:block">
+                        <polygon points="45,5 135,5 175,80 135,155 45,155 5,80" fill="${fillColor}"
+                            stroke="${s.borderColor || '#4f46e5'}" stroke-width="${s.borderWidth ?? 2}" stroke-linejoin="round"/>
+                    </svg>`;
+        }
+
+        case 'star': {
+            const s = widget.style || {};
+            const fillColor = s.fillTransparent ? 'none' : (s.fill || '#6366f1');
+            return `<svg width="100%" height="100%" viewBox="0 0 160 160" preserveAspectRatio="none" style="display:block">
+                        <polygon points="80,5 98,60 158,60 110,95 128,150 80,118 32,150 50,95 2,60 62,60"
+                            fill="${fillColor}" stroke="${s.borderColor || '#4f46e5'}"
+                            stroke-width="${s.borderWidth ?? 2}" stroke-linejoin="round"/>
+                    </svg>`;
+        }
+
+        case 'arrow-right': {
+            const s = widget.style || {};
+            return `<svg width="100%" height="100%" viewBox="0 0 180 60" preserveAspectRatio="none" style="display:block">
+                        <polygon points="0,18 120,18 120,5 175,30 120,55 120,42 0,42" fill="${s.fill || '#374151'}"/>
+                    </svg>`;
+        }
+
+        case 'arrow-left': {
+            const s = widget.style || {};
+            return `<svg width="100%" height="100%" viewBox="0 0 180 60" preserveAspectRatio="none" style="display:block">
+                        <polygon points="180,18 60,18 60,5 5,30 60,55 60,42 180,42" fill="${s.fill || '#374151'}"/>
+                    </svg>`;
+        }
+
+        case 'arrow-up': {
+            const s = widget.style || {};
+            return `<svg width="100%" height="100%" viewBox="0 0 60 180" preserveAspectRatio="none" style="display:block">
+                        <polygon points="18,180 18,60 5,60 30,5 55,60 42,60 42,180" fill="${s.fill || '#374151'}"/>
+                    </svg>`;
+        }
+
+        case 'arrow-down': {
+            const s = widget.style || {};
+            return `<svg width="100%" height="100%" viewBox="0 0 60 180" preserveAspectRatio="none" style="display:block">
+                        <polygon points="18,0 18,120 5,120 30,175 55,120 42,120 42,0" fill="${s.fill || '#374151'}"/>
+                    </svg>`;
+        }
+
+        case 'double-arrow': {
+            const s = widget.style || {};
+            return `<svg width="100%" height="100%" viewBox="0 0 200 60" preserveAspectRatio="none" style="display:block">
+                        <polygon points="5,30 30,5 30,18 170,18 170,5 195,30 170,55 170,42 30,42 30,55"
+                            fill="${s.fill || '#374151'}"/>
+                    </svg>`;
+        }
+
+        case 'textbox': {
+            const s = widget.style || {};
+            const fillColor = s.fillTransparent ? 'transparent' : (s.fill || 'transparent');
+            return `<div style="width:100%;height:100%;background:${fillColor};
+                        border:${s.borderWidth ?? 0}px solid ${s.borderColor || 'transparent'};
+                        border-radius:${s.borderRadius ?? 4}px;
+                        font-size:${s.fontSize ?? 16}px;color:${s.fontColor || '#1f2937'};
+                        font-weight:${s.fontWeight || 'normal'};text-align:${s.textAlign || 'left'};
+                        padding:8px;box-sizing:border-box;white-space:pre-wrap;overflow:auto">${widget.text || ''}</div>`;
         }
 
         case 'line': {

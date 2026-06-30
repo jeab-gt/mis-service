@@ -181,13 +181,24 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     <div id="insert-panel">
         <p class="panel-label">Content</p>
         <button class="ins-btn" onclick="insertImage()"><i class="ti ti-photo"></i> Image</button>
+        <button class="ins-btn" onclick="insertTextBox()"><i class="ti ti-text-size"></i> Text Box</button>
         <button class="ins-btn" onclick="insertHR()"><i class="ti ti-minus"></i> Divider</button>
 
         <p class="panel-label">Shapes</p>
         <button class="ins-btn" onclick="insertShape('rectangle')"><i class="ti ti-rectangle"></i> Rectangle</button>
+        <button class="ins-btn" onclick="insertShape('rounded-rectangle')"><i class="ti ti-square-rounded"></i> Rounded Rect</button>
         <button class="ins-btn" onclick="insertShape('circle')"><i class="ti ti-circle"></i> Circle</button>
+        <button class="ins-btn" onclick="insertShape('triangle')"><i class="ti ti-triangle"></i> Triangle</button>
+        <button class="ins-btn" onclick="insertShape('diamond')"><i class="ti ti-diamond"></i> Diamond</button>
+        <button class="ins-btn" onclick="insertShape('pentagon')"><i class="ti ti-pentagon"></i> Pentagon</button>
+        <button class="ins-btn" onclick="insertShape('hexagon')"><i class="ti ti-hexagon"></i> Hexagon</button>
+        <button class="ins-btn" onclick="insertShape('star')"><i class="ti ti-star"></i> Star</button>
         <button class="ins-btn" onclick="insertShape('line')"><i class="ti ti-minus"></i> Line</button>
-        <button class="ins-btn" onclick="insertShape('arrow')"><i class="ti ti-arrow-right"></i> Arrow</button>
+        <button class="ins-btn" onclick="insertShape('arrow-right')"><i class="ti ti-arrow-right"></i> Arrow Right</button>
+        <button class="ins-btn" onclick="insertShape('arrow-left')"><i class="ti ti-arrow-left"></i> Arrow Left</button>
+        <button class="ins-btn" onclick="insertShape('arrow-up')"><i class="ti ti-arrow-up"></i> Arrow Up</button>
+        <button class="ins-btn" onclick="insertShape('arrow-down')"><i class="ti ti-arrow-down"></i> Arrow Down</button>
+        <button class="ins-btn" onclick="insertShape('double-arrow')"><i class="ti ti-arrows-horizontal"></i> Double Arrow</button>
 
         <p class="panel-label">Project Data</p>
         <button class="ins-btn" onclick="insertWidget('kpi')"><i class="ti ti-chart-bar"></i> KPI Summary</button>
@@ -377,17 +388,29 @@ function renderSlideList() {
 
 // ── Widget manager ─────────────────────────────────────────────────────────
 const WIDGET_DEFAULTS = {
-    kpi:       { w: 560, h: 180 },
-    chart:     { w: 460, h: 300 },
-    gantt:     { w: 800, h: 260 },
-    milestone: { w: 380, h: 240 },
-    team:      { w: 420, h: 260 },
-    blocker:   { w: 400, h: 220 },
-    image:     { w: 400, h: 300 },
-    rectangle: { w: 200, h: 120 },
-    circle:    { w: 150, h: 150 },
-    line:      { w: 200, h: 4   },
-    arrow:     { w: 200, h: 40  },
+    kpi:               { w: 560, h: 180 },
+    chart:             { w: 460, h: 300 },
+    gantt:             { w: 800, h: 260 },
+    milestone:         { w: 380, h: 240 },
+    team:              { w: 420, h: 260 },
+    blocker:           { w: 400, h: 220 },
+    image:             { w: 400, h: 300 },
+    textbox:           { w: 240, h: 80  },
+    rectangle:         { w: 200, h: 120 },
+    'rounded-rectangle': { w: 200, h: 120 },
+    circle:            { w: 150, h: 150 },
+    triangle:          { w: 160, h: 140 },
+    diamond:           { w: 160, h: 160 },
+    pentagon:          { w: 160, h: 160 },
+    hexagon:           { w: 180, h: 160 },
+    star:              { w: 160, h: 160 },
+    line:              { w: 200, h: 4   },
+    arrow:             { w: 200, h: 40  },
+    'arrow-right':     { w: 180, h: 60  },
+    'arrow-left':      { w: 180, h: 60  },
+    'arrow-up':        { w: 60,  h: 180 },
+    'arrow-down':      { w: 60,  h: 180 },
+    'double-arrow':    { w: 200, h: 60  },
 };
 
 function insertWidget(type) {
@@ -397,6 +420,7 @@ function insertWidget(type) {
         type,
         x: 40, y: 40,
         w: d.w, h: d.h,
+        rotation: 0,
     };
     widgets.push(widget);
     renderAllWidgets();
@@ -405,18 +429,21 @@ function insertWidget(type) {
 
 function insertShape(type) {
     const d = WIDGET_DEFAULTS[type] || { w: 200, h: 120 };
-    const isLine = type === 'line' || type === 'arrow';
+    const isLine      = type === 'line';
+    const isArrowLike = type === 'arrow' || type.startsWith('arrow-') || type === 'double-arrow';
     const widget = {
         id: 'w_' + Date.now(),
         type,
         x: 40, y: 40,
         w: d.w, h: d.h,
+        rotation: 0,
         style: {
-            fill:         isLine ? '#374151' : '#6366f1',
-            borderColor:  '#4f46e5',
-            borderWidth:  isLine ? 0 : 2,
-            borderRadius: type === 'circle' ? 999 : 4,
-            opacity:      100,
+            fill:            (isLine || isArrowLike) ? '#374151' : '#6366f1',
+            fillTransparent: false,
+            borderColor:     '#4f46e5',
+            borderWidth:     (isLine || isArrowLike) ? 0 : 2,
+            borderRadius:    type === 'circle' ? 999 : 4,
+            shadow:          false,
         },
     };
     widgets.push(widget);
@@ -521,14 +548,46 @@ function insertImageWidget(url, file) {
             type: 'image',
             x: 40, y: 40,
             w: w, h: h,
+            rotation: 0,
             imageUrl: url,
-            style: { borderColor: 'transparent', borderWidth: 0, borderRadius: 0 },
+            style: { borderColor: 'transparent', borderWidth: 0, borderRadius: 0, shadow: false },
         };
         widgets.push(widget);
         renderAllWidgets();
         selectWidget(widget.id);
     };
     img.src = url;
+}
+
+function insertTextBox() {
+    const widget = {
+        id: 'w_' + Date.now(),
+        type: 'textbox',
+        x: 40, y: 40,
+        w: 240, h: 80,
+        rotation: 0,
+        text: 'Type here...',
+        style: {
+            fontSize:        16,
+            fontColor:       '#1f2937',
+            fontWeight:      'normal',
+            textAlign:       'left',
+            fill:            'transparent',
+            fillTransparent: true,
+            borderColor:     '#d1d5db',
+            borderWidth:     0,
+            borderRadius:    4,
+            shadow:          false,
+        },
+    };
+    widgets.push(widget);
+    renderAllWidgets();
+    selectWidget(widget.id);
+}
+
+function updateWidgetText(id, text) {
+    const widget = widgets.find(w => w.id === id);
+    if (widget) widget.text = text;
 }
 
 function insertHR() {
@@ -546,20 +605,36 @@ function buildWidgetEl(widget) {
     const el = document.createElement('div');
     el.id = 'widget-' + widget.id;
     el.className = 'rb-widget widget-el';
-    const SHAPE_TYPES = ['image','rectangle','circle','line','arrow'];
-    const isShape = SHAPE_TYPES.includes(widget.type);
+
+    const ALL_OVERLAY_TYPES = [
+        'image','rectangle','circle','line','arrow',
+        'rounded-rectangle','triangle','diamond','pentagon',
+        'hexagon','star','arrow-right','arrow-left',
+        'arrow-up','arrow-down','double-arrow','textbox',
+    ];
+    const isShape   = ALL_OVERLAY_TYPES.includes(widget.type);
+    const shadowCss = widget.style?.shadow ? '0 8px 16px rgba(0,0,0,.25)' : 'none';
+
     el.style.cssText = `
         left:${widget.x}px; top:${widget.y}px;
         width:${widget.w}px; height:${widget.h}px;
-        border: ${isShape ? '1px solid transparent' : '2px dashed #6366f1'};
-        box-shadow: none; z-index: 1;
-        pointer-events: all; cursor: move;
+        background:${isShape ? 'transparent' : 'white'};
+        border:${isShape ? '1px solid transparent' : '2px dashed #6366f1'};
+        box-shadow:${shadowCss};
+        transform:rotate(${widget.rotation || 0}deg);
+        transform-origin:center center;
+        z-index:1; pointer-events:all; cursor:move;
     `;
 
     // Content
     const content = document.createElement('div');
     content.className = 'widget-content';
     content.style.padding = isShape ? '0' : '8px';
+    if (widget.type === 'textbox') {
+        content.style.pointerEvents = 'auto';
+        content.style.overflow = 'visible';
+        content.style.cursor = 'text';
+    }
     content.innerHTML = renderWidgetContent(widget);
     el.appendChild(content);
 
@@ -568,9 +643,33 @@ function buildWidgetEl(widget) {
     handle.className = 'widget-handle';
     el.appendChild(handle);
 
+    // Rotate stem
+    const rotateLine = document.createElement('div');
+    rotateLine.className = 'rotate-line';
+    rotateLine.style.cssText = `
+        position:absolute; top:-18px; left:50%; transform:translateX(-50%);
+        width:1px; height:18px; background:#9ca3af; z-index:19; display:none; pointer-events:none;
+    `;
+    el.appendChild(rotateLine);
+
+    // Rotate handle
+    const rotateHandle = document.createElement('div');
+    rotateHandle.className = 'rotate-handle';
+    rotateHandle.style.cssText = `
+        position:absolute; top:-32px; left:50%; transform:translateX(-50%);
+        width:14px; height:14px; background:#2563eb; border-radius:50%;
+        cursor:grab; z-index:21; pointer-events:all;
+        border:2px solid white; box-shadow:0 1px 4px rgba(0,0,0,.4); display:none;
+    `;
+    el.appendChild(rotateHandle);
+
     // ── Drag ──
     el.addEventListener('mousedown', e => {
-        if (e.target === handle || e.target.closest('.widget-tb')) return;
+        if (e.target === handle || e.target.closest('.rotate-handle')) return;
+        if (widget.type === 'textbox' && e.target.closest('.widget-content')) {
+            selectWidget(widget.id);
+            return;
+        }
         e.preventDefault();
         selectWidget(widget.id);
         const startX = e.clientX - widget.x;
@@ -581,10 +680,8 @@ function buildWidgetEl(widget) {
             const ny = Math.max(0, e.clientY - startY);
             if (rafId) cancelAnimationFrame(rafId);
             rafId = requestAnimationFrame(() => {
-                widget.x = nx;
-                widget.y = ny;
-                el.style.left = nx + 'px';
-                el.style.top  = ny + 'px';
+                widget.x = nx; widget.y = ny;
+                el.style.left = nx + 'px'; el.style.top = ny + 'px';
             });
         };
         const onUp = () => {
@@ -600,17 +697,15 @@ function buildWidgetEl(widget) {
     handle.addEventListener('mousedown', e => {
         e.preventDefault(); e.stopPropagation();
         const startX = e.clientX, startY = e.clientY;
-        const startW = widget.w,  startH = widget.h;
+        const startW = widget.w, startH = widget.h;
         let rafId = null;
         const onMove = e => {
-            const nw = Math.max(120, startW + e.clientX - startX);
-            const nh = Math.max(80,  startH + e.clientY - startY);
+            const nw = Math.max(40, startW + e.clientX - startX);
+            const nh = Math.max(20, startH + e.clientY - startY);
             if (rafId) cancelAnimationFrame(rafId);
             rafId = requestAnimationFrame(() => {
-                widget.w = nw;
-                widget.h = nh;
-                el.style.width  = nw + 'px';
-                el.style.height = nh + 'px';
+                widget.w = nw; widget.h = nh;
+                el.style.width = nw + 'px'; el.style.height = nh + 'px';
             });
         };
         const onUp = () => {
@@ -618,6 +713,36 @@ function buildWidgetEl(widget) {
             document.removeEventListener('mousemove', onMove);
             document.removeEventListener('mouseup', onUp);
             content.innerHTML = renderWidgetContent(widget);
+        };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+    });
+
+    // ── Rotate ──
+    rotateHandle.addEventListener('mousedown', e => {
+        e.preventDefault(); e.stopPropagation();
+        rotateHandle.style.cursor = 'grabbing';
+        const rect = el.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const startRotation = widget.rotation || 0;
+        const startAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * 180 / Math.PI;
+        let rafId = null;
+        const onMove = e => {
+            const currentAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * 180 / Math.PI;
+            let newRotation = startRotation + (currentAngle - startAngle);
+            if (e.shiftKey) newRotation = Math.round(newRotation / 15) * 15;
+            if (rafId) cancelAnimationFrame(rafId);
+            rafId = requestAnimationFrame(() => {
+                widget.rotation = newRotation;
+                el.style.transform = `rotate(${newRotation}deg)`;
+            });
+        };
+        const onUp = () => {
+            if (rafId) cancelAnimationFrame(rafId);
+            rotateHandle.style.cursor = 'grab';
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
         };
         document.addEventListener('mousemove', onMove);
         document.addEventListener('mouseup', onUp);
@@ -631,14 +756,23 @@ function deselectCurrent() {
     const prev = document.getElementById('widget-' + selectedWidgetId);
     if (prev) {
         const prevW = widgets.find(w => w.id === selectedWidgetId);
-        const SHAPE_TYPES = ['image','rectangle','circle','line','arrow'];
-        prev.style.border = prevW && SHAPE_TYPES.includes(prevW.type)
+        const ALL_OVERLAY_TYPES = [
+            'image','rectangle','circle','line','arrow',
+            'rounded-rectangle','triangle','diamond','pentagon',
+            'hexagon','star','arrow-right','arrow-left',
+            'arrow-up','arrow-down','double-arrow','textbox',
+        ];
+        prev.style.border = prevW && ALL_OVERLAY_TYPES.includes(prevW.type)
             ? '1px solid transparent'
             : '2px dashed #6366f1';
-        prev.style.boxShadow = 'none';
+        prev.style.boxShadow = prevW?.style?.shadow ? '0 8px 16px rgba(0,0,0,.25)' : 'none';
         prev.style.zIndex = '1';
         const tb = prev.querySelector('.widget-tb');
         if (tb) tb.remove();
+        const rh = prev.querySelector('.rotate-handle');
+        const rl = prev.querySelector('.rotate-line');
+        if (rh) rh.style.display = 'none';
+        if (rl) rl.style.display = 'none';
     }
     selectedWidgetId = null;
 }
@@ -651,15 +785,24 @@ function selectWidget(id) {
     const el = document.getElementById('widget-' + id);
     if (!el) return;
     el.style.border = '2px solid #2563eb';
-    el.style.boxShadow = '0 0 0 3px rgba(37,99,235,.15)';
     el.style.zIndex = '10';
 
     const widget = widgets.find(w => w.id === id);
+    el.style.boxShadow = widget?.style?.shadow
+        ? '0 0 0 3px rgba(37,99,235,.15), 0 8px 16px rgba(0,0,0,.25)'
+        : '0 0 0 3px rgba(37,99,235,.15)';
+
     if (!widget) return;
+
+    const rh = el.querySelector('.rotate-handle');
+    const rl = el.querySelector('.rotate-line');
+    if (rh) rh.style.display = 'block';
+    if (rl) rl.style.display = 'block';
+
     const tb = document.createElement('div');
     tb.className = 'widget-tb';
     tb.style.cssText = `
-        position:absolute; top:-32px; left:0; background:#1e293b; color:white;
+        position:absolute; bottom:-34px; left:0; background:#1e293b; color:white;
         border-radius:6px; padding:3px 8px; display:flex; align-items:center;
         gap:8px; z-index:20; font-size:11px; white-space:nowrap;
         box-shadow:0 2px 8px rgba(0,0,0,.5); pointer-events:all;
@@ -710,9 +853,9 @@ function renderWidgetContent(widget) {
 
         case 'rectangle': {
             const s = widget.style || {};
+            const fillColor = s.fillTransparent ? 'transparent' : (s.fill || '#6366f1');
             return `<div style="width:100%;height:100%;
-                        background:${s.fill || '#6366f1'};
-                        opacity:${(s.opacity ?? 100) / 100};
+                        background:${fillColor};
                         border:${s.borderWidth ?? 2}px solid ${s.borderColor || '#4f46e5'};
                         border-radius:${s.borderRadius ?? 4}px;
                         box-sizing:border-box"></div>`;
@@ -720,9 +863,9 @@ function renderWidgetContent(widget) {
 
         case 'circle': {
             const s = widget.style || {};
+            const fillColor = s.fillTransparent ? 'transparent' : (s.fill || '#6366f1');
             return `<div style="width:100%;height:100%;
-                        background:${s.fill || '#6366f1'};
-                        opacity:${(s.opacity ?? 100) / 100};
+                        background:${fillColor};
                         border:${s.borderWidth ?? 2}px solid ${s.borderColor || '#4f46e5'};
                         border-radius:50%;
                         box-sizing:border-box"></div>`;
@@ -747,6 +890,116 @@ function renderWidgetContent(widget) {
                               stroke="${color}" stroke-width="${sw}"/>
                         <polygon points="175,10 195,20 175,30" fill="${color}"/>
                     </svg>`;
+        }
+
+        case 'rounded-rectangle': {
+            const s = widget.style || {};
+            const fillColor = s.fillTransparent ? 'transparent' : (s.fill || '#6366f1');
+            return `<div style="width:100%;height:100%;background:${fillColor};
+                        border:${s.borderWidth ?? 2}px solid ${s.borderColor || '#4f46e5'};
+                        border-radius:16px;box-sizing:border-box"></div>`;
+        }
+
+        case 'triangle': {
+            const s = widget.style || {};
+            const fillColor = s.fillTransparent ? 'none' : (s.fill || '#6366f1');
+            return `<svg width="100%" height="100%" viewBox="0 0 160 140" preserveAspectRatio="none" style="display:block">
+                        <polygon points="80,5 155,135 5,135" fill="${fillColor}"
+                            stroke="${s.borderColor || '#4f46e5'}" stroke-width="${s.borderWidth ?? 2}"
+                            stroke-linejoin="round"/>
+                    </svg>`;
+        }
+
+        case 'diamond': {
+            const s = widget.style || {};
+            const fillColor = s.fillTransparent ? 'none' : (s.fill || '#6366f1');
+            return `<svg width="100%" height="100%" viewBox="0 0 160 160" preserveAspectRatio="none" style="display:block">
+                        <polygon points="80,5 155,80 80,155 5,80" fill="${fillColor}"
+                            stroke="${s.borderColor || '#4f46e5'}" stroke-width="${s.borderWidth ?? 2}"
+                            stroke-linejoin="round"/>
+                    </svg>`;
+        }
+
+        case 'pentagon': {
+            const s = widget.style || {};
+            const fillColor = s.fillTransparent ? 'none' : (s.fill || '#6366f1');
+            return `<svg width="100%" height="100%" viewBox="0 0 160 160" preserveAspectRatio="none" style="display:block">
+                        <polygon points="80,5 155,62 127,155 33,155 5,62" fill="${fillColor}"
+                            stroke="${s.borderColor || '#4f46e5'}" stroke-width="${s.borderWidth ?? 2}"
+                            stroke-linejoin="round"/>
+                    </svg>`;
+        }
+
+        case 'hexagon': {
+            const s = widget.style || {};
+            const fillColor = s.fillTransparent ? 'none' : (s.fill || '#6366f1');
+            return `<svg width="100%" height="100%" viewBox="0 0 180 160" preserveAspectRatio="none" style="display:block">
+                        <polygon points="45,5 135,5 175,80 135,155 45,155 5,80" fill="${fillColor}"
+                            stroke="${s.borderColor || '#4f46e5'}" stroke-width="${s.borderWidth ?? 2}"
+                            stroke-linejoin="round"/>
+                    </svg>`;
+        }
+
+        case 'star': {
+            const s = widget.style || {};
+            const fillColor = s.fillTransparent ? 'none' : (s.fill || '#6366f1');
+            return `<svg width="100%" height="100%" viewBox="0 0 160 160" preserveAspectRatio="none" style="display:block">
+                        <polygon points="80,5 98,60 158,60 110,95 128,150 80,118 32,150 50,95 2,60 62,60"
+                            fill="${fillColor}" stroke="${s.borderColor || '#4f46e5'}"
+                            stroke-width="${s.borderWidth ?? 2}" stroke-linejoin="round"/>
+                    </svg>`;
+        }
+
+        case 'arrow-right': {
+            const s = widget.style || {};
+            return `<svg width="100%" height="100%" viewBox="0 0 180 60" preserveAspectRatio="none" style="display:block">
+                        <polygon points="0,18 120,18 120,5 175,30 120,55 120,42 0,42" fill="${s.fill || '#374151'}"/>
+                    </svg>`;
+        }
+
+        case 'arrow-left': {
+            const s = widget.style || {};
+            return `<svg width="100%" height="100%" viewBox="0 0 180 60" preserveAspectRatio="none" style="display:block">
+                        <polygon points="180,18 60,18 60,5 5,30 60,55 60,42 180,42" fill="${s.fill || '#374151'}"/>
+                    </svg>`;
+        }
+
+        case 'arrow-up': {
+            const s = widget.style || {};
+            return `<svg width="100%" height="100%" viewBox="0 0 60 180" preserveAspectRatio="none" style="display:block">
+                        <polygon points="18,180 18,60 5,60 30,5 55,60 42,60 42,180" fill="${s.fill || '#374151'}"/>
+                    </svg>`;
+        }
+
+        case 'arrow-down': {
+            const s = widget.style || {};
+            return `<svg width="100%" height="100%" viewBox="0 0 60 180" preserveAspectRatio="none" style="display:block">
+                        <polygon points="18,0 18,120 5,120 30,175 55,120 42,120 42,0" fill="${s.fill || '#374151'}"/>
+                    </svg>`;
+        }
+
+        case 'double-arrow': {
+            const s = widget.style || {};
+            return `<svg width="100%" height="100%" viewBox="0 0 200 60" preserveAspectRatio="none" style="display:block">
+                        <polygon points="5,30 30,5 30,18 170,18 170,5 195,30 170,55 170,42 30,42 30,55"
+                            fill="${s.fill || '#374151'}"/>
+                    </svg>`;
+        }
+
+        case 'textbox': {
+            const s = widget.style || {};
+            const fillColor = s.fillTransparent ? 'transparent' : (s.fill || 'transparent');
+            return `<div contenteditable="true"
+                        onblur="updateWidgetText('${widget.id}', this.innerText)"
+                        style="width:100%;height:100%;background:${fillColor};
+                            border:${s.borderWidth ?? 0}px solid ${s.borderColor || 'transparent'};
+                            border-radius:${s.borderRadius ?? 4}px;
+                            font-size:${s.fontSize ?? 16}px;
+                            color:${s.fontColor || '#1f2937'};
+                            font-weight:${s.fontWeight || 'normal'};
+                            text-align:${s.textAlign || 'left'};
+                            padding:8px;box-sizing:border-box;outline:none;
+                            overflow:auto;white-space:pre-wrap">${widget.text || ''}</div>`;
         }
 
         case 'kpi': {
@@ -893,7 +1146,12 @@ function renderWidgetContent(widget) {
 }
 
 // ── Settings panel ─────────────────────────────────────────────────────────
-const SHAPE_STYLE_TYPES = ['rectangle', 'circle', 'line', 'arrow', 'image'];
+const SHAPE_STYLE_TYPES = [
+    'rectangle', 'circle', 'line', 'arrow', 'image',
+    'rounded-rectangle', 'triangle', 'diamond', 'pentagon',
+    'hexagon', 'star', 'arrow-right', 'arrow-left',
+    'arrow-up', 'arrow-down', 'double-arrow', 'textbox',
+];
 
 function renderSettingsPanel() {
     const panel = document.getElementById('settings-panel');
@@ -904,49 +1162,59 @@ function renderSettingsPanel() {
         return;
     }
 
-    const s = widget.style || {};
-    const isLine  = widget.type === 'line' || widget.type === 'arrow';
-    const isImage = widget.type === 'image';
+    const s            = widget.style || {};
+    const isLine       = widget.type === 'line';
+    const isOldArrow   = widget.type === 'arrow';
+    const isSolidArrow = ['arrow-right','arrow-left','arrow-up','arrow-down','double-arrow'].includes(widget.type);
+    const isArrowLike  = isLine || isOldArrow || isSolidArrow;
+    const isImage      = widget.type === 'image';
+    const isTextbox    = widget.type === 'textbox';
+    const isFillShape  = ['rectangle','circle','rounded-rectangle','triangle','diamond',
+                           'pentagon','hexagon','star'].includes(widget.type);
+    const isFillTrans  = !!s.fillTransparent;
 
-    const fillRow = `
+    const transparentFillRow = isFillShape ? `
+        <label style="display:flex;align-items:center;gap:8px;color:#d1d5db;font-size:11px;margin-bottom:10px;cursor:pointer">
+            <input type="checkbox" ${isFillTrans ? 'checked' : ''}
+                   onchange="updateWidgetStyle('fillTransparent', this.checked)"
+                   style="cursor:pointer;width:13px;height:13px">
+            Transparent Fill
+        </label>` : '';
+
+    const fillRow = (!isImage && !isTextbox) ? `
         <label style="display:block;color:#d1d5db;font-size:11px;margin-bottom:4px">
-            ${isLine ? 'Color' : 'Fill Color'}
+            ${isArrowLike ? 'Color' : 'Fill Color'}
         </label>
-        <input type="color" value="${s.fill || '#6366f1'}"
+        <input type="color" value="${s.fill || (isArrowLike ? '#374151' : '#6366f1')}"
                oninput="updateWidgetStyle('fill', this.value)"
-               style="width:100%;height:28px;border:none;border-radius:4px;margin-bottom:10px;cursor:pointer">`;
+               ${isFillTrans ? 'disabled' : ''}
+               style="width:100%;height:28px;border:none;border-radius:4px;margin-bottom:10px;
+                      cursor:${isFillTrans ? 'not-allowed' : 'pointer'};
+                      opacity:${isFillTrans ? '0.4' : '1'}">` : '';
 
-    const borderColorRow = `
+    const borderColorRow = (!isArrowLike && !isTextbox) ? `
         <label style="display:block;color:#d1d5db;font-size:11px;margin-bottom:4px">Border Color</label>
         <input type="color" value="${s.borderColor || '#4f46e5'}"
                oninput="updateWidgetStyle('borderColor', this.value)"
-               style="width:100%;height:28px;border:none;border-radius:4px;margin-bottom:10px;cursor:pointer">`;
+               style="width:100%;height:28px;border:none;border-radius:4px;margin-bottom:10px;cursor:pointer">` : '';
 
-    const opVal = s.opacity ?? 100;
-    const opacityRow = `
-        <label style="display:block;color:#d1d5db;font-size:11px;margin-bottom:4px">
-            Opacity: <span id="sp-op">${opVal}</span>%
-        </label>
-        <input type="range" min="0" max="100" value="${opVal}"
-               oninput="document.getElementById('sp-op').textContent=this.value;updateWidgetStyle('opacity',+this.value)"
-               style="width:100%;margin-bottom:10px">`;
-
-    const bwLabel = isLine ? 'Thickness' : 'Border Width';
-    const bwVal   = s.borderWidth ?? (isLine ? 4 : 2);
-    const thicknessRow = `
+    const bwLabel = isArrowLike ? 'Thickness' : 'Border Width';
+    const bwVal   = s.borderWidth ?? (isArrowLike ? 4 : 2);
+    const thicknessRow = !isTextbox ? `
         <label style="display:block;color:#d1d5db;font-size:11px;margin-bottom:4px">
             ${bwLabel}: <span id="sp-bw">${bwVal}</span>px
         </label>
         <input type="range" min="0" max="20" value="${bwVal}"
                oninput="document.getElementById('sp-bw').textContent=this.value;updateWidgetStyle('borderWidth',+this.value)"
                style="width:100%;margin-bottom:6px">
-        ${!isLine ? `<button onclick="updateWidgetStyle('borderWidth',0);renderSettingsPanel()"
+        ${!isArrowLike ? `<button onclick="updateWidgetStyle('borderWidth',0);renderSettingsPanel()"
                style="width:100%;background:#374151;color:#d1d5db;border:none;
                       padding:6px;border-radius:4px;cursor:pointer;font-size:11px;
-                      margin-bottom:10px">No Border</button>` : ''}`;
+                      margin-bottom:10px">No Border</button>` : ''}` : '';
 
     const brVal = s.borderRadius ?? 0;
-    const radiusRow = `
+    const showRadius = ['rectangle','circle','rounded-rectangle','image'].includes(widget.type);
+    const radiusRow = showRadius ? `
         <label style="display:block;color:#d1d5db;font-size:11px;margin-bottom:4px">
             Border Radius: <span id="sp-br">${brVal}</span>px
         </label>
@@ -956,17 +1224,52 @@ function renderSettingsPanel() {
                ${widget.type === 'circle' ? 'disabled' : ''}>
         ${widget.type === 'circle'
             ? '<p style="color:#6b7280;font-size:10px;margin:0 0 6px">Circle is always fully rounded</p>'
-            : ''}`;
+            : ''}` : '';
+
+    const shadowRow = `
+        <label style="display:flex;align-items:center;gap:8px;color:#d1d5db;font-size:11px;margin-bottom:6px;cursor:pointer">
+            <input type="checkbox" ${s.shadow ? 'checked' : ''}
+                   onchange="updateWidgetStyle('shadow', this.checked)"
+                   style="cursor:pointer;width:13px;height:13px">
+            Drop Shadow
+        </label>`;
+
+    const textboxRow = isTextbox ? `
+        <label style="display:block;color:#d1d5db;font-size:11px;margin-bottom:4px">
+            Font Size: <span id="sp-fs">${s.fontSize ?? 16}</span>px
+        </label>
+        <input type="range" min="10" max="72" value="${s.fontSize ?? 16}"
+               oninput="document.getElementById('sp-fs').textContent=this.value;updateWidgetStyle('fontSize',parseInt(this.value))"
+               style="width:100%;margin-bottom:10px">
+        <label style="display:block;color:#d1d5db;font-size:11px;margin-bottom:4px">Font Color</label>
+        <input type="color" value="${s.fontColor || '#1f2937'}"
+               oninput="updateWidgetStyle('fontColor', this.value)"
+               style="width:100%;height:28px;border:none;border-radius:4px;margin-bottom:10px;cursor:pointer">
+        <div style="display:flex;gap:6px;margin-bottom:10px">
+            <button onclick="updateWidgetStyle('fontWeight','${s.fontWeight==='bold'?'normal':'bold'}');renderSettingsPanel()"
+                style="flex:1;background:${s.fontWeight==='bold'?'#4f46e5':'#374151'};
+                       color:white;border:none;padding:6px;border-radius:4px;cursor:pointer;font-weight:bold;font-size:12px">B</button>
+            <button onclick="updateWidgetStyle('textAlign','left');renderSettingsPanel()"
+                style="flex:1;background:${!s.textAlign||s.textAlign==='left'?'#4f46e5':'#374151'};
+                       color:white;border:none;padding:6px;border-radius:4px;cursor:pointer;font-size:11px">L</button>
+            <button onclick="updateWidgetStyle('textAlign','center');renderSettingsPanel()"
+                style="flex:1;background:${s.textAlign==='center'?'#4f46e5':'#374151'};
+                       color:white;border:none;padding:6px;border-radius:4px;cursor:pointer;font-size:11px">C</button>
+            <button onclick="updateWidgetStyle('textAlign','right');renderSettingsPanel()"
+                style="flex:1;background:${s.textAlign==='right'?'#4f46e5':'#374151'};
+                       color:white;border:none;padding:6px;border-radius:4px;cursor:pointer;font-size:11px">R</button>
+        </div>` : '';
 
     panel.style.display = 'block';
     panel.innerHTML = `
         <p style="color:#9ca3af;font-size:10px;font-weight:600;letter-spacing:.5px;margin:0 0 10px">SETTINGS</p>
-        ${!isImage ? fillRow : ''}
-        ${!isLine ? opacityRow : ''}
-        ${!isImage && !isLine ? borderColorRow : ''}
-        ${isImage ? borderColorRow : ''}
+        ${textboxRow}
+        ${transparentFillRow}
+        ${fillRow}
+        ${borderColorRow}
         ${thicknessRow}
-        ${!isLine ? radiusRow : ''}
+        ${radiusRow}
+        ${shadowRow}
     `;
 }
 
@@ -977,10 +1280,18 @@ function updateWidgetStyle(key, value) {
     widget.style[key] = value;
 
     const el = document.getElementById('widget-' + widget.id);
-    if (el) {
-        const content = el.querySelector('.widget-content');
-        if (content) content.innerHTML = renderWidgetContent(widget);
+    if (!el) return;
+
+    if (key === 'shadow') {
+        const shadowCss = value ? '0 8px 16px rgba(0,0,0,.25)' : 'none';
+        el.style.boxShadow = (selectedWidgetId === widget.id)
+            ? `0 0 0 3px rgba(37,99,235,.15)${value ? ', 0 8px 16px rgba(0,0,0,.25)' : ''}`
+            : shadowCss;
+        return;
     }
+
+    const content = el.querySelector('.widget-content');
+    if (content) content.innerHTML = renderWidgetContent(widget);
 }
 
 // ── Save ───────────────────────────────────────────────────────────────────
