@@ -414,8 +414,9 @@ function insertShape(type) {
         style: {
             fill:         isLine ? '#374151' : '#6366f1',
             borderColor:  '#4f46e5',
-            borderWidth:  isLine ? 4 : 2,
+            borderWidth:  isLine ? 0 : 2,
             borderRadius: type === 'circle' ? 999 : 4,
+            opacity:      100,
         },
     };
     widgets.push(widget);
@@ -711,6 +712,7 @@ function renderWidgetContent(widget) {
             const s = widget.style || {};
             return `<div style="width:100%;height:100%;
                         background:${s.fill || '#6366f1'};
+                        opacity:${(s.opacity ?? 100) / 100};
                         border:${s.borderWidth ?? 2}px solid ${s.borderColor || '#4f46e5'};
                         border-radius:${s.borderRadius ?? 4}px;
                         box-sizing:border-box"></div>`;
@@ -720,6 +722,7 @@ function renderWidgetContent(widget) {
             const s = widget.style || {};
             return `<div style="width:100%;height:100%;
                         background:${s.fill || '#6366f1'};
+                        opacity:${(s.opacity ?? 100) / 100};
                         border:${s.borderWidth ?? 2}px solid ${s.borderColor || '#4f46e5'};
                         border-radius:50%;
                         box-sizing:border-box"></div>`;
@@ -919,6 +922,15 @@ function renderSettingsPanel() {
                oninput="updateWidgetStyle('borderColor', this.value)"
                style="width:100%;height:28px;border:none;border-radius:4px;margin-bottom:10px;cursor:pointer">`;
 
+    const opVal = s.opacity ?? 100;
+    const opacityRow = `
+        <label style="display:block;color:#d1d5db;font-size:11px;margin-bottom:4px">
+            Opacity: <span id="sp-op">${opVal}</span>%
+        </label>
+        <input type="range" min="0" max="100" value="${opVal}"
+               oninput="document.getElementById('sp-op').textContent=this.value;updateWidgetStyle('opacity',+this.value)"
+               style="width:100%;margin-bottom:10px">`;
+
     const bwLabel = isLine ? 'Thickness' : 'Border Width';
     const bwVal   = s.borderWidth ?? (isLine ? 4 : 2);
     const thicknessRow = `
@@ -927,7 +939,11 @@ function renderSettingsPanel() {
         </label>
         <input type="range" min="0" max="20" value="${bwVal}"
                oninput="document.getElementById('sp-bw').textContent=this.value;updateWidgetStyle('borderWidth',+this.value)"
-               style="width:100%;margin-bottom:10px">`;
+               style="width:100%;margin-bottom:6px">
+        ${!isLine ? `<button onclick="updateWidgetStyle('borderWidth',0);renderSettingsPanel()"
+               style="width:100%;background:#374151;color:#d1d5db;border:none;
+                      padding:6px;border-radius:4px;cursor:pointer;font-size:11px;
+                      margin-bottom:10px">No Border</button>` : ''}`;
 
     const brVal = s.borderRadius ?? 0;
     const radiusRow = `
@@ -946,6 +962,7 @@ function renderSettingsPanel() {
     panel.innerHTML = `
         <p style="color:#9ca3af;font-size:10px;font-weight:600;letter-spacing:.5px;margin:0 0 10px">SETTINGS</p>
         ${!isImage ? fillRow : ''}
+        ${!isLine ? opacityRow : ''}
         ${!isImage && !isLine ? borderColorRow : ''}
         ${isImage ? borderColorRow : ''}
         ${thicknessRow}

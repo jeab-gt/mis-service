@@ -157,6 +157,7 @@ function renderWidgetContent(widget) {
             const s = widget.style || {};
             return `<div style="width:100%;height:100%;
                         background:${s.fill || '#6366f1'};
+                        opacity:${(s.opacity ?? 100) / 100};
                         border:${s.borderWidth ?? 2}px solid ${s.borderColor || '#4f46e5'};
                         border-radius:${s.borderRadius ?? 4}px;
                         box-sizing:border-box"></div>`;
@@ -166,6 +167,7 @@ function renderWidgetContent(widget) {
             const s = widget.style || {};
             return `<div style="width:100%;height:100%;
                         background:${s.fill || '#6366f1'};
+                        opacity:${(s.opacity ?? 100) / 100};
                         border:${s.borderWidth ?? 2}px solid ${s.borderColor || '#4f46e5'};
                         border-radius:50%;
                         box-sizing:border-box"></div>`;
