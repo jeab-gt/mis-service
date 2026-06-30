@@ -110,6 +110,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .ins-btn:hover { background: #334155; color: #f1f5f9; }
 .ins-btn i { font-size: 15px; color: #6366f1; flex-shrink: 0; }
 
+/* ── Shape icon grid ── */
+.shape-icon-btn {
+    aspect-ratio: 1; background: #1e293b; color: #94a3b8; border: none;
+    border-radius: 6px; cursor: pointer; display: flex; align-items: center;
+    justify-content: center; transition: background .12s, color .12s;
+    padding: 0;
+}
+.shape-icon-btn:hover { background: #4f46e5; color: white; }
+
 /* ── Widget element ── */
 .rb-widget {
     position: absolute; border-radius: 8px; background: white;
@@ -185,20 +194,50 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
         <button class="ins-btn" onclick="insertHR()"><i class="ti ti-minus"></i> Divider</button>
 
         <p class="panel-label">Shapes</p>
-        <button class="ins-btn" onclick="insertShape('rectangle')"><i class="ti ti-rectangle"></i> Rectangle</button>
-        <button class="ins-btn" onclick="insertShape('rounded-rectangle')"><i class="ti ti-square-rounded"></i> Rounded Rect</button>
-        <button class="ins-btn" onclick="insertShape('circle')"><i class="ti ti-circle"></i> Circle</button>
-        <button class="ins-btn" onclick="insertShape('triangle')"><i class="ti ti-triangle"></i> Triangle</button>
-        <button class="ins-btn" onclick="insertShape('diamond')"><i class="ti ti-diamond"></i> Diamond</button>
-        <button class="ins-btn" onclick="insertShape('pentagon')"><i class="ti ti-pentagon"></i> Pentagon</button>
-        <button class="ins-btn" onclick="insertShape('hexagon')"><i class="ti ti-hexagon"></i> Hexagon</button>
-        <button class="ins-btn" onclick="insertShape('star')"><i class="ti ti-star"></i> Star</button>
-        <button class="ins-btn" onclick="insertShape('line')"><i class="ti ti-minus"></i> Line</button>
-        <button class="ins-btn" onclick="insertShape('arrow-right')"><i class="ti ti-arrow-right"></i> Arrow Right</button>
-        <button class="ins-btn" onclick="insertShape('arrow-left')"><i class="ti ti-arrow-left"></i> Arrow Left</button>
-        <button class="ins-btn" onclick="insertShape('arrow-up')"><i class="ti ti-arrow-up"></i> Arrow Up</button>
-        <button class="ins-btn" onclick="insertShape('arrow-down')"><i class="ti ti-arrow-down"></i> Arrow Down</button>
-        <button class="ins-btn" onclick="insertShape('double-arrow')"><i class="ti ti-arrows-horizontal"></i> Double Arrow</button>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:12px">
+            <button class="shape-icon-btn" title="Rectangle" onclick="insertShape('rectangle')">
+                <svg width="18" height="14" viewBox="0 0 18 14"><rect x="1" y="1" width="16" height="12" fill="currentColor"/></svg>
+            </button>
+            <button class="shape-icon-btn" title="Rounded Rect" onclick="insertShape('rounded-rectangle')">
+                <svg width="18" height="14" viewBox="0 0 18 14"><rect x="1" y="1" width="16" height="12" fill="currentColor" rx="4"/></svg>
+            </button>
+            <button class="shape-icon-btn" title="Circle" onclick="insertShape('circle')">
+                <svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6" fill="currentColor"/></svg>
+            </button>
+            <button class="shape-icon-btn" title="Triangle" onclick="insertShape('triangle')">
+                <svg width="16" height="14" viewBox="0 0 16 14"><polygon points="8,1 15,13 1,13" fill="currentColor"/></svg>
+            </button>
+            <button class="shape-icon-btn" title="Diamond" onclick="insertShape('diamond')">
+                <svg width="14" height="14" viewBox="0 0 14 14"><polygon points="7,1 13,7 7,13 1,7" fill="currentColor"/></svg>
+            </button>
+            <button class="shape-icon-btn" title="Pentagon" onclick="insertShape('pentagon')">
+                <svg width="14" height="14" viewBox="0 0 14 14"><polygon points="7,1 13,5 11,12 3,12 1,5" fill="currentColor"/></svg>
+            </button>
+            <button class="shape-icon-btn" title="Hexagon" onclick="insertShape('hexagon')">
+                <svg width="14" height="14" viewBox="0 0 14 14"><polygon points="7,1 12.5,4 12.5,10 7,13 1.5,10 1.5,4" fill="currentColor"/></svg>
+            </button>
+            <button class="shape-icon-btn" title="Star" onclick="insertShape('star')">
+                <svg width="14" height="14" viewBox="0 0 14 14"><polygon points="7,1 8.5,5.5 13,5.5 9.5,8.5 10.5,13 7,10.5 3.5,13 4.5,8.5 1,5.5 5.5,5.5" fill="currentColor"/></svg>
+            </button>
+            <button class="shape-icon-btn" title="Line" onclick="insertShape('line')">
+                <svg width="18" height="14" viewBox="0 0 18 14"><line x1="1" y1="7" x2="17" y2="7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+            </button>
+            <button class="shape-icon-btn" title="Arrow Right" onclick="insertShape('arrow-right')">
+                <svg width="14" height="14" viewBox="0 0 14 14"><polygon points="1,5 9,5 9,2 13,7 9,12 9,9 1,9" fill="currentColor"/></svg>
+            </button>
+            <button class="shape-icon-btn" title="Arrow Left" onclick="insertShape('arrow-left')">
+                <svg width="14" height="14" viewBox="0 0 14 14"><polygon points="13,5 5,5 5,2 1,7 5,12 5,9 13,9" fill="currentColor"/></svg>
+            </button>
+            <button class="shape-icon-btn" title="Arrow Up" onclick="insertShape('arrow-up')">
+                <svg width="14" height="14" viewBox="0 0 14 14"><polygon points="5,13 5,5 2,5 7,1 12,5 9,5 9,13" fill="currentColor"/></svg>
+            </button>
+            <button class="shape-icon-btn" title="Arrow Down" onclick="insertShape('arrow-down')">
+                <svg width="14" height="14" viewBox="0 0 14 14"><polygon points="5,1 5,9 2,9 7,13 12,9 9,9 9,1" fill="currentColor"/></svg>
+            </button>
+            <button class="shape-icon-btn" title="Double Arrow" onclick="insertShape('double-arrow')">
+                <svg width="18" height="14" viewBox="0 0 18 14"><polygon points="1,7 5,3 5,5.5 13,5.5 13,3 17,7 13,11 13,8.5 5,8.5 5,11" fill="currentColor"/></svg>
+            </button>
+        </div>
 
         <p class="panel-label">Project Data</p>
         <button class="ins-btn" onclick="insertWidget('kpi')"><i class="ti ti-chart-bar"></i> KPI Summary</button>
@@ -421,6 +460,7 @@ function insertWidget(type) {
         x: 40, y: 40,
         w: d.w, h: d.h,
         rotation: 0,
+        style: { shadow: false, borderColor: '#e5e7eb', borderRadius: 8 },
     };
     widgets.push(widget);
     renderAllWidgets();
@@ -612,15 +652,19 @@ function buildWidgetEl(widget) {
         'hexagon','star','arrow-right','arrow-left',
         'arrow-up','arrow-down','double-arrow','textbox',
     ];
-    const isShape   = ALL_OVERLAY_TYPES.includes(widget.type);
-    const shadowCss = widget.style?.shadow ? '0 8px 16px rgba(0,0,0,.25)' : 'none';
+    const DATA_WIDGET_TYPES = ['kpi','chart','gantt','milestone','team','blocker'];
+    const isShape      = ALL_OVERLAY_TYPES.includes(widget.type);
+    const isDataWidget = DATA_WIDGET_TYPES.includes(widget.type);
+    const dwBorder     = `1px solid ${widget.style?.borderColor || '#e5e7eb'}`;
+    const dwRadius     = (widget.style?.borderRadius ?? 8) + 'px';
 
     el.style.cssText = `
         left:${widget.x}px; top:${widget.y}px;
         width:${widget.w}px; height:${widget.h}px;
         background:${isShape ? 'transparent' : 'white'};
-        border:${isShape ? '1px solid transparent' : '2px dashed #6366f1'};
-        box-shadow:${shadowCss};
+        border:${isShape ? '1px solid transparent' : (isDataWidget ? dwBorder : '2px dashed #6366f1')};
+        border-radius:${isDataWidget ? dwRadius : '8px'};
+        box-shadow:none;
         transform:rotate(${widget.rotation || 0}deg);
         transform-origin:center center;
         z-index:1; pointer-events:all; cursor:move;
@@ -630,9 +674,10 @@ function buildWidgetEl(widget) {
     const content = document.createElement('div');
     content.className = 'widget-content';
     content.style.padding = isShape ? '0' : '8px';
+    if (isShape) content.style.overflow = 'visible';
+    if (widget.style?.shadow) content.style.filter = 'drop-shadow(0 6px 10px rgba(0,0,0,.3))';
     if (widget.type === 'textbox') {
         content.style.pointerEvents = 'auto';
-        content.style.overflow = 'visible';
         content.style.cursor = 'text';
     }
     content.innerHTML = renderWidgetContent(widget);
@@ -762,10 +807,16 @@ function deselectCurrent() {
             'hexagon','star','arrow-right','arrow-left',
             'arrow-up','arrow-down','double-arrow','textbox',
         ];
-        prev.style.border = prevW && ALL_OVERLAY_TYPES.includes(prevW.type)
+        const DATA_WIDGET_TYPES = ['kpi','chart','gantt','milestone','team','blocker'];
+        const isPrevShape      = prevW && ALL_OVERLAY_TYPES.includes(prevW.type);
+        const isPrevDataWidget = prevW && DATA_WIDGET_TYPES.includes(prevW.type);
+        prev.style.border = isPrevShape
             ? '1px solid transparent'
-            : '2px dashed #6366f1';
-        prev.style.boxShadow = prevW?.style?.shadow ? '0 8px 16px rgba(0,0,0,.25)' : 'none';
+            : isPrevDataWidget
+                ? `1px solid ${prevW.style?.borderColor || '#e5e7eb'}`
+                : '2px dashed #6366f1';
+        if (isPrevDataWidget) prev.style.borderRadius = (prevW.style?.borderRadius ?? 8) + 'px';
+        prev.style.boxShadow = 'none';
         prev.style.zIndex = '1';
         const tb = prev.querySelector('.widget-tb');
         if (tb) tb.remove();
@@ -788,9 +839,7 @@ function selectWidget(id) {
     el.style.zIndex = '10';
 
     const widget = widgets.find(w => w.id === id);
-    el.style.boxShadow = widget?.style?.shadow
-        ? '0 0 0 3px rgba(37,99,235,.15), 0 8px 16px rgba(0,0,0,.25)'
-        : '0 0 0 3px rgba(37,99,235,.15)';
+    el.style.boxShadow = '0 0 0 3px rgba(37,99,235,.15)';
 
     if (!widget) return;
 
@@ -1157,8 +1206,36 @@ function renderSettingsPanel() {
     const panel = document.getElementById('settings-panel');
     const widget = widgets.find(w => w.id === selectedWidgetId);
 
-    if (!widget || !SHAPE_STYLE_TYPES.includes(widget.type)) {
+    const DATA_WIDGET_TYPES = ['kpi','chart','gantt','milestone','team','blocker'];
+    const isDataWidget = !!(widget && DATA_WIDGET_TYPES.includes(widget.type));
+
+    if (!widget || (!SHAPE_STYLE_TYPES.includes(widget.type) && !isDataWidget)) {
         panel.style.display = 'none';
+        return;
+    }
+
+    if (isDataWidget) {
+        const s = widget.style || {};
+        panel.style.display = 'block';
+        panel.innerHTML = `
+            <p style="color:#9ca3af;font-size:10px;font-weight:600;letter-spacing:.5px;margin:0 0 10px">SETTINGS</p>
+            <label style="display:flex;align-items:center;gap:8px;color:#d1d5db;font-size:11px;margin-bottom:12px;cursor:pointer">
+                <input type="checkbox" ${s.shadow ? 'checked' : ''}
+                       onchange="updateWidgetStyle('shadow', this.checked)"
+                       style="cursor:pointer;width:13px;height:13px">
+                Drop Shadow
+            </label>
+            <label style="display:block;color:#d1d5db;font-size:11px;margin-bottom:4px">Border Color</label>
+            <input type="color" value="${s.borderColor || '#e5e7eb'}"
+                   oninput="updateWidgetStyle('borderColor', this.value)"
+                   style="width:100%;height:28px;border:none;border-radius:4px;margin-bottom:10px;cursor:pointer">
+            <label style="display:block;color:#d1d5db;font-size:11px;margin-bottom:4px">
+                Border Radius: <span id="sp-dw-br">${s.borderRadius ?? 8}</span>px
+            </label>
+            <input type="range" min="0" max="24" value="${s.borderRadius ?? 8}"
+                   oninput="document.getElementById('sp-dw-br').textContent=this.value;updateWidgetStyle('borderRadius',parseInt(this.value))"
+                   style="width:100%;margin-bottom:4px">
+        `;
         return;
     }
 
@@ -1282,11 +1359,22 @@ function updateWidgetStyle(key, value) {
     const el = document.getElementById('widget-' + widget.id);
     if (!el) return;
 
+    const DATA_WIDGET_TYPES = ['kpi','chart','gantt','milestone','team','blocker'];
+    const isDataWidget = DATA_WIDGET_TYPES.includes(widget.type);
+
     if (key === 'shadow') {
-        const shadowCss = value ? '0 8px 16px rgba(0,0,0,.25)' : 'none';
-        el.style.boxShadow = (selectedWidgetId === widget.id)
-            ? `0 0 0 3px rgba(37,99,235,.15)${value ? ', 0 8px 16px rgba(0,0,0,.25)' : ''}`
-            : shadowCss;
+        const content = el.querySelector('.widget-content');
+        if (content) content.style.filter = value ? 'drop-shadow(0 6px 10px rgba(0,0,0,.3))' : 'none';
+        return;
+    }
+
+    if (isDataWidget && key === 'borderColor') {
+        el.style.borderColor = value;
+        return;
+    }
+
+    if (isDataWidget && key === 'borderRadius') {
+        el.style.borderRadius = value + 'px';
         return;
     }
 

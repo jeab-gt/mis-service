@@ -137,16 +137,25 @@ function loadSlide() {
     ];
     (slide.widgets_data || []).forEach(w => {
         const isShape   = SHAPE_TYPES.includes(w.type);
-        const shadowCss = w.style?.shadow ? '0 8px 16px rgba(0,0,0,.25)' : 'none';
+        const DATA_WIDGET_TYPES = ['kpi','chart','gantt','milestone','team','blocker'];
+        const isDataWidget = DATA_WIDGET_TYPES.includes(w.type);
+        const dwBorder = `1px solid ${w.style?.borderColor || '#e5e7eb'}`;
+        const dwRadius = (w.style?.borderRadius ?? 8) + 'px';
         const el = document.createElement('div');
         el.style.cssText = `position:absolute;left:${w.x||0}px;top:${w.y||0}px;`
             + `width:${w.w||200}px;height:${w.h||150}px;`
-            + `background:${isShape ? 'transparent' : 'white'};`
-            + `border-radius:${isShape ? '0' : '8px'};overflow:${isShape ? 'visible' : 'hidden'};`
-            + `border:${isShape ? 'none' : '1px solid #e5e7eb'};box-sizing:border-box;`
-            + `box-shadow:${shadowCss};`
+            + `background:transparent;overflow:visible;box-sizing:border-box;`
             + `transform:rotate(${w.rotation||0}deg);transform-origin:center center;`;
-        el.innerHTML = renderWidgetContent(w);
+        const inner = document.createElement('div');
+        inner.style.cssText = `width:100%;height:100%;box-sizing:border-box;`
+            + (isShape
+                ? 'overflow:visible;'
+                : `background:white;`
+                + `border-radius:${isDataWidget ? dwRadius : '8px'};`
+                + `border:${isDataWidget ? dwBorder : '1px solid #e5e7eb'};overflow:hidden;`);
+        if (w.style?.shadow) inner.style.filter = 'drop-shadow(0 6px 10px rgba(0,0,0,.3))';
+        inner.innerHTML = renderWidgetContent(w);
+        el.appendChild(inner);
         overlay.appendChild(el);
     });
 }
