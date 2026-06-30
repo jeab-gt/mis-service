@@ -481,7 +481,7 @@ function insertWidget(type) {
         rotation: 0,
         style: type === 'gantt'
             ? { shadow:false, borderColor:'#e5e7eb', borderRadius:8,
-                showStart:true, showEnd:true, showPct:true, showStatus:true }
+                showStart:true, showEnd:true, showPct:true, showStatus:true, viewMode:'month' }
             : { shadow:false, borderColor:'#e5e7eb', borderRadius:8 },
     };
     widgets.push(widget);
@@ -1210,17 +1210,37 @@ function renderWidgetContent(widget) {
             const showEnd    = gs.showEnd    !== false;
             const showPct    = gs.showPct    !== false;
             const showStatus = gs.showStatus !== false;
+            const viewMode   = gs.viewMode || 'month';
 
             const dates = tasks.flatMap(t => [t.start_date, t.due_date]).filter(Boolean).map(d => new Date(d));
             const minD = new Date(Math.min(...dates));
             const maxD = new Date(Math.max(...dates));
-            const rangeStart = new Date(minD.getFullYear(), minD.getMonth(), 1);
-            const rangeEnd   = new Date(maxD.getFullYear(), maxD.getMonth() + 1, 0);
+
+            const thMonths = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+            function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate()+n); return r; }
+            function startOfWeek(d) { const r = new Date(d); return addDays(r, -r.getDay()); }
+
+            let rangeStart, rangeEnd, units = [];
+            if (viewMode === 'day') {
+                rangeStart = addDays(minD, -1);
+                rangeEnd   = addDays(maxD, 1);
+                let c = new Date(rangeStart);
+                while (c <= rangeEnd) { units.push(new Date(c)); c = addDays(c, 1); }
+            } else if (viewMode === 'week') {
+                rangeStart = startOfWeek(minD);
+                rangeEnd   = addDays(startOfWeek(maxD), 7);
+                let c = new Date(rangeStart);
+                while (c <= rangeEnd) { units.push(new Date(c)); c = addDays(c, 7); }
+            } else {
+                rangeStart = new Date(minD.getFullYear(), minD.getMonth(), 1);
+                rangeEnd   = new Date(maxD.getFullYear(), maxD.getMonth() + 1, 0);
+                let c = new Date(rangeStart);
+                while (c <= rangeEnd) { units.push(new Date(c)); c = new Date(c.getFullYear(), c.getMonth()+1, 1); }
+            }
             const totalMs = Math.max(rangeEnd - rangeStart, 86400000);
 
             const statusColor = { todo:'#6b7280', in_progress:'#2563eb', review:'#d97706', done:'#16a34a', cancelled:'#dc2626' };
             const statusLabel = { todo:'รอดำเนินการ', in_progress:'กำลังทำ', review:'รีวิว', done:'เสร็จแล้ว', cancelled:'ยกเลิก' };
-            const thMonths = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 
             const baseW = 800, baseH = 260;
             const scaleX = (widget.w || baseW) / baseW;
@@ -1240,23 +1260,32 @@ function renderWidgetContent(widget) {
             const chartW = Math.max(totalW - labelW, 100);
             const svgH = hdrH + tasks.length * rowH;
 
-            // Month markers
-            const months = [];
-            let cur = new Date(rangeStart);
-            while (cur <= rangeEnd) { months.push(new Date(cur)); cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 1); }
-
             let svg = `<svg width="100%" height="100%" viewBox="0 0 ${totalW} ${svgH}"
                             preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"
                             style="font-family:sans-serif;display:block">`;
 
-            // Month header backgrounds + labels + vertical grid lines
-            months.forEach((m, i) => {
-                const mStart = new Date(m.getFullYear(), m.getMonth(), 1);
-                const mEnd   = new Date(m.getFullYear(), m.getMonth() + 1, 0);
-                const x0 = labelW + (mStart - rangeStart) / totalMs * chartW;
-                const x1 = labelW + Math.min((mEnd - rangeStart) / totalMs * chartW + 1, chartW);
-                svg += `<rect x="${x0}" y="0" width="${x1-x0}" height="${hdrH}" fill="${i%2 ? '#f9fafb' : '#f3f4f6'}"/>`;
-                svg += `<text x="${(x0+x1)/2}" y="${hdrH*0.68}" font-size="${fontBase*0.85}" fill="#6b7280" text-anchor="middle" font-weight="600">${thMonths[m.getMonth()]} ${(m.getFullYear()+543).toString().slice(-2)}</text>`;
+            // Unit header backgrounds + labels + vertical grid lines
+            units.forEach((u, i) => {
+                let uStart, uEnd, label;
+                if (viewMode === 'day') {
+                    uStart = u; uEnd = addDays(u, 1);
+                    label = `${u.getDate()}/${u.getMonth()+1}`;
+                } else if (viewMode === 'week') {
+                    uStart = u; uEnd = addDays(u, 7);
+                    label = `${u.getDate()}/${u.getMonth()+1}`;
+                } else {
+                    uStart = new Date(u.getFullYear(), u.getMonth(), 1);
+                    uEnd   = new Date(u.getFullYear(), u.getMonth()+1, 0);
+                    label = `${thMonths[u.getMonth()]} ${(u.getFullYear()+543).toString().slice(-2)}`;
+                }
+                const x0 = labelW + Math.max(0, (uStart - rangeStart)) / totalMs * chartW;
+                const x1 = labelW + Math.min(totalMs, (uEnd   - rangeStart)) / totalMs * chartW;
+                if (x1 <= labelW) return;
+                svg += `<rect x="${x0}" y="0" width="${Math.max(0,x1-x0)}" height="${hdrH}" fill="${i%2 ? '#f9fafb' : '#f3f4f6'}"/>`;
+                const minLW = viewMode === 'day' ? 18 : 28;
+                if ((x1-x0) >= minLW * fontScale) {
+                    svg += `<text x="${(x0+x1)/2}" y="${hdrH*0.68}" font-size="${fontBase*0.8}" fill="#6b7280" text-anchor="middle" font-weight="600">${label}</text>`;
+                }
                 svg += `<line x1="${x0}" y1="0" x2="${x0}" y2="${svgH}" stroke="#e5e7eb" stroke-width="1"/>`;
             });
             svg += `<line x1="${labelW+chartW}" y1="0" x2="${labelW+chartW}" y2="${svgH}" stroke="#e5e7eb" stroke-width="1"/>`;
@@ -1271,9 +1300,8 @@ function renderWidgetContent(widget) {
             if (showPct)    { svg += `<text x="${hx+4}" y="${hdrH*0.68}" font-size="${fontBase*0.85}" fill="#6b7280" font-weight="600">%</text>`;          hx += colPctW;   }
             if (showStatus) { svg += `<text x="${hx+4}" y="${hdrH*0.68}" font-size="${fontBase*0.85}" fill="#6b7280" font-weight="600">สถานะ</text>`;     }
 
-            // Dividers
-            svg += `<line x1="0"      y1="${hdrH}" x2="${totalW}" y2="${hdrH}"  stroke="#d1d5db" stroke-width="1"/>`;
-            svg += `<line x1="${labelW}" y1="0"    x2="${labelW}" y2="${svgH}"  stroke="#d1d5db" stroke-width="1.5"/>`;
+            svg += `<line x1="0"       y1="${hdrH}" x2="${totalW}" y2="${hdrH}"  stroke="#d1d5db" stroke-width="1"/>`;
+            svg += `<line x1="${labelW}" y1="0"     x2="${labelW}" y2="${svgH}"  stroke="#d1d5db" stroke-width="1.5"/>`;
 
             tasks.forEach((t, i) => {
                 const y = hdrH + i * rowH;
@@ -1287,9 +1315,9 @@ function renderWidgetContent(widget) {
                 const maxChars = Math.round(14 / Math.max(fontScale, 0.5));
                 svg += `<text x="6" y="${y+rowH*0.65}" font-size="${fontBase}" fill="#374151">${(t.title||'').substring(0, maxChars)}</text>`;
                 cx += colName;
-                if (showStart)  { svg += `<text x="${cx+4}" y="${y+rowH*0.65}" font-size="${fontBase*0.85}" fill="#6b7280">${formatGanttDate(t.start_date)}</text>`;                                        cx += colStartW; }
-                if (showEnd)    { svg += `<text x="${cx+4}" y="${y+rowH*0.65}" font-size="${fontBase*0.85}" fill="#6b7280">${formatGanttDate(t.due_date)}</text>`;                                          cx += colEndW;   }
-                if (showPct)    { svg += `<text x="${cx+4}" y="${y+rowH*0.65}" font-size="${fontBase*0.85}" fill="${color}" font-weight="600">${t.progress_pct ?? 0}%</text>`;                              cx += colPctW;   }
+                if (showStart)  { svg += `<text x="${cx+4}" y="${y+rowH*0.65}" font-size="${fontBase*0.85}" fill="#6b7280">${formatGanttDate(t.start_date)}</text>`;                              cx += colStartW; }
+                if (showEnd)    { svg += `<text x="${cx+4}" y="${y+rowH*0.65}" font-size="${fontBase*0.85}" fill="#6b7280">${formatGanttDate(t.due_date)}</text>`;                                cx += colEndW;   }
+                if (showPct)    { svg += `<text x="${cx+4}" y="${y+rowH*0.65}" font-size="${fontBase*0.85}" fill="${color}" font-weight="600">${t.progress_pct ?? 0}%</text>`;                    cx += colPctW;   }
                 if (showStatus) { svg += `<text x="${cx+4}" y="${y+rowH*0.65}" font-size="${fontBase*0.8}"  fill="${color}">${statusLabel[t.status] || t.status || ''}</text>`; }
 
                 if (t.start_date && t.due_date) {
@@ -1301,6 +1329,15 @@ function renderWidgetContent(widget) {
                         svg += `<rect x="${bx}" y="${y+4*scaleY}" width="${bw*t.progress_pct/100}" height="${barH}" rx="${3*scaleX}" fill="${color}"/>`;
                 }
             });
+
+            // Today marker
+            const today = new Date();
+            if (today >= rangeStart && today <= rangeEnd) {
+                const tx = labelW + (today - rangeStart) / totalMs * chartW;
+                svg += `<line x1="${tx}" y1="0" x2="${tx}" y2="${svgH}" stroke="#dc2626" stroke-width="${Math.max(1.5, 1.5*scaleX)}" stroke-dasharray="4,2"/>`;
+                svg += `<rect x="${tx-16}" y="0" width="32" height="${hdrH*0.72}" rx="3" fill="#dc2626"/>`;
+                svg += `<text x="${tx}" y="${hdrH*0.52}" font-size="${fontBase*0.75}" fill="white" text-anchor="middle" font-weight="700">วันนี้</text>`;
+            }
 
             svg += `<line x1="0" y1="${svgH}" x2="${totalW}" y2="${svgH}" stroke="#e5e7eb" stroke-width="1"/>`;
             svg += '</svg>';
@@ -1415,7 +1452,16 @@ function renderSettingsPanel() {
                    oninput="document.getElementById('sp-dw-br').textContent=this.value;updateWidgetStyle('borderRadius',parseInt(this.value))"
                    style="width:100%;margin-bottom:4px">
             ${widget.type === 'gantt' ? `
-            <p style="color:#9ca3af;font-size:10px;font-weight:600;letter-spacing:.5px;margin:12px 0 8px">SHOW COLUMNS</p>
+            <p style="color:#9ca3af;font-size:10px;font-weight:600;letter-spacing:.5px;margin:12px 0 8px">VIEW MODE</p>
+            <div style="display:flex;gap:4px;margin-bottom:14px">
+                <button onclick="updateWidgetStyle('viewMode','day');renderSettingsPanel()"
+                    style="flex:1;background:${(s.viewMode||'month')==='day'?'#4f46e5':'#374151'};color:white;border:none;padding:6px;border-radius:4px;cursor:pointer;font-size:11px">Day</button>
+                <button onclick="updateWidgetStyle('viewMode','week');renderSettingsPanel()"
+                    style="flex:1;background:${(s.viewMode||'month')==='week'?'#4f46e5':'#374151'};color:white;border:none;padding:6px;border-radius:4px;cursor:pointer;font-size:11px">Week</button>
+                <button onclick="updateWidgetStyle('viewMode','month');renderSettingsPanel()"
+                    style="flex:1;background:${(s.viewMode||'month')==='month'?'#4f46e5':'#374151'};color:white;border:none;padding:6px;border-radius:4px;cursor:pointer;font-size:11px">Month</button>
+            </div>
+            <p style="color:#9ca3af;font-size:10px;font-weight:600;letter-spacing:.5px;margin:0 0 8px">SHOW COLUMNS</p>
             <label style="display:flex;align-items:center;gap:8px;color:#d1d5db;font-size:11px;margin-bottom:6px;cursor:pointer">
                 <input type="checkbox" ${s.showStart !== false ? 'checked' : ''}
                        onchange="updateWidgetStyle('showStart', this.checked)" style="cursor:pointer">
