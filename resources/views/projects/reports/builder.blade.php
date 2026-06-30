@@ -183,6 +183,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
         <button class="ins-btn" onclick="insertImage()"><i class="ti ti-photo"></i> Image</button>
         <button class="ins-btn" onclick="insertHR()"><i class="ti ti-minus"></i> Divider</button>
 
+        <p class="panel-label">Shapes</p>
+        <button class="ins-btn" onclick="insertShape('rectangle')"><i class="ti ti-rectangle"></i> Rectangle</button>
+        <button class="ins-btn" onclick="insertShape('circle')"><i class="ti ti-circle"></i> Circle</button>
+        <button class="ins-btn" onclick="insertShape('line')"><i class="ti ti-minus"></i> Line</button>
+        <button class="ins-btn" onclick="insertShape('arrow')"><i class="ti ti-arrow-right"></i> Arrow</button>
+
         <p class="panel-label">Project Data</p>
         <button class="ins-btn" onclick="insertWidget('kpi')"><i class="ti ti-chart-bar"></i> KPI Summary</button>
         <button class="ins-btn" onclick="insertWidget('chart')"><i class="ti ti-chart-donut"></i> Task Chart</button>
@@ -192,6 +198,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
         <button class="ins-btn" onclick="insertWidget('blocker')"><i class="ti ti-alert-triangle"></i> Blockers</button>
     </div>
 
+</div>
+
+{{-- Settings Panel --}}
+<div id="settings-panel" style="position:fixed;top:60px;right:212px;width:220px;
+     background:#1f2937;border-radius:8px;padding:14px;display:none;
+     box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:200;border:1px solid #374151">
 </div>
 
 {{-- Data --}}
@@ -372,6 +384,10 @@ const WIDGET_DEFAULTS = {
     team:      { w: 420, h: 260 },
     blocker:   { w: 400, h: 220 },
     image:     { w: 400, h: 300 },
+    rectangle: { w: 200, h: 120 },
+    circle:    { w: 150, h: 150 },
+    line:      { w: 200, h: 4   },
+    arrow:     { w: 200, h: 40  },
 };
 
 function insertWidget(type) {
@@ -381,6 +397,26 @@ function insertWidget(type) {
         type,
         x: 40, y: 40,
         w: d.w, h: d.h,
+    };
+    widgets.push(widget);
+    renderAllWidgets();
+    selectWidget(widget.id);
+}
+
+function insertShape(type) {
+    const d = WIDGET_DEFAULTS[type] || { w: 200, h: 120 };
+    const isLine = type === 'line' || type === 'arrow';
+    const widget = {
+        id: 'w_' + Date.now(),
+        type,
+        x: 40, y: 40,
+        w: d.w, h: d.h,
+        style: {
+            fill:         isLine ? '#374151' : '#6366f1',
+            borderColor:  '#4f46e5',
+            borderWidth:  isLine ? 4 : 2,
+            borderRadius: type === 'circle' ? 999 : 4,
+        },
     };
     widgets.push(widget);
     renderAllWidgets();
@@ -485,6 +521,7 @@ function insertImageWidget(url, file) {
             x: 40, y: 40,
             w: w, h: h,
             imageUrl: url,
+            style: { borderColor: 'transparent', borderWidth: 0, borderRadius: 0 },
         };
         widgets.push(widget);
         renderAllWidgets();
@@ -508,11 +545,12 @@ function buildWidgetEl(widget) {
     const el = document.createElement('div');
     el.id = 'widget-' + widget.id;
     el.className = 'rb-widget widget-el';
-    const isImg = widget.type === 'image';
+    const SHAPE_TYPES = ['image','rectangle','circle','line','arrow'];
+    const isShape = SHAPE_TYPES.includes(widget.type);
     el.style.cssText = `
         left:${widget.x}px; top:${widget.y}px;
         width:${widget.w}px; height:${widget.h}px;
-        border: ${isImg ? '1px solid transparent' : '2px dashed #6366f1'};
+        border: ${isShape ? '1px solid transparent' : '2px dashed #6366f1'};
         box-shadow: none; z-index: 1;
         pointer-events: all; cursor: move;
     `;
@@ -520,6 +558,7 @@ function buildWidgetEl(widget) {
     // Content
     const content = document.createElement('div');
     content.className = 'widget-content';
+    content.style.padding = isShape ? '0' : '8px';
     content.innerHTML = renderWidgetContent(widget);
     el.appendChild(content);
 
@@ -590,7 +629,11 @@ function deselectCurrent() {
     if (!selectedWidgetId) return;
     const prev = document.getElementById('widget-' + selectedWidgetId);
     if (prev) {
-        prev.style.border = '2px dashed #6366f1';
+        const prevW = widgets.find(w => w.id === selectedWidgetId);
+        const SHAPE_TYPES = ['image','rectangle','circle','line','arrow'];
+        prev.style.border = prevW && SHAPE_TYPES.includes(prevW.type)
+            ? '1px solid transparent'
+            : '2px dashed #6366f1';
         prev.style.boxShadow = 'none';
         prev.style.zIndex = '1';
         const tb = prev.querySelector('.widget-tb');
@@ -630,6 +673,7 @@ function selectWidget(id) {
         deleteWidget(id);
     });
     el.appendChild(tb);
+    renderSettingsPanel();
 }
 
 function deleteWidget(id) {
@@ -637,12 +681,16 @@ function deleteWidget(id) {
     selectedWidgetId = null;
     const el = document.getElementById('widget-' + id);
     if (el) el.remove();
+    document.getElementById('settings-panel').style.display = 'none';
 }
 
 // Deselect on outside click
 document.addEventListener('mousedown', e => {
-    if (selectedWidgetId && !e.target.closest('#widget-overlay')) {
-        deselectCurrent();
+    if (!e.target.closest('#widget-overlay') && !e.target.closest('#settings-panel')) {
+        if (selectedWidgetId) {
+            deselectCurrent();
+            document.getElementById('settings-panel').style.display = 'none';
+        }
     }
 });
 
@@ -651,9 +699,51 @@ function renderWidgetContent(widget) {
     switch (widget.type) {
 
         case 'image': {
+            const s = widget.style || {};
             return `<img src="${widget.imageUrl}"
                          style="width:100%;height:100%;object-fit:contain;
-                                border-radius:4px;display:block;pointer-events:none" />`;
+                                border:${s.borderWidth || 0}px solid ${s.borderColor || 'transparent'};
+                                border-radius:${s.borderRadius || 0}px;
+                                display:block;box-sizing:border-box;pointer-events:none" />`;
+        }
+
+        case 'rectangle': {
+            const s = widget.style || {};
+            return `<div style="width:100%;height:100%;
+                        background:${s.fill || '#6366f1'};
+                        border:${s.borderWidth ?? 2}px solid ${s.borderColor || '#4f46e5'};
+                        border-radius:${s.borderRadius ?? 4}px;
+                        box-sizing:border-box"></div>`;
+        }
+
+        case 'circle': {
+            const s = widget.style || {};
+            return `<div style="width:100%;height:100%;
+                        background:${s.fill || '#6366f1'};
+                        border:${s.borderWidth ?? 2}px solid ${s.borderColor || '#4f46e5'};
+                        border-radius:50%;
+                        box-sizing:border-box"></div>`;
+        }
+
+        case 'line': {
+            const s = widget.style || {};
+            return `<div style="width:100%;height:100%;display:flex;align-items:center">
+                        <div style="width:100%;height:${Math.max(2, s.borderWidth || 4)}px;
+                             background:${s.fill || '#374151'};
+                             border-radius:${s.borderRadius ?? 0}px"></div>
+                    </div>`;
+        }
+
+        case 'arrow': {
+            const s = widget.style || {};
+            const color = s.fill || '#374151';
+            const sw    = Math.max(2, s.borderWidth || 4);
+            return `<svg width="100%" height="100%" viewBox="0 0 200 40" preserveAspectRatio="none"
+                         style="display:block">
+                        <line x1="5" y1="20" x2="180" y2="20"
+                              stroke="${color}" stroke-width="${sw}"/>
+                        <polygon points="175,10 195,20 175,30" fill="${color}"/>
+                    </svg>`;
         }
 
         case 'kpi': {
@@ -796,6 +886,83 @@ function renderWidgetContent(widget) {
 
         default:
             return `<div style="padding:16px;color:#9ca3af;font-size:11px;text-align:center">${widget.type}</div>`;
+    }
+}
+
+// ── Settings panel ─────────────────────────────────────────────────────────
+const SHAPE_STYLE_TYPES = ['rectangle', 'circle', 'line', 'arrow', 'image'];
+
+function renderSettingsPanel() {
+    const panel = document.getElementById('settings-panel');
+    const widget = widgets.find(w => w.id === selectedWidgetId);
+
+    if (!widget || !SHAPE_STYLE_TYPES.includes(widget.type)) {
+        panel.style.display = 'none';
+        return;
+    }
+
+    const s = widget.style || {};
+    const isLine  = widget.type === 'line' || widget.type === 'arrow';
+    const isImage = widget.type === 'image';
+
+    const fillRow = `
+        <label style="display:block;color:#d1d5db;font-size:11px;margin-bottom:4px">
+            ${isLine ? 'Color' : 'Fill Color'}
+        </label>
+        <input type="color" value="${s.fill || '#6366f1'}"
+               oninput="updateWidgetStyle('fill', this.value)"
+               style="width:100%;height:28px;border:none;border-radius:4px;margin-bottom:10px;cursor:pointer">`;
+
+    const borderColorRow = `
+        <label style="display:block;color:#d1d5db;font-size:11px;margin-bottom:4px">Border Color</label>
+        <input type="color" value="${s.borderColor || '#4f46e5'}"
+               oninput="updateWidgetStyle('borderColor', this.value)"
+               style="width:100%;height:28px;border:none;border-radius:4px;margin-bottom:10px;cursor:pointer">`;
+
+    const bwLabel = isLine ? 'Thickness' : 'Border Width';
+    const bwVal   = s.borderWidth ?? (isLine ? 4 : 2);
+    const thicknessRow = `
+        <label style="display:block;color:#d1d5db;font-size:11px;margin-bottom:4px">
+            ${bwLabel}: <span id="sp-bw">${bwVal}</span>px
+        </label>
+        <input type="range" min="0" max="20" value="${bwVal}"
+               oninput="document.getElementById('sp-bw').textContent=this.value;updateWidgetStyle('borderWidth',+this.value)"
+               style="width:100%;margin-bottom:10px">`;
+
+    const brVal = s.borderRadius ?? 0;
+    const radiusRow = `
+        <label style="display:block;color:#d1d5db;font-size:11px;margin-bottom:4px">
+            Border Radius: <span id="sp-br">${brVal}</span>px
+        </label>
+        <input type="range" min="0" max="${widget.type === 'circle' ? 999 : 100}" value="${brVal}"
+               oninput="document.getElementById('sp-br').textContent=this.value;updateWidgetStyle('borderRadius',+this.value)"
+               style="width:100%;margin-bottom:4px"
+               ${widget.type === 'circle' ? 'disabled' : ''}>
+        ${widget.type === 'circle'
+            ? '<p style="color:#6b7280;font-size:10px;margin:0 0 6px">Circle is always fully rounded</p>'
+            : ''}`;
+
+    panel.style.display = 'block';
+    panel.innerHTML = `
+        <p style="color:#9ca3af;font-size:10px;font-weight:600;letter-spacing:.5px;margin:0 0 10px">SETTINGS</p>
+        ${!isImage ? fillRow : ''}
+        ${!isImage && !isLine ? borderColorRow : ''}
+        ${isImage ? borderColorRow : ''}
+        ${thicknessRow}
+        ${!isLine ? radiusRow : ''}
+    `;
+}
+
+function updateWidgetStyle(key, value) {
+    const widget = widgets.find(w => w.id === selectedWidgetId);
+    if (!widget) return;
+    if (!widget.style) widget.style = {};
+    widget.style[key] = value;
+
+    const el = document.getElementById('widget-' + widget.id);
+    if (el) {
+        const content = el.querySelector('.widget-content');
+        if (content) content.innerHTML = renderWidgetContent(widget);
     }
 }
 

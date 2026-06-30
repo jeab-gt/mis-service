@@ -145,9 +145,50 @@ function renderWidgetContent(widget) {
     switch (widget.type) {
 
         case 'image': {
+            const s = widget.style || {};
             return `<img src="${widget.imageUrl}"
                          style="width:100%;height:100%;object-fit:contain;
-                                border-radius:4px;display:block" />`;
+                                border:${s.borderWidth || 0}px solid ${s.borderColor || 'transparent'};
+                                border-radius:${s.borderRadius || 0}px;
+                                display:block;box-sizing:border-box" />`;
+        }
+
+        case 'rectangle': {
+            const s = widget.style || {};
+            return `<div style="width:100%;height:100%;
+                        background:${s.fill || '#6366f1'};
+                        border:${s.borderWidth ?? 2}px solid ${s.borderColor || '#4f46e5'};
+                        border-radius:${s.borderRadius ?? 4}px;
+                        box-sizing:border-box"></div>`;
+        }
+
+        case 'circle': {
+            const s = widget.style || {};
+            return `<div style="width:100%;height:100%;
+                        background:${s.fill || '#6366f1'};
+                        border:${s.borderWidth ?? 2}px solid ${s.borderColor || '#4f46e5'};
+                        border-radius:50%;
+                        box-sizing:border-box"></div>`;
+        }
+
+        case 'line': {
+            const s = widget.style || {};
+            return `<div style="width:100%;height:100%;display:flex;align-items:center">
+                        <div style="width:100%;height:${Math.max(2, s.borderWidth || 4)}px;
+                             background:${s.fill || '#374151'}"></div>
+                    </div>`;
+        }
+
+        case 'arrow': {
+            const s = widget.style || {};
+            const color = s.fill || '#374151';
+            const sw    = Math.max(2, s.borderWidth || 4);
+            return `<svg width="100%" height="100%" viewBox="0 0 200 40" preserveAspectRatio="none"
+                         style="display:block">
+                        <line x1="5" y1="20" x2="180" y2="20"
+                              stroke="${color}" stroke-width="${sw}"/>
+                        <polygon points="175,10 195,20 175,30" fill="${color}"/>
+                    </svg>`;
         }
 
         case 'kpi': {
