@@ -232,8 +232,7 @@ const {
     Paragraph, Heading, Alignment, FontFamily, FontSize,
     FontColor, FontBackgroundColor, List, Table, TableToolbar,
     TableProperties, TableCellProperties, TableColumnResize,
-    Image, ImageUpload, SimpleUploadAdapter,
-    ImageResize, ImageStyle, ImageToolbar, Link,
+    Image, ImageResize, ImageStyle, ImageToolbar, Link,
     HorizontalLine, Indent, IndentBlock, BlockQuote, Undo,
     GeneralHtmlSupport
 } = CKEDITOR;
@@ -248,8 +247,7 @@ async function initEditor(htmlContent = '') {
             Paragraph, Heading, Alignment, FontFamily, FontSize,
             FontColor, FontBackgroundColor, List, Table, TableToolbar,
             TableProperties, TableCellProperties, TableColumnResize,
-            Image, ImageUpload, SimpleUploadAdapter,
-            ImageResize, ImageStyle, ImageToolbar, Link,
+            Image, ImageResize, ImageStyle, ImageToolbar, Link,
             HorizontalLine, Indent, IndentBlock, BlockQuote, Undo,
             GeneralHtmlSupport,
         ],
@@ -261,8 +259,7 @@ async function initEditor(htmlContent = '') {
                 'fontColor', 'fontBackgroundColor', '|',
                 'alignment', '|',
                 'bulletedList', 'numberedList', 'outdent', 'indent', '|',
-                'link', 'insertTable', 'horizontalLine', 'blockQuote', '|',
-                'uploadImage',
+                'link', 'insertTable', 'horizontalLine', 'blockQuote',
             ],
             shouldNotGroupWhenFull: false,
         },
@@ -293,10 +290,6 @@ async function initEditor(htmlContent = '') {
         },
         htmlSupport: {
             allow: [{ name: /.*/, attributes: true, classes: true, styles: true }],
-        },
-        simpleUpload: {
-            uploadUrl: UPLOAD_URL,
-            headers: { 'X-CSRF-TOKEN': CSRF },
         },
         initialData: htmlContent,
     });
@@ -400,52 +393,78 @@ function insertImage() {
     input.onchange = async () => {
         const file = input.files[0];
         if (!file) return;
-        const compressed = await compressImage(file, 1200, 0.85);
-        await uploadToEditor(compressed);
+        try {
+            const compressedFile = await compressImage(file, 1280, 0.82);
+            await uploadAndInsert(compressedFile);
+        } catch (e) {
+            console.error('Image processing error:', e);
+            alert('ไม่สามารถประมวลผลรูปได้: ' + e.message);
+        }
     };
     input.click();
 }
 
-async function compressImage(file, maxWidth, quality) {
-    return new Promise((resolve) => {
+function compressImage(file, maxWidth = 1280, quality = 0.82) {
+    return new Promise((resolve, reject) => {
         const img = new Image();
         const url = URL.createObjectURL(file);
+
         img.onload = () => {
             URL.revokeObjectURL(url);
+
+            let { width, height } = img;
+            if (width > maxWidth) {
+                height = Math.round(height * (maxWidth / width));
+                width = maxWidth;
+            }
+
             const canvas = document.createElement('canvas');
-            let w = img.width, h = img.height;
-            if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
-            canvas.width = w; canvas.height = h;
-            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-            canvas.toBlob(blob => resolve(
-                new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' })
-            ), 'image/jpeg', quality);
+            canvas.width = width;
+            canvas.height = height;
+            canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+
+            const outputType = file.type === 'image/gif' ? 'image/png' : 'image/jpeg';
+
+            canvas.toBlob((blob) => {
+                if (!blob) return reject(new Error('Canvas compress failed'));
+                const compressedFile = new File(
+                    [blob],
+                    file.name.replace(/\.\w+$/, outputType === 'image/png' ? '.png' : '.jpg'),
+                    { type: outputType }
+                );
+                resolve(compressedFile);
+            }, outputType, quality);
         };
+
+        img.onerror = () => {
+            URL.revokeObjectURL(url);
+            reject(new Error('ไม่สามารถโหลดรูปได้'));
+        };
+
         img.src = url;
     });
 }
 
-async function uploadToEditor(file) {
+async function uploadAndInsert(file) {
     const form = new FormData();
     form.append('upload', file);
-    try {
-        const res = await fetch(UPLOAD_URL, {
-            method: 'POST',
-            headers: { 'X-CSRF-TOKEN': CSRF },
-            body: form,
-        });
-        if (!res.ok) {
-            const json = await res.json().catch(() => ({}));
-            throw new Error(json.error?.message || `Server ${res.status}`);
-        }
-        const json = await res.json();
-        const url  = json.urls?.default || json.url;
-        if (!url) throw new Error('No URL in response');
-        editor.execute('insertImage', { source: url });
-    } catch (e) {
-        console.error('Upload error:', e);
-        alert('Upload failed: ' + e.message);
+
+    const res = await fetch(UPLOAD_URL, {
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': CSRF },
+        body: form,
+    });
+
+    if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error?.message || `Server error ${res.status}`);
     }
+
+    const json = await res.json();
+    const url  = json.urls?.default || json.url;
+    if (!url) throw new Error('ไม่ได้รับ URL จาก server');
+
+    editor.execute('insertImage', { source: url });
 }
 
 function insertHR() {
