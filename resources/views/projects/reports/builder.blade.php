@@ -119,6 +119,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 }
 .shape-icon-btn:hover { background: #4f46e5; color: white; }
 
+/* ── Context menu ── */
+.ctx-item {
+    display:block; width:100%; text-align:left; background:none; border:none;
+    color:#d1d5db; padding:7px 10px; border-radius:4px; cursor:pointer; font-size:12px;
+}
+.ctx-item:hover { background:#374151; }
+
 /* ── Widget element ── */
 .rb-widget {
     position: absolute; border-radius: 8px; background: white;
@@ -254,6 +261,18 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 <div id="settings-panel" style="position:fixed;top:60px;right:212px;width:220px;
      background:#1f2937;border-radius:8px;padding:14px;display:none;
      box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:200;border:1px solid #374151">
+</div>
+
+{{-- Context Menu --}}
+<div id="context-menu" style="position:fixed;display:none;background:#1f2937;
+     border-radius:6px;padding:4px;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:300;
+     min-width:170px">
+    <button class="ctx-item" onclick="bringToFront()">⬆ Bring to Front</button>
+    <button class="ctx-item" onclick="bringForward()">↑ Bring Forward</button>
+    <button class="ctx-item" onclick="sendBackward()">↓ Send Backward</button>
+    <button class="ctx-item" onclick="sendToBack()">⬇ Send to Back</button>
+    <div style="height:1px;background:#374151;margin:4px 0"></div>
+    <button class="ctx-item" onclick="deleteWidget(selectedWidgetId);hideContextMenu()" style="color:#f87171">✕ Delete</button>
 </div>
 
 {{-- Data --}}
@@ -793,6 +812,13 @@ function buildWidgetEl(widget) {
         document.addEventListener('mouseup', onUp);
     });
 
+    // ── Context menu ──
+    el.addEventListener('contextmenu', e => {
+        e.preventDefault();
+        selectWidget(widget.id);
+        showContextMenu(e.clientX, e.clientY);
+    });
+
     return el;
 }
 
@@ -877,6 +903,63 @@ function deleteWidget(id) {
     document.getElementById('settings-panel').style.display = 'none';
 }
 
+function showContextMenu(x, y) {
+    const menu = document.getElementById('context-menu');
+    menu.style.left = x + 'px';
+    menu.style.top  = y + 'px';
+    menu.style.display = 'block';
+}
+
+function hideContextMenu() {
+    document.getElementById('context-menu').style.display = 'none';
+}
+
+function getWidgetIndex(id) {
+    return widgets.findIndex(w => w.id === id);
+}
+
+function bringToFront() {
+    if (!selectedWidgetId) return;
+    const idx = getWidgetIndex(selectedWidgetId);
+    if (idx === -1) return;
+    const [w] = widgets.splice(idx, 1);
+    widgets.push(w);
+    renderAllWidgets();
+    selectWidget(selectedWidgetId);
+    hideContextMenu();
+}
+
+function sendToBack() {
+    if (!selectedWidgetId) return;
+    const idx = getWidgetIndex(selectedWidgetId);
+    if (idx === -1) return;
+    const [w] = widgets.splice(idx, 1);
+    widgets.unshift(w);
+    renderAllWidgets();
+    selectWidget(selectedWidgetId);
+    hideContextMenu();
+}
+
+function bringForward() {
+    if (!selectedWidgetId) return;
+    const idx = getWidgetIndex(selectedWidgetId);
+    if (idx === -1 || idx === widgets.length - 1) return;
+    [widgets[idx], widgets[idx+1]] = [widgets[idx+1], widgets[idx]];
+    renderAllWidgets();
+    selectWidget(selectedWidgetId);
+    hideContextMenu();
+}
+
+function sendBackward() {
+    if (!selectedWidgetId) return;
+    const idx = getWidgetIndex(selectedWidgetId);
+    if (idx <= 0) return;
+    [widgets[idx], widgets[idx-1]] = [widgets[idx-1], widgets[idx]];
+    renderAllWidgets();
+    selectWidget(selectedWidgetId);
+    hideContextMenu();
+}
+
 // Deselect on outside click
 document.addEventListener('mousedown', e => {
     if (!e.target.closest('#widget-overlay') && !e.target.closest('#settings-panel')) {
@@ -886,6 +969,16 @@ document.addEventListener('mousedown', e => {
         }
     }
 });
+
+document.addEventListener('click', e => {
+    if (!e.target.closest('#context-menu')) hideContextMenu();
+});
+
+function formatGanttDate(dateStr) {
+    if (!dateStr) return '-';
+    const d = new Date(dateStr);
+    return `${d.getDate()}/${d.getMonth()+1}`;
+}
 
 // ── Widget content ─────────────────────────────────────────────────────────
 function renderWidgetContent(widget) {
@@ -1053,6 +1146,8 @@ function renderWidgetContent(widget) {
 
         case 'kpi': {
             const k = PROJECT_KPI;
+            const baseW = 560, baseH = 180;
+            const scale = Math.min((widget.w||baseW)/baseW, (widget.h||baseH)/baseH);
             const cards = [
                 { label:'Total Tasks', value:k.total,            color:'#4f46e5', bg:'#f5f3ff' },
                 { label:'Done',        value:k.done,             color:'#16a34a', bg:'#f0fdf4' },
@@ -1061,18 +1156,20 @@ function renderWidgetContent(widget) {
                 { label:'Progress',    value:k.progress_pct+'%', color:'#0891b2', bg:'#ecfeff' },
                 { label:'Members',     value:k.members,          color:'#7c3aed', bg:'#faf5ff' },
             ];
-            return `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;height:100%;padding:2px">` +
+            return `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:${6*scale}px;height:100%;padding:${4*scale}px">` +
                 cards.map(c => `
-                    <div style="background:${c.bg};border-radius:6px;padding:8px;text-align:center;
+                    <div style="background:${c.bg};border-radius:${6*scale}px;padding:${8*scale}px;text-align:center;
                                 border:1px solid ${c.color}22;display:flex;flex-direction:column;
                                 align-items:center;justify-content:center;min-height:0">
-                        <div style="font-size:1.5em;font-weight:800;color:${c.color};line-height:1">${c.value}</div>
-                        <div style="font-size:9px;color:#6b7280;margin-top:3px">${c.label}</div>
+                        <div style="font-size:${1.4*scale}em;font-weight:800;color:${c.color};line-height:1">${c.value}</div>
+                        <div style="font-size:${9*scale}px;color:#6b7280;margin-top:${3*scale}px">${c.label}</div>
                     </div>`).join('') + '</div>';
         }
 
         case 'chart': {
             const d = CHART_DATA.tasksByStatus;
+            const baseW = 460, baseH = 300;
+            const scale = Math.min((widget.w||baseW)/baseW, (widget.h||baseH)/baseH);
             const bars = [
                 { label:'Todo',        value: d.todo,        color:'#6b7280' },
                 { label:'In Progress', value: d.in_progress, color:'#2563eb' },
@@ -1081,70 +1178,98 @@ function renderWidgetContent(widget) {
                 { label:'Cancelled',   value: d.cancelled,   color:'#dc2626' },
             ];
             const maxV = Math.max(...bars.map(b => b.value), 1);
-            return `<div style="height:100%;display:flex;flex-direction:column;padding:4px">
-                <div style="font-size:10px;font-weight:600;color:#374151;margin-bottom:6px">Tasks by Status</div>
-                <div style="flex:1;display:flex;align-items:flex-end;gap:5px;min-height:0">
+            return `<div style="padding:${8*scale}px;height:100%;display:flex;flex-direction:column">
+                <div style="font-size:${11*scale}px;font-weight:600;color:#374151;margin-bottom:${8*scale}px">Tasks by Status</div>
+                <div style="flex:1;display:flex;align-items:flex-end;gap:${6*scale}px;min-height:0">
                     ${bars.map(b => `
-                        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;height:100%;justify-content:flex-end">
-                            <span style="font-size:9px;font-weight:700;color:${b.color}">${b.value}</span>
-                            <div style="width:100%;background:${b.color};border-radius:3px 3px 0 0;
-                                        height:${Math.max(4,Math.round((b.value/maxV)*80))}%;opacity:.85"></div>
-                            <span style="font-size:7px;color:#9ca3af;text-align:center;line-height:1.1">${b.label}</span>
+                        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:${3*scale}px;height:100%;justify-content:flex-end">
+                            <span style="font-size:${10*scale}px;font-weight:600;color:${b.color}">${b.value}</span>
+                            <div style="width:100%;background:${b.color};border-radius:${4*scale}px ${4*scale}px 0 0;
+                                        height:${Math.max(4,Math.round((b.value/maxV)*80))}%;min-height:4px"></div>
+                            <span style="font-size:${8*scale}px;color:#9ca3af;text-align:center;line-height:1.2">${b.label}</span>
                         </div>`).join('')}
                 </div>
             </div>`;
         }
 
         case 'gantt': {
-            const tasks = (PROJECT_DATA.tasks || []).filter(t => t.start_date && t.due_date);
-            if (!tasks.length) return '<div style="padding:20px;color:#9ca3af;font-size:11px;text-align:center">No tasks with dates</div>';
-            const dates = tasks.flatMap(t => [new Date(t.start_date), new Date(t.due_date)]);
+            const tasks = PROJECT_DATA.tasks || [];
+            if (!tasks.length) return '<div style="padding:16px;color:#9ca3af;font-size:12px;text-align:center">No tasks</div>';
+
+            const dates = tasks.flatMap(t => [t.start_date, t.due_date]).filter(Boolean).map(d => new Date(d));
             const minD = new Date(Math.min(...dates));
             const maxD = new Date(Math.max(...dates));
             const totalMs = Math.max(maxD - minD, 86400000);
-            const lW = 130, rowH = 26, hdrH = 22;
+
+            const statusColor = { todo:'#6b7280', in_progress:'#2563eb', review:'#d97706', done:'#16a34a', cancelled:'#dc2626' };
+            const statusLabel = { todo:'รอดำเนินการ', in_progress:'กำลังทำ', review:'รีวิว', done:'เสร็จแล้ว', cancelled:'ยกเลิก' };
+
+            const baseW = 800, baseH = 260;
+            const scaleX = (widget.w || baseW) / baseW;
+            const scaleY = (widget.h || baseH) / baseH;
+            const fontScale = Math.min(scaleX, scaleY);
+
+            const colName = 130 * scaleX, colDate = 50 * scaleX, colPct = 50 * scaleX, colStatus = 60 * scaleX;
+            const labelW = colName + colDate * 2 + colPct + colStatus;
+            const rowH = 26 * scaleY, hdrH = 22 * scaleY;
+            const fontBase = 10 * fontScale;
+            const totalW = (widget.w || baseW);
+            const chartW = Math.max(totalW - labelW, 100);
             const svgH = hdrH + tasks.length * rowH;
-            const chartW = 700 - lW;
-            const sc = { todo:'#6b7280',in_progress:'#2563eb',review:'#d97706',done:'#16a34a',cancelled:'#dc2626' };
-            let s = `<svg width="100%" height="${svgH}" viewBox="0 0 700 ${svgH}" xmlns="http://www.w3.org/2000/svg"
-                          preserveAspectRatio="none" style="font-family:sans-serif;display:block">`;
-            s += `<rect width="700" height="${svgH}" fill="#f8fafc" rx="2"/>`;
-            s += `<rect width="700" height="${hdrH}" fill="#e2e8f0"/>`;
-            const cur = new Date(minD.getFullYear(), minD.getMonth(), 1);
-            while (cur <= maxD) {
-                const x = lW + (cur - minD) / totalMs * chartW;
-                s += `<line x1="${x}" y1="${hdrH}" x2="${x}" y2="${svgH}" stroke="#e2e8f0" stroke-width="1"/>`;
-                s += `<text x="${x+3}" y="16" font-size="8" fill="#64748b">${cur.toLocaleString('default',{month:'short'})} ${cur.getFullYear()}</text>`;
-                cur.setMonth(cur.getMonth() + 1);
-            }
-            s += `<line x1="${lW}" y1="0" x2="${lW}" y2="${svgH}" stroke="#cbd5e1" stroke-width="1"/>`;
+
+            let svg = `<svg width="100%" height="100%" viewBox="0 0 ${totalW} ${svgH}"
+                            preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"
+                            style="font-family:sans-serif;display:block">`;
+
+            svg += `<rect x="0" y="0" width="${labelW}" height="${hdrH}" fill="#f3f4f6"/>`;
+            svg += `<text x="6" y="${hdrH*0.72}" font-size="${fontBase*0.9}" fill="#6b7280" font-weight="600">งาน</text>`;
+            svg += `<text x="${colName+4}" y="${hdrH*0.72}" font-size="${fontBase*0.9}" fill="#6b7280" font-weight="600">เริ่ม</text>`;
+            svg += `<text x="${colName+colDate+4}" y="${hdrH*0.72}" font-size="${fontBase*0.9}" fill="#6b7280" font-weight="600">สิ้นสุด</text>`;
+            svg += `<text x="${colName+colDate*2+4}" y="${hdrH*0.72}" font-size="${fontBase*0.9}" fill="#6b7280" font-weight="600">%</text>`;
+            svg += `<text x="${colName+colDate*2+colPct+4}" y="${hdrH*0.72}" font-size="${fontBase*0.9}" fill="#6b7280" font-weight="600">สถานะ</text>`;
+            svg += `<line x1="${labelW}" y1="0" x2="${labelW}" y2="${svgH}" stroke="#e2e8f0" stroke-width="1"/>`;
+
             tasks.forEach((t, i) => {
                 const y = hdrH + i * rowH;
-                const color = sc[t.status] || '#6366f1';
-                s += `<rect x="0" y="${y}" width="${lW}" height="${rowH}" fill="${i%2?'#f9fafb':'white'}"/>`;
-                const lbl = t.title.length > 18 ? t.title.slice(0,17)+'…' : t.title;
-                s += `<text x="5" y="${y+rowH/2+3}" font-size="8" fill="#374151">${lbl}</text>`;
-                const bx = lW + (new Date(t.start_date) - minD) / totalMs * chartW;
-                const bw = Math.max(4, (new Date(t.due_date) - new Date(t.start_date)) / totalMs * chartW);
-                s += `<rect x="${bx}" y="${y+4}" width="${bw}" height="${rowH-8}" rx="3" fill="${color}" opacity=".7"/>`;
-                if (t.progress_pct > 0)
-                    s += `<rect x="${bx}" y="${y+4}" width="${bw*t.progress_pct/100}" height="${rowH-8}" rx="3" fill="${color}"/>`;
+                const color = statusColor[t.status] || '#6366f1';
+                const rowBg = i % 2 ? '#f9fafb' : 'white';
+
+                svg += `<rect x="0" y="${y}" width="${labelW}" height="${rowH}" fill="${rowBg}"/>`;
+                const maxChars = Math.round(16 / Math.max(fontScale, 0.5));
+                const title = (t.title||'').substring(0, maxChars);
+                svg += `<text x="6" y="${y+rowH*0.65}" font-size="${fontBase}" fill="#374151">${title}</text>`;
+                svg += `<text x="${colName+4}" y="${y+rowH*0.65}" font-size="${fontBase*0.85}" fill="#6b7280">${formatGanttDate(t.start_date)}</text>`;
+                svg += `<text x="${colName+colDate+4}" y="${y+rowH*0.65}" font-size="${fontBase*0.85}" fill="#6b7280">${formatGanttDate(t.due_date)}</text>`;
+                svg += `<text x="${colName+colDate*2+4}" y="${y+rowH*0.65}" font-size="${fontBase*0.85}" fill="${color}" font-weight="600">${t.progress_pct ?? 0}%</text>`;
+                svg += `<text x="${colName+colDate*2+colPct+4}" y="${y+rowH*0.65}" font-size="${fontBase*0.8}" fill="${color}">${statusLabel[t.status] || t.status || ''}</text>`;
+
+                if (t.start_date && t.due_date) {
+                    const bx = labelW + (new Date(t.start_date) - minD) / totalMs * chartW;
+                    const bw = Math.max(4, (new Date(t.due_date) - new Date(t.start_date)) / totalMs * chartW);
+                    const barH = rowH - 8 * scaleY;
+                    svg += `<rect x="${bx}" y="${y+4*scaleY}" width="${bw}" height="${barH}" rx="${3*scaleX}" fill="${color}" opacity=".35"/>`;
+                    if (t.progress_pct > 0)
+                        svg += `<rect x="${bx}" y="${y+4*scaleY}" width="${bw*t.progress_pct/100}" height="${barH}" rx="${3*scaleX}" fill="${color}"/>`;
+                }
             });
-            s += '</svg>';
-            return s;
+
+            svg += '</svg>';
+            return svg;
         }
 
         case 'milestone': {
             const ms = PROJECT_DATA.milestones || [];
             if (!ms.length) return '<div style="padding:20px;color:#9ca3af;font-size:11px;text-align:center">No milestones</div>';
-            return `<div style="height:100%;overflow:auto">
-                <div style="font-size:10px;font-weight:700;color:#374151;margin-bottom:8px;padding:2px 0">🎯 Milestones</div>
+            const baseW = 380, baseH = 240;
+            const scale = Math.min((widget.w||baseW)/baseW, (widget.h||baseH)/baseH);
+            return `<div style="height:100%;overflow:auto;padding:${4*scale}px">
+                <div style="font-size:${10*scale}px;font-weight:700;color:#374151;margin-bottom:${8*scale}px">🎯 Milestones</div>
                 ${ms.map(m => `
-                    <div style="display:flex;align-items:center;gap:7px;padding:5px 0;
-                                border-bottom:1px solid #f1f5f9;font-size:11px">
-                        <span>${m.is_completed ? '✅' : '⭕'}</span>
-                        <span style="flex:1;color:#1e293b">${m.name}</span>
-                        <span style="color:#94a3b8;font-size:9px;white-space:nowrap">${m.due_date||''}</span>
+                    <div style="display:flex;align-items:center;gap:${7*scale}px;padding:${5*scale}px 0;
+                                border-bottom:1px solid #f1f5f9">
+                        <span style="font-size:${12*scale}px">${m.is_completed ? '✅' : '⭕'}</span>
+                        <span style="flex:1;color:#1e293b;font-size:${11*scale}px">${m.name}</span>
+                        <span style="color:#94a3b8;font-size:${9*scale}px;white-space:nowrap">${m.due_date||''}</span>
                     </div>`).join('')}
             </div>`;
         }
@@ -1152,21 +1277,23 @@ function renderWidgetContent(widget) {
         case 'team': {
             const members = PROJECT_DATA.members || [];
             if (!members.length) return '<div style="padding:20px;color:#9ca3af;font-size:11px;text-align:center">No members</div>';
+            const baseW = 420, baseH = 260;
+            const scale = Math.min((widget.w||baseW)/baseW, (widget.h||baseH)/baseH);
             const colors = ['#4f46e5','#0891b2','#16a34a','#d97706','#dc2626','#7c3aed'];
-            return `<div style="height:100%;overflow:auto">
-                <div style="font-size:10px;font-weight:700;color:#374151;margin-bottom:8px;padding:2px 0">👥 Team Members</div>
+            return `<div style="height:100%;overflow:auto;padding:${4*scale}px">
+                <div style="font-size:${10*scale}px;font-weight:700;color:#374151;margin-bottom:${8*scale}px">👥 Team Members</div>
                 ${members.map((m,i) => `
-                    <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f1f5f9">
-                        <div style="width:26px;height:26px;border-radius:50%;background:${colors[i%colors.length]};
+                    <div style="display:flex;align-items:center;gap:${8*scale}px;padding:${5*scale}px 0;border-bottom:1px solid #f1f5f9">
+                        <div style="width:${26*scale}px;height:${26*scale}px;border-radius:50%;background:${colors[i%colors.length]};
                                     display:flex;align-items:center;justify-content:center;
-                                    color:white;font-size:10px;font-weight:700;flex-shrink:0">
+                                    color:white;font-size:${10*scale}px;font-weight:700;flex-shrink:0">
                             ${(m.name||'?')[0].toUpperCase()}
                         </div>
                         <div style="flex:1;min-width:0">
-                            <div style="font-size:11px;font-weight:500;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name}</div>
-                            <div style="font-size:9px;color:#94a3b8">${m.role}</div>
+                            <div style="font-size:${11*scale}px;font-weight:500;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name}</div>
+                            <div style="font-size:${9*scale}px;color:#94a3b8">${m.role}</div>
                         </div>
-                        <span style="font-size:9px;color:#64748b;white-space:nowrap">${m.tasks_count} tasks</span>
+                        <span style="font-size:${9*scale}px;color:#64748b;white-space:nowrap">${m.tasks_count} tasks</span>
                     </div>`).join('')}
             </div>`;
         }
@@ -1178,13 +1305,15 @@ function renderWidgetContent(widget) {
                 <div style="font-size:28px">✅</div>
                 <div style="font-size:11px;color:#16a34a;font-weight:600">No active blockers</div>
             </div>`;
-            return `<div style="height:100%;overflow:auto">
-                <div style="font-size:10px;font-weight:700;color:#dc2626;margin-bottom:8px;padding:2px 0">🚨 Active Blockers</div>
+            const baseW = 400, baseH = 220;
+            const scale = Math.min((widget.w||baseW)/baseW, (widget.h||baseH)/baseH);
+            return `<div style="height:100%;overflow:auto;padding:${4*scale}px">
+                <div style="font-size:${10*scale}px;font-weight:700;color:#dc2626;margin-bottom:${8*scale}px">🚨 Active Blockers</div>
                 ${bl.map(b => `
-                    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:5px;padding:7px;margin-bottom:5px">
-                        <div style="font-size:10px;font-weight:600;color:#dc2626">${b.task_title}</div>
-                        <div style="font-size:9px;color:#6b7280;margin-top:2px">${b.description||''}</div>
-                        <div style="font-size:9px;color:#9ca3af;margin-top:2px">by ${b.reporter}</div>
+                    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:${5*scale}px;padding:${7*scale}px;margin-bottom:${5*scale}px">
+                        <div style="font-size:${10*scale}px;font-weight:600;color:#dc2626">${b.task_title}</div>
+                        <div style="font-size:${9*scale}px;color:#6b7280;margin-top:2px">${b.description||''}</div>
+                        <div style="font-size:${9*scale}px;color:#9ca3af;margin-top:2px">by ${b.reporter}</div>
                     </div>`).join('')}
             </div>`;
         }
