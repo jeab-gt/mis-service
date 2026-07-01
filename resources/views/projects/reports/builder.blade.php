@@ -1147,18 +1147,19 @@ function createConnectorEl(widget) {
         z-index:${isSelected ? 10 : 1};
     `;
 
-    // Compute midpoint handle position in local SVG coords
-    const vertDom = Math.abs(ly2 - ly1) >= Math.abs(lx2 - lx1);
-    let mhx, mhy;
-    if (vertDom) {
-        mhx = (lx1 + lx2) / 2;
-        mhy = (ly1 + ly2) / 2 + midOffset;
-    } else {
-        mhx = (lx1 + lx2) / 2 + midOffset;
-        mhy = (ly1 + ly2) / 2;
-    }
     const ep1Anchored = !!widget.startAnchor;
     const ep2Anchored = !!widget.endAnchor;
+
+    // Segment hit lines (elbow only) — thick transparent SVG lines with drag cursors
+    const segs = lineType === 'elbow'
+        ? getElbowSegments(lx1, ly1, lx2, ly2, midOffset)
+        : [];
+    const segHitPaths = segs.map((seg, i) =>
+        `<line x1="${seg.x1}" y1="${seg.y1}" x2="${seg.x2}" y2="${seg.y2}"
+               stroke="transparent" stroke-width="16" stroke-linecap="round"
+               style="cursor:${seg.dir === 'h' ? 'ns-resize' : 'ew-resize'};pointer-events:stroke"
+               class="c-seg-${i}"/>`
+    ).join('');
 
     el.innerHTML = `
         <svg width="${svgW}" height="${svgH}"
@@ -1178,18 +1179,13 @@ function createConnectorEl(widget) {
                   ${markerStart} ${markerEnd}
                   style="${s.shadow ? 'filter:drop-shadow(0 2px 4px rgba(0,0,0,.3))' : ''}"/>
 
+            ${segHitPaths}
+
             <path d="${pathD}" fill="none"
-                  stroke="transparent" stroke-width="16"
+                  stroke="transparent" stroke-width="8"
                   stroke-linecap="round" stroke-linejoin="round"
                   style="cursor:move;pointer-events:stroke"
                   class="c-hit"/>
-
-            ${lineType === 'elbow' ? `
-            <rect x="${mhx - 6}" y="${mhy - 6}" width="12" height="12" rx="2"
-                  fill="#f59e0b" stroke="white" stroke-width="2"
-                  style="cursor:${vertDom ? 'ns-resize' : 'ew-resize'};pointer-events:all"
-                  class="c-mid"/>
-            ` : ''}
 
             ${isSelected ? `
             <circle cx="${lx1}" cy="${ly1}" r="7"
@@ -1205,6 +1201,31 @@ function createConnectorEl(widget) {
             ` : ''}
         </svg>
     `;
+
+    // ── Segment drag: each thick transparent line adjusts midOffset ──
+    segs.forEach((seg, i) => {
+        const segEl = el.querySelector(`.c-seg-${i}`);
+        if (!segEl) return;
+        const isH = seg.dir === 'h';
+        segEl.addEventListener('mousedown', (e) => {
+            if (e.button === 2) return;
+            e.preventDefault(); e.stopPropagation();
+            selectWidget(widget.id); renderSettingsPanel();
+            const orig = widget.midOffset ?? 0;
+            const startC = isH ? e.clientY : e.clientX;
+            let raf = null;
+            const onMove = (e) => {
+                if (raf) cancelAnimationFrame(raf);
+                raf = requestAnimationFrame(() => {
+                    widget.midOffset = orig + (isH ? e.clientY : e.clientX) - startC;
+                    updateConnectorEl(widget.id);
+                });
+            };
+            const onUp = () => { if (raf) cancelAnimationFrame(raf); document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        });
+    });
 
     // ── Hit path: select + drag whole connector ──
     const hitPathEl = el.querySelector('.c-hit');
@@ -1236,28 +1257,6 @@ function createConnectorEl(widget) {
             e.preventDefault(); e.stopPropagation();
             selectWidget(widget.id); renderSettingsPanel();
             showContextMenu(e.clientX, e.clientY);
-        });
-    }
-
-    // ── Mid handle: drag midOffset ──
-    const midEl = el.querySelector('.c-mid');
-    if (midEl) {
-        midEl.addEventListener('mousedown', (e) => {
-            e.preventDefault(); e.stopPropagation();
-            selectWidget(widget.id); renderSettingsPanel();
-            const orig = widget.midOffset ?? 0;
-            const sx = e.clientX, sy = e.clientY;
-            let raf = null;
-            const onMove = (e) => {
-                if (raf) cancelAnimationFrame(raf);
-                raf = requestAnimationFrame(() => {
-                    widget.midOffset = orig + (vertDom ? e.clientY - sy : e.clientX - sx);
-                    updateConnectorEl(widget.id);
-                });
-            };
-            const onUp = () => { if (raf) cancelAnimationFrame(raf); document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
-            document.addEventListener('mousemove', onMove);
-            document.addEventListener('mouseup', onUp);
         });
     }
 
