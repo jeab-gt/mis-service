@@ -1163,7 +1163,7 @@ function createConnectorEl(widget) {
 
     el.innerHTML = `
         <svg width="${svgW}" height="${svgH}"
-             style="overflow:visible;position:absolute;top:0;left:0;pointer-events:none">
+             style="overflow:visible;position:absolute;top:0;left:0">
             <defs>
                 <marker id="${markerId}" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
                     <polygon points="0,0 0,6 8,3" fill="${color}"/>
@@ -1177,7 +1177,7 @@ function createConnectorEl(widget) {
                   stroke="${color}" stroke-width="${strokeW}"
                   stroke-linejoin="round" stroke-linecap="round" ${dashArr}
                   ${markerStart} ${markerEnd}
-                  style="${s.shadow ? 'filter:drop-shadow(0 2px 4px rgba(0,0,0,.3))' : ''}"/>
+                  style="pointer-events:none;${s.shadow ? 'filter:drop-shadow(0 2px 4px rgba(0,0,0,.3))' : ''}"/>
 
             ${segHitPaths}
 
