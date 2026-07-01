@@ -1137,8 +1137,8 @@ function createConnectorEl(widget) {
         </svg>
     `;
 
-    // Segment hit areas — only the middle (draggable) segment, only when selected
-    if (lineType === 'elbow' && isSelected) {
+    // Segment hit areas — always present so drag works on first click
+    if (lineType === 'elbow') {
         const segs = getElbowSegments(lx1, ly1, lx2, ly2, midRatio);
         const midSeg = segs[1]; // index 1 is always the draggable middle segment
         if (midSeg) {
@@ -1176,6 +1176,8 @@ function createConnectorEl(widget) {
                     if (e.button === 2) return;
                     e.preventDefault();
                     e.stopPropagation();
+                    selectWidget(widget.id);
+                    renderSettingsPanel();
 
                     const { sx: p1x, sy: p1y, ex: p2x, ey: p2y } = resolveConnectorPoints(widget);
                     const totalDist = isH ? Math.abs(p2y - p1y) : Math.abs(p2x - p1x);
@@ -1263,8 +1265,8 @@ function createConnectorEl(widget) {
         showContextMenu(e.clientX, e.clientY);
     });
 
-    // Midpoint handle — yellow square, drag to adjust midRatio (elbow only, when selected)
-    if (isSelected && lineType === 'elbow') {
+    // Midpoint handle — yellow square, drag to adjust midRatio (elbow only, always shown)
+    if (lineType === 'elbow') {
         const { sx: rx1, sy: ry1, ex: rx2, ey: ry2 } = resolveConnectorPoints(widget);
         const rdx = rx2 - rx1, rdy = ry2 - ry1;
         const vertDom = Math.abs(rdy) > Math.abs(rdx);
@@ -1295,6 +1297,8 @@ function createConnectorEl(widget) {
         midHandle.addEventListener('mousedown', (e) => {
             e.preventDefault();
             e.stopPropagation();
+            selectWidget(widget.id);
+            renderSettingsPanel();
             const { sx: p1x, sy: p1y, ex: p2x, ey: p2y } = resolveConnectorPoints(widget);
             const totalDist = vertDom ? Math.abs(p2y - p1y) : Math.abs(p2x - p1x);
             const origRatio = widget.midRatio ?? 0.5;
