@@ -527,6 +527,7 @@ function insertConnector() {
         endX:   300, endY:   240,
         startAnchor: null,
         endAnchor:   null,
+        midOverride: null,
         x: 80, y: 120, w: 220, h: 120,
         rotation: 0,
         style: {
@@ -956,6 +957,7 @@ function updateConnectedConnectors(movedWidgetId) {
             const pt = getAnchorPoint(w.endAnchor.widgetId, w.endAnchor.side);
             if (pt) { w.endX = pt.x; w.endY = pt.y; }
         }
+        w.midOverride = null;
         w.x = Math.min(w.startX, w.endX);
         w.y = Math.min(w.startY, w.endY);
         w.w = Math.abs(w.endX - w.startX);
@@ -964,7 +966,7 @@ function updateConnectedConnectors(movedWidgetId) {
     });
 }
 
-function buildConnectorPath(lx1, ly1, lx2, ly2, lineType) {
+function buildConnectorPath(lx1, ly1, lx2, ly2, lineType, localMid) {
     switch (lineType) {
         case 'straight':
             return `M ${lx1} ${ly1} L ${lx2} ${ly2}`;
@@ -980,6 +982,10 @@ function buildConnectorPath(lx1, ly1, lx2, ly2, lineType) {
         }
         case 'elbow':
         default: {
+            if (localMid) {
+                const mx = localMid.x, my = localMid.y;
+                return `M ${lx1} ${ly1} L ${mx} ${ly1} L ${mx} ${my} L ${lx2} ${ly2}`;
+            }
             const dx = Math.abs(lx2 - lx1), dy = Math.abs(ly2 - ly1);
             return dy >= dx
                 ? `M ${lx1} ${ly1} L ${lx1} ${ly2} L ${lx2} ${ly2}`
@@ -988,19 +994,34 @@ function buildConnectorPath(lx1, ly1, lx2, ly2, lineType) {
     }
 }
 
-function getConnectorSegments(lx1, ly1, lx2, ly2, lineType) {
+function getElbowSegments(lx1, ly1, lx2, ly2, localMid) {
+    if (localMid) {
+        const mx = localMid.x, my = localMid.y;
+        return [
+            { x1: lx1, y1: ly1, x2: mx,  y2: ly1, dir: 'h' },
+            { x1: mx,  y1: ly1, x2: mx,  y2: my,  dir: 'v' },
+            { x1: mx,  y1: my,  x2: lx2, y2: ly2, dir: Math.abs(lx2 - mx) >= Math.abs(ly2 - my) ? 'h' : 'v' },
+        ].filter(seg => Math.hypot(seg.x2 - seg.x1, seg.y2 - seg.y1) > 2);
+    }
     const dx = Math.abs(lx2 - lx1), dy = Math.abs(ly2 - ly1);
+    if (dy >= dx) {
+        return [
+            { x1: lx1, y1: ly1, x2: lx1, y2: ly2, dir: 'v' },
+            { x1: lx1, y1: ly2, x2: lx2, y2: ly2, dir: 'h' },
+        ];
+    } else {
+        return [
+            { x1: lx1, y1: ly1, x2: lx2, y2: ly1, dir: 'h' },
+            { x1: lx2, y1: ly1, x2: lx2, y2: ly2, dir: 'v' },
+        ];
+    }
+}
+
+function getConnectorSegments(lx1, ly1, lx2, ly2, lineType, localMid) {
     if (lineType === 'straight') {
         return [{ x1: lx1, y1: ly1, x2: lx2, y2: ly2 }];
-    } else {
-        if (dy >= dx) {
-            return [{ x1: lx1, y1: ly1, x2: lx1, y2: ly2 },
-                    { x1: lx1, y1: ly2, x2: lx2, y2: ly2 }];
-        } else {
-            return [{ x1: lx1, y1: ly1, x2: lx2, y2: ly1 },
-                    { x1: lx2, y1: ly1, x2: lx2, y2: ly2 }];
-        }
     }
+    return getElbowSegments(lx1, ly1, lx2, ly2, localMid);
 }
 
 function segmentIntersection(s1, s2) {
@@ -1020,13 +1041,16 @@ function buildPathWithJumps(connectorWidget, lx1, ly1, lx2, ly2, svgOffX, svgOff
     const s = connectorWidget.style || {};
     const lineType = s.lineType || 'elbow';
     const lineJump = s.lineJump || false;
+    const localMid = connectorWidget.midOverride && lineType === 'elbow'
+        ? { x: connectorWidget.midOverride.x - svgOffX, y: connectorWidget.midOverride.y - svgOffY }
+        : null;
 
     if (!lineJump || lineType === 'curved') {
-        return buildConnectorPath(lx1, ly1, lx2, ly2, lineType);
+        return buildConnectorPath(lx1, ly1, lx2, ly2, lineType, localMid);
     }
 
     const JUMP_R = 8;
-    const segments = getConnectorSegments(lx1, ly1, lx2, ly2, lineType);
+    const segments = getConnectorSegments(lx1, ly1, lx2, ly2, lineType, localMid);
     const jumpPoints = [];
 
     widgets.forEach(other => {
@@ -1035,7 +1059,10 @@ function buildPathWithJumps(connectorWidget, lx1, ly1, lx2, ly2, svgOffX, svgOff
         const otherLx1 = ox1 - svgOffX, otherLy1 = oy1 - svgOffY;
         const otherLx2 = ox2 - svgOffX, otherLy2 = oy2 - svgOffY;
         const otherType = other.style?.lineType || 'elbow';
-        const otherSegs = getConnectorSegments(otherLx1, otherLy1, otherLx2, otherLy2, otherType);
+        const otherLocalMid = other.midOverride && otherType === 'elbow'
+            ? { x: other.midOverride.x - svgOffX, y: other.midOverride.y - svgOffY }
+            : null;
+        const otherSegs = getConnectorSegments(otherLx1, otherLy1, otherLx2, otherLy2, otherType, otherLocalMid);
 
         segments.forEach((seg, si) => {
             otherSegs.forEach(otherSeg => {
@@ -1045,7 +1072,7 @@ function buildPathWithJumps(connectorWidget, lx1, ly1, lx2, ly2, svgOffX, svgOff
         });
     });
 
-    if (!jumpPoints.length) return buildConnectorPath(lx1, ly1, lx2, ly2, lineType);
+    if (!jumpPoints.length) return buildConnectorPath(lx1, ly1, lx2, ly2, lineType, localMid);
 
     let path = '';
     segments.forEach((seg, si) => {
@@ -1069,16 +1096,28 @@ function buildPathWithJumps(connectorWidget, lx1, ly1, lx2, ly2, svgOffX, svgOff
 
 function createConnectorEl(widget) {
     const { sx: x1, sy: y1, ex: x2, ey: y2 } = resolveConnectorPoints(widget);
-    const minX = Math.min(x1, x2) - 10;
-    const minY = Math.min(y1, y2) - 10;
-    const maxX = Math.max(x1, x2) + 10;
-    const maxY = Math.max(y1, y2) + 10;
-    const svgW = maxX - minX;
-    const svgH = maxY - minY;
+    const s = widget.style || {};
+    const lineType = s.lineType || 'elbow';
+
+    // Expand bounding box to include midOverride point so hit areas stay inside the div
+    let bMinX = Math.min(x1, x2) - 10;
+    let bMinY = Math.min(y1, y2) - 10;
+    let bMaxX = Math.max(x1, x2) + 10;
+    let bMaxY = Math.max(y1, y2) + 10;
+    if (widget.midOverride && lineType === 'elbow') {
+        bMinX = Math.min(bMinX, widget.midOverride.x - 10);
+        bMinY = Math.min(bMinY, widget.midOverride.y - 10);
+        bMaxX = Math.max(bMaxX, widget.midOverride.x + 10);
+        bMaxY = Math.max(bMaxY, widget.midOverride.y + 10);
+    }
+    const minX = bMinX, minY = bMinY;
+    const svgW = bMaxX - bMinX, svgH = bMaxY - bMinY;
     const lx1 = x1 - minX, ly1 = y1 - minY;
     const lx2 = x2 - minX, ly2 = y2 - minY;
+    const localMid = widget.midOverride && lineType === 'elbow'
+        ? { x: widget.midOverride.x - minX, y: widget.midOverride.y - minY }
+        : null;
 
-    const s = widget.style || {};
     const color = s.color || '#374151';
     const strokeW = s.strokeWidth || 2;
     const dashArr = s.lineStyle === 'dashed' ? 'stroke-dasharray="6,3"' : '';
@@ -1116,12 +1155,98 @@ function createConnectorEl(widget) {
         </svg>
     `;
 
-    // Transparent click overlay — reliable across all lineTypes
+    // Segment hit areas for elbow connectors (z-index:6, above clickOverlay:4)
+    if (lineType === 'elbow') {
+        const segs = getElbowSegments(lx1, ly1, lx2, ly2, localMid);
+        segs.forEach(seg => {
+            const isH = seg.dir === 'h';
+            const segLen = Math.hypot(seg.x2 - seg.x1, seg.y2 - seg.y1);
+            if (segLen < 4) return;
+
+            const HIT = 10; // half-thickness of hit zone
+            const hitDiv = document.createElement('div');
+            if (isH) {
+                hitDiv.style.cssText = `
+                    position:absolute;
+                    left:${Math.min(seg.x1, seg.x2)}px;
+                    top:${seg.y1 - HIT}px;
+                    width:${Math.abs(seg.x2 - seg.x1)}px;
+                    height:${HIT * 2}px;
+                    cursor:ns-resize; pointer-events:all;
+                    background:transparent; z-index:6;
+                `;
+            } else {
+                hitDiv.style.cssText = `
+                    position:absolute;
+                    left:${seg.x1 - HIT}px;
+                    top:${Math.min(seg.y1, seg.y2)}px;
+                    width:${HIT * 2}px;
+                    height:${Math.abs(seg.y2 - seg.y1)}px;
+                    cursor:ew-resize; pointer-events:all;
+                    background:transparent; z-index:6;
+                `;
+            }
+
+            // Hover highlight
+            hitDiv.addEventListener('mouseenter', () => {
+                hitDiv.style.background = 'rgba(59,130,246,0.15)';
+            });
+            hitDiv.addEventListener('mouseleave', () => {
+                hitDiv.style.background = 'transparent';
+            });
+
+            hitDiv.addEventListener('mousedown', (e) => {
+                if (e.button === 2) return;
+                e.preventDefault();
+                e.stopPropagation();
+                selectWidget(widget.id);
+                renderSettingsPanel();
+
+                // Compute midOverride start in canvas coords
+                let origMidX, origMidY;
+                if (widget.midOverride) {
+                    origMidX = widget.midOverride.x;
+                    origMidY = widget.midOverride.y;
+                } else {
+                    const ddx = Math.abs(lx2 - lx1), ddy = Math.abs(ly2 - ly1);
+                    if (ddy >= ddx) { origMidX = lx1 + minX; origMidY = ly2 + minY; }
+                    else            { origMidX = lx2 + minX; origMidY = ly1 + minY; }
+                }
+
+                const startCX = e.clientX, startCY = e.clientY;
+                let rafId = null;
+                const onMove = (e) => {
+                    const dx = e.clientX - startCX;
+                    const dy = e.clientY - startCY;
+                    if (rafId) cancelAnimationFrame(rafId);
+                    rafId = requestAnimationFrame(() => {
+                        if (isH) {
+                            widget.midOverride = { x: origMidX, y: origMidY + dy };
+                        } else {
+                            widget.midOverride = { x: origMidX + dx, y: origMidY };
+                        }
+                        updateConnectorEl(widget.id);
+                    });
+                };
+                const onUp = () => {
+                    if (rafId) cancelAnimationFrame(rafId);
+                    document.removeEventListener('mousemove', onMove);
+                    document.removeEventListener('mouseup', onUp);
+                };
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onUp);
+            });
+
+            el.appendChild(hitDiv);
+        });
+    }
+
+    // Transparent click overlay — reliable across all lineTypes (z-index:4, below segment hit areas)
     const clickOverlay = document.createElement('div');
     clickOverlay.style.cssText = `
         position:absolute; inset:-8px;
         cursor:pointer; pointer-events:all;
-        background:transparent; z-index:5;
+        background:transparent; z-index:4;
     `;
     clickOverlay.addEventListener('mousedown', (e) => {
         if (e.button === 2) return;
@@ -1133,6 +1258,7 @@ function createConnectorEl(widget) {
         const startClientX = e.clientX, startClientY = e.clientY;
         const origStartX = widget.startX, origStartY = widget.startY;
         const origEndX = widget.endX, origEndY = widget.endY;
+        const origMid = widget.midOverride ? { ...widget.midOverride } : null;
         let rafId = null;
         const onMove = (e) => {
             const ddx = e.clientX - startClientX;
@@ -1141,6 +1267,7 @@ function createConnectorEl(widget) {
             rafId = requestAnimationFrame(() => {
                 if (!widget.startAnchor) { widget.startX = origStartX + ddx; widget.startY = origStartY + ddy; }
                 if (!widget.endAnchor)   { widget.endX   = origEndX   + ddx; widget.endY   = origEndY   + ddy; }
+                if (origMid) widget.midOverride = { x: origMid.x + ddx, y: origMid.y + ddy };
                 widget.x = Math.min(widget.startX, widget.endX);
                 widget.y = Math.min(widget.startY, widget.endY);
                 updateConnectorEl(widget.id);
