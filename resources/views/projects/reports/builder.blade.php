@@ -534,6 +534,8 @@ function insertConnector() {
             strokeWidth: 2,
             arrowHead: 'end',
             lineStyle: 'solid',
+            lineType: 'elbow',
+            lineJump: false,
             shadow: false,
         },
     };
@@ -962,6 +964,109 @@ function updateConnectedConnectors(movedWidgetId) {
     });
 }
 
+function buildConnectorPath(lx1, ly1, lx2, ly2, lineType) {
+    switch (lineType) {
+        case 'straight':
+            return `M ${lx1} ${ly1} L ${lx2} ${ly2}`;
+        case 'curved': {
+            const absDx = Math.abs(lx2 - lx1), absDy = Math.abs(ly2 - ly1);
+            if (absDx >= absDy) {
+                const off = Math.max(absDx * 0.5, 40);
+                return `M ${lx1} ${ly1} C ${lx1+off} ${ly1}, ${lx2-off} ${ly2}, ${lx2} ${ly2}`;
+            } else {
+                const off = Math.max(absDy * 0.5, 40);
+                return `M ${lx1} ${ly1} C ${lx1} ${ly1+off}, ${lx2} ${ly2-off}, ${lx2} ${ly2}`;
+            }
+        }
+        case 'elbow':
+        default: {
+            const dx = Math.abs(lx2 - lx1), dy = Math.abs(ly2 - ly1);
+            return dy >= dx
+                ? `M ${lx1} ${ly1} L ${lx1} ${ly2} L ${lx2} ${ly2}`
+                : `M ${lx1} ${ly1} L ${lx2} ${ly1} L ${lx2} ${ly2}`;
+        }
+    }
+}
+
+function getConnectorSegments(lx1, ly1, lx2, ly2, lineType) {
+    const dx = Math.abs(lx2 - lx1), dy = Math.abs(ly2 - ly1);
+    if (lineType === 'straight') {
+        return [{ x1: lx1, y1: ly1, x2: lx2, y2: ly2 }];
+    } else {
+        if (dy >= dx) {
+            return [{ x1: lx1, y1: ly1, x2: lx1, y2: ly2 },
+                    { x1: lx1, y1: ly2, x2: lx2, y2: ly2 }];
+        } else {
+            return [{ x1: lx1, y1: ly1, x2: lx2, y2: ly1 },
+                    { x1: lx2, y1: ly1, x2: lx2, y2: ly2 }];
+        }
+    }
+}
+
+function segmentIntersection(s1, s2) {
+    const dx1 = s1.x2-s1.x1, dy1 = s1.y2-s1.y1;
+    const dx2 = s2.x2-s2.x1, dy2 = s2.y2-s2.y1;
+    const denom = dx1*dy2 - dy1*dx2;
+    if (Math.abs(denom) < 0.001) return null;
+    const t1 = ((s2.x1-s1.x1)*dy2 - (s2.y1-s1.y1)*dx2) / denom;
+    const t2 = ((s2.x1-s1.x1)*dy1 - (s2.y1-s1.y1)*dx1) / denom;
+    if (t1 > 0.05 && t1 < 0.95 && t2 > 0.05 && t2 < 0.95) {
+        return { x: s1.x1 + t1*dx1, y: s1.y1 + t1*dy1, t1 };
+    }
+    return null;
+}
+
+function buildPathWithJumps(connectorWidget, lx1, ly1, lx2, ly2, svgOffX, svgOffY) {
+    const s = connectorWidget.style || {};
+    const lineType = s.lineType || 'elbow';
+    const lineJump = s.lineJump || false;
+
+    if (!lineJump || lineType === 'curved') {
+        return buildConnectorPath(lx1, ly1, lx2, ly2, lineType);
+    }
+
+    const JUMP_R = 8;
+    const segments = getConnectorSegments(lx1, ly1, lx2, ly2, lineType);
+    const jumpPoints = [];
+
+    widgets.forEach(other => {
+        if (other.id === connectorWidget.id || other.type !== 'connector') return;
+        const { sx: ox1, sy: oy1, ex: ox2, ey: oy2 } = resolveConnectorPoints(other);
+        const otherLx1 = ox1 - svgOffX, otherLy1 = oy1 - svgOffY;
+        const otherLx2 = ox2 - svgOffX, otherLy2 = oy2 - svgOffY;
+        const otherType = other.style?.lineType || 'elbow';
+        const otherSegs = getConnectorSegments(otherLx1, otherLy1, otherLx2, otherLy2, otherType);
+
+        segments.forEach((seg, si) => {
+            otherSegs.forEach(otherSeg => {
+                const pt = segmentIntersection(seg, otherSeg);
+                if (pt) jumpPoints.push({ t: pt.t1, segIdx: si, px: pt.x, py: pt.y });
+            });
+        });
+    });
+
+    if (!jumpPoints.length) return buildConnectorPath(lx1, ly1, lx2, ly2, lineType);
+
+    let path = '';
+    segments.forEach((seg, si) => {
+        const segJumps = jumpPoints.filter(j => j.segIdx === si).sort((a, b) => a.t - b.t);
+        const segLen = Math.hypot(seg.x2-seg.x1, seg.y2-seg.y1) || 1;
+        const ux = (seg.x2-seg.x1)/segLen, uy = (seg.y2-seg.y1)/segLen;
+
+        if (si === 0) path += `M ${seg.x1} ${seg.y1}`;
+
+        segJumps.forEach(j => {
+            const beforeX = j.px - ux * JUMP_R, beforeY = j.py - uy * JUMP_R;
+            const afterX  = j.px + ux * JUMP_R, afterY  = j.py + uy * JUMP_R;
+            path += ` L ${beforeX} ${beforeY} A ${JUMP_R} ${JUMP_R} 0 0 1 ${afterX} ${afterY}`;
+        });
+
+        path += ` L ${seg.x2} ${seg.y2}`;
+    });
+
+    return path;
+}
+
 function createConnectorEl(widget) {
     const { sx: x1, sy: y1, ex: x2, ey: y2 } = resolveConnectorPoints(widget);
     const minX = Math.min(x1, x2) - 10;
@@ -973,11 +1078,6 @@ function createConnectorEl(widget) {
     const lx1 = x1 - minX, ly1 = y1 - minY;
     const lx2 = x2 - minX, ly2 = y2 - minY;
 
-    const dx = Math.abs(lx2 - lx1), dy = Math.abs(ly2 - ly1);
-    const midPath = dy >= dx
-        ? `L ${lx1} ${ly2} L ${lx2} ${ly2}`
-        : `L ${lx2} ${ly1} L ${lx2} ${ly2}`;
-
     const s = widget.style || {};
     const color = s.color || '#374151';
     const strokeW = s.strokeWidth || 2;
@@ -986,6 +1086,7 @@ function createConnectorEl(widget) {
     const markerStart = s.arrowHead === 'both' ? `marker-start="url(#${markerId}-s)"` : '';
     const markerEnd   = s.arrowHead !== 'none' ? `marker-end="url(#${markerId})"` : '';
     const isSelected  = selectedWidgetId === widget.id;
+    const pathD = buildPathWithJumps(widget, lx1, ly1, lx2, ly2, minX, minY);
 
     const el = document.createElement('div');
     el.id = 'widget-' + widget.id;
@@ -1007,29 +1108,27 @@ function createConnectorEl(widget) {
                     <polygon points="0,0 0,6 8,3" fill="${color}"/>
                 </marker>
             </defs>
-            <path d="M ${lx1} ${ly1} ${midPath}" fill="none"
+            <path d="${pathD}" fill="none"
                   stroke="${color}" stroke-width="${strokeW}"
-                  stroke-linejoin="round" ${dashArr}
+                  stroke-linejoin="round" stroke-linecap="round" ${dashArr}
                   ${markerStart} ${markerEnd}
                   style="${s.shadow ? 'filter:drop-shadow(0 2px 4px rgba(0,0,0,.3))' : ''}"/>
         </svg>
     `;
 
-    // Wide transparent hit area for clicking/dragging the line
-    const hitArea = document.createElement('div');
-    hitArea.style.cssText = 'position:absolute;inset:0;pointer-events:none;';
-    hitArea.innerHTML = `
-        <svg width="${svgW}" height="${svgH}" style="overflow:visible;position:absolute;top:0;left:0">
-            <path d="M ${lx1} ${ly1} ${midPath}" fill="none"
-                  stroke="transparent" stroke-width="${Math.max(12, strokeW + 10)}"
-                  style="cursor:pointer;pointer-events:stroke"/>
-        </svg>
+    // Transparent click overlay — reliable across all lineTypes
+    const clickOverlay = document.createElement('div');
+    clickOverlay.style.cssText = `
+        position:absolute; inset:-8px;
+        cursor:pointer; pointer-events:all;
+        background:transparent; z-index:5;
     `;
-    hitArea.style.pointerEvents = 'all';
-    hitArea.querySelector('path').addEventListener('mousedown', (e) => {
+    clickOverlay.addEventListener('mousedown', (e) => {
         if (e.button === 2) return;
         e.preventDefault();
+        e.stopPropagation();
         selectWidget(widget.id);
+        renderSettingsPanel();
 
         const startClientX = e.clientX, startClientY = e.clientY;
         const origStartX = widget.startX, origStartY = widget.startY;
@@ -1040,8 +1139,8 @@ function createConnectorEl(widget) {
             const ddy = e.clientY - startClientY;
             if (rafId) cancelAnimationFrame(rafId);
             rafId = requestAnimationFrame(() => {
-                widget.startX = origStartX + ddx; widget.startY = origStartY + ddy;
-                widget.endX   = origEndX   + ddx; widget.endY   = origEndY   + ddy;
+                if (!widget.startAnchor) { widget.startX = origStartX + ddx; widget.startY = origStartY + ddy; }
+                if (!widget.endAnchor)   { widget.endX   = origEndX   + ddx; widget.endY   = origEndY   + ddy; }
                 widget.x = Math.min(widget.startX, widget.endX);
                 widget.y = Math.min(widget.startY, widget.endY);
                 updateConnectorEl(widget.id);
@@ -1055,14 +1154,14 @@ function createConnectorEl(widget) {
         document.addEventListener('mousemove', onMove);
         document.addEventListener('mouseup', onUp);
     });
-    hitArea.addEventListener('contextmenu', (e) => {
+    clickOverlay.addEventListener('contextmenu', (e) => {
         e.preventDefault();
         e.stopPropagation();
         selectWidget(widget.id);
         renderSettingsPanel();
         showContextMenu(e.clientX, e.clientY);
     });
-    el.appendChild(hitArea);
+    el.appendChild(clickOverlay);
 
     if (isSelected) {
         // Endpoint handles
@@ -1174,6 +1273,12 @@ function updateConnectorEl(id) {
     const old = document.getElementById('widget-' + id);
     if (!old) return;
     old.parentNode.replaceChild(createConnectorEl(widget), old);
+    // Re-render other connectors that have lineJump and may intersect this one
+    widgets.forEach(w => {
+        if (w.id === id || w.type !== 'connector' || !w.style?.lineJump) return;
+        const el = document.getElementById('widget-' + w.id);
+        if (el) el.parentNode.replaceChild(createConnectorEl(w), el);
+    });
 }
 
 function deselectCurrent() {
@@ -1797,9 +1902,50 @@ function renderSettingsPanel() {
 
     if (isConnector) {
         const s = widget.style || {};
+        const lt = s.lineType || 'elbow';
         panel.style.display = 'block';
         panel.innerHTML = `
-            <p style="color:#9ca3af;font-size:10px;font-weight:600;letter-spacing:.5px;margin:0 0 10px">SETTINGS</p>
+            <p style="color:#9ca3af;font-size:10px;font-weight:600;letter-spacing:.5px;margin:0 0 8px">LINE TYPE</p>
+            <div style="display:flex;gap:4px;margin-bottom:12px">
+                <button onclick="updateWidgetStyle('lineType','straight'); renderSettingsPanel()"
+                    style="flex:1;background:${lt==='straight'?'#4f46e5':'#374151'};
+                           color:white;border:none;padding:5px 2px;border-radius:4px;cursor:pointer;font-size:10px;
+                           display:flex;flex-direction:column;align-items:center;gap:2px">
+                    <svg viewBox="0 0 28 16" width="28" height="16">
+                        <line x1="2" y1="8" x2="22" y2="8" stroke="white" stroke-width="1.5"/>
+                        <polygon points="20,5 26,8 20,11" fill="white"/>
+                    </svg>
+                    <span>Straight</span>
+                </button>
+                <button onclick="updateWidgetStyle('lineType','elbow'); renderSettingsPanel()"
+                    style="flex:1;background:${lt==='elbow'?'#4f46e5':'#374151'};
+                           color:white;border:none;padding:5px 2px;border-radius:4px;cursor:pointer;font-size:10px;
+                           display:flex;flex-direction:column;align-items:center;gap:2px">
+                    <svg viewBox="0 0 28 16" width="28" height="16">
+                        <polyline points="2,4 14,4 14,12 22,12" fill="none" stroke="white" stroke-width="1.5"/>
+                        <polygon points="20,9 26,12 20,15" fill="white"/>
+                    </svg>
+                    <span>Elbow</span>
+                </button>
+                <button onclick="updateWidgetStyle('lineType','curved'); renderSettingsPanel()"
+                    style="flex:1;background:${lt==='curved'?'#4f46e5':'#374151'};
+                           color:white;border:none;padding:5px 2px;border-radius:4px;cursor:pointer;font-size:10px;
+                           display:flex;flex-direction:column;align-items:center;gap:2px">
+                    <svg viewBox="0 0 28 16" width="28" height="16">
+                        <path d="M 2 4 C 14 4, 14 12, 26 12" fill="none" stroke="white" stroke-width="1.5"/>
+                        <polygon points="23,9 28,12 23,15" fill="white"/>
+                    </svg>
+                    <span>Curved</span>
+                </button>
+            </div>
+
+            <label style="display:flex;align-items:center;gap:8px;color:#d1d5db;font-size:11px;margin-bottom:12px;cursor:pointer">
+                <input type="checkbox" ${s.lineJump ? 'checked' : ''}
+                       onchange="updateWidgetStyle('lineJump', this.checked)"
+                       style="cursor:pointer">
+                Line Jump (ข้ามเส้นที่ตัดกัน)
+            </label>
+
             <label style="display:block;color:#d1d5db;font-size:11px;margin-bottom:4px">Line Color</label>
             <input type="color" value="${s.color || '#374151'}"
                    oninput="updateWidgetStyle('color', this.value)"

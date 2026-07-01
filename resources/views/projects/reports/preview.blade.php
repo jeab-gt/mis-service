@@ -596,11 +596,26 @@ function renderWidgetContent(widget) {
             const ly1 = cy1 - (widget.y || 0);
             const lx2 = cx2 - (widget.x || 0);
             const ly2 = cy2 - (widget.y || 0);
-            const dx = Math.abs(lx2-lx1), dy = Math.abs(ly2-ly1);
-            const midPath = dy >= dx
-                ? `L ${lx1} ${ly2} L ${lx2} ${ly2}`
-                : `L ${lx2} ${ly1} L ${lx2} ${ly2}`;
             const s = widget.style || {};
+            const lineType = s.lineType || 'elbow';
+            let pathD;
+            if (lineType === 'straight') {
+                pathD = `M ${lx1} ${ly1} L ${lx2} ${ly2}`;
+            } else if (lineType === 'curved') {
+                const absDx = Math.abs(lx2-lx1), absDy = Math.abs(ly2-ly1);
+                if (absDx >= absDy) {
+                    const off = Math.max(absDx*0.5, 40);
+                    pathD = `M ${lx1} ${ly1} C ${lx1+off} ${ly1}, ${lx2-off} ${ly2}, ${lx2} ${ly2}`;
+                } else {
+                    const off = Math.max(absDy*0.5, 40);
+                    pathD = `M ${lx1} ${ly1} C ${lx1} ${ly1+off}, ${lx2} ${ly2-off}, ${lx2} ${ly2}`;
+                }
+            } else {
+                const dx = Math.abs(lx2-lx1), dy = Math.abs(ly2-ly1);
+                pathD = dy >= dx
+                    ? `M ${lx1} ${ly1} L ${lx1} ${ly2} L ${lx2} ${ly2}`
+                    : `M ${lx1} ${ly1} L ${lx2} ${ly1} L ${lx2} ${ly2}`;
+            }
             const color = s.color || '#374151';
             const strokeW = s.strokeWidth || 2;
             const dashArr = s.lineStyle === 'dashed' ? 'stroke-dasharray="6,3"' : '';
@@ -616,9 +631,9 @@ function renderWidgetContent(widget) {
                         <polygon points="0,0 0,6 8,3" fill="${color}"/>
                     </marker>
                 </defs>
-                <path d="M ${lx1} ${ly1} ${midPath}" fill="none"
+                <path d="${pathD}" fill="none"
                       stroke="${color}" stroke-width="${strokeW}"
-                      stroke-linejoin="round" ${dashArr}
+                      stroke-linejoin="round" stroke-linecap="round" ${dashArr}
                       ${markerEnd} ${markerStart}
                       style="${s.shadow ? 'filter:drop-shadow(0 2px 4px rgba(0,0,0,.3))' : ''}"/>
             </svg>`;
