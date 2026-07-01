@@ -1139,8 +1139,13 @@ function createConnectorEl(widget) {
 
     // Segment hit areas — always present so drag works on first click
     if (lineType === 'elbow') {
-        const segs = getElbowSegments(lx1, ly1, lx2, ly2, midRatio);
-        const midSeg = segs[1]; // index 1 is always the draggable middle segment
+        const { sx: csx, sy: csy, ex: cex, ey: cey } = resolveConnectorPoints(widget);
+        const canvasSegs = getElbowSegments(
+            csx - minX, csy - minY,
+            cex - minX, cey - minY,
+            midRatio
+        );
+        const midSeg = canvasSegs[1]; // index 1 is always the draggable middle segment
         if (midSeg) {
             const isH = midSeg.dir === 'h';
             const segLen = Math.hypot(midSeg.x2 - midSeg.x1, midSeg.y2 - midSeg.y1);
