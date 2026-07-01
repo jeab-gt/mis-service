@@ -612,12 +612,12 @@ function renderWidgetContent(widget) {
                 }
             } else {
                 const rdx = lx2 - lx1, rdy = ly2 - ly1;
-                const ratio = (typeof widget.midRatio === 'number') ? widget.midRatio : 0.5;
-                if (Math.abs(rdy) > Math.abs(rdx)) {
-                    const midY = ly1 + rdy * ratio;
+                const mOff = widget.midOffset ?? 0;
+                if (Math.abs(rdy) >= Math.abs(rdx)) {
+                    const midY = ly1 + rdy * 0.5 + mOff;
                     pathD = `M ${lx1} ${ly1} L ${lx1} ${midY} L ${lx2} ${midY} L ${lx2} ${ly2}`;
                 } else {
-                    const midX = lx1 + rdx * ratio;
+                    const midX = lx1 + rdx * 0.5 + mOff;
                     pathD = `M ${lx1} ${ly1} L ${midX} ${ly1} L ${midX} ${ly2} L ${lx2} ${ly2}`;
                 }
             }

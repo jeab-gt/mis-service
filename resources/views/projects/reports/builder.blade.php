@@ -394,7 +394,16 @@ async function switchSlide(index) {
     currentSlideIndex = index;
     const slide = slides[index];
     await editor.setData(slide.html_content || '');
-    widgets = (slide.widgets_data || []).map(w => ({ ...w }));
+    widgets = (slide.widgets_data || []).map(w => {
+        if (w.type === 'connector' && w.midRatio !== undefined && w.midOffset === undefined) {
+            const adx = Math.abs((w.endX||0) - (w.startX||0));
+            const ady = Math.abs((w.endY||0) - (w.startY||0));
+            const total = ady >= adx ? ady : adx;
+            w.midOffset = ((w.midRatio ?? 0.5) - 0.5) * total;
+            delete w.midRatio;
+        }
+        return { ...w };
+    });
     selectedWidgetId = null;
     renderAllWidgets();
     renderSlideList();
@@ -527,7 +536,7 @@ function insertConnector() {
         endX:   300, endY:   240,
         startAnchor: null,
         endAnchor:   null,
-        midRatio: 0.5,
+        midOffset: 0,
         x: 80, y: 120, w: 220, h: 120,
         rotation: 0,
         style: {
@@ -965,7 +974,7 @@ function updateConnectedConnectors(movedWidgetId) {
     });
 }
 
-function buildConnectorPath(lx1, ly1, lx2, ly2, lineType, midRatio) {
+function buildConnectorPath(lx1, ly1, lx2, ly2, lineType, midOffset) {
     switch (lineType) {
         case 'straight':
             return `M ${lx1} ${ly1} L ${lx2} ${ly2}`;
@@ -982,30 +991,30 @@ function buildConnectorPath(lx1, ly1, lx2, ly2, lineType, midRatio) {
         case 'elbow':
         default: {
             const dx = lx2 - lx1, dy = ly2 - ly1;
-            const ratio = (typeof midRatio === 'number') ? midRatio : 0.5;
-            if (Math.abs(dy) > Math.abs(dx)) {
-                const midY = ly1 + dy * ratio;
+            const offset = (typeof midOffset === 'number') ? midOffset : 0;
+            if (Math.abs(dy) >= Math.abs(dx)) {
+                const midY = ly1 + dy * 0.5 + offset;
                 return `M ${lx1} ${ly1} L ${lx1} ${midY} L ${lx2} ${midY} L ${lx2} ${ly2}`;
             } else {
-                const midX = lx1 + dx * ratio;
+                const midX = lx1 + dx * 0.5 + offset;
                 return `M ${lx1} ${ly1} L ${midX} ${ly1} L ${midX} ${ly2} L ${lx2} ${ly2}`;
             }
         }
     }
 }
 
-function getElbowSegments(lx1, ly1, lx2, ly2, midRatio) {
+function getElbowSegments(lx1, ly1, lx2, ly2, midOffset) {
     const dx = lx2 - lx1, dy = ly2 - ly1;
-    const ratio = (typeof midRatio === 'number') ? midRatio : 0.5;
-    if (Math.abs(dy) > Math.abs(dx)) {
-        const midY = ly1 + dy * ratio;
+    const offset = midOffset ?? 0;
+    if (Math.abs(dy) >= Math.abs(dx)) {
+        const midY = ly1 + dy * 0.5 + offset;
         return [
             { x1: lx1, y1: ly1,  x2: lx1, y2: midY, dir: 'v' },
             { x1: lx1, y1: midY, x2: lx2, y2: midY, dir: 'h' },
             { x1: lx2, y1: midY, x2: lx2, y2: ly2,  dir: 'v' },
         ].filter(s => Math.hypot(s.x2 - s.x1, s.y2 - s.y1) > 2);
     } else {
-        const midX = lx1 + dx * ratio;
+        const midX = lx1 + dx * 0.5 + offset;
         return [
             { x1: lx1,  y1: ly1, x2: midX, y2: ly1, dir: 'h' },
             { x1: midX, y1: ly1, x2: midX, y2: ly2, dir: 'v' },
@@ -1014,11 +1023,11 @@ function getElbowSegments(lx1, ly1, lx2, ly2, midRatio) {
     }
 }
 
-function getConnectorSegments(lx1, ly1, lx2, ly2, lineType, midRatio) {
+function getConnectorSegments(lx1, ly1, lx2, ly2, lineType, midOffset) {
     if (lineType === 'straight') {
         return [{ x1: lx1, y1: ly1, x2: lx2, y2: ly2 }];
     }
-    return getElbowSegments(lx1, ly1, lx2, ly2, midRatio);
+    return getElbowSegments(lx1, ly1, lx2, ly2, midOffset);
 }
 
 function segmentIntersection(s1, s2) {
@@ -1038,14 +1047,14 @@ function buildPathWithJumps(connectorWidget, lx1, ly1, lx2, ly2, svgOffX, svgOff
     const s = connectorWidget.style || {};
     const lineType = s.lineType || 'elbow';
     const lineJump = s.lineJump || false;
-    const midRatio = (typeof connectorWidget.midRatio === 'number') ? connectorWidget.midRatio : 0.5;
+    const midOffset = connectorWidget.midOffset ?? 0;
 
     if (!lineJump || lineType === 'curved') {
-        return buildConnectorPath(lx1, ly1, lx2, ly2, lineType, midRatio);
+        return buildConnectorPath(lx1, ly1, lx2, ly2, lineType, midOffset);
     }
 
     const JUMP_R = 8;
-    const segments = getConnectorSegments(lx1, ly1, lx2, ly2, lineType, midRatio);
+    const segments = getConnectorSegments(lx1, ly1, lx2, ly2, lineType, midOffset);
     const jumpPoints = [];
 
     widgets.forEach(other => {
@@ -1054,8 +1063,8 @@ function buildPathWithJumps(connectorWidget, lx1, ly1, lx2, ly2, svgOffX, svgOff
         const otherLx1 = ox1 - svgOffX, otherLy1 = oy1 - svgOffY;
         const otherLx2 = ox2 - svgOffX, otherLy2 = oy2 - svgOffY;
         const otherType = other.style?.lineType || 'elbow';
-        const otherMidRatio = (typeof other.midRatio === 'number') ? other.midRatio : 0.5;
-        const otherSegs = getConnectorSegments(otherLx1, otherLy1, otherLx2, otherLy2, otherType, otherMidRatio);
+        const otherMidOffset = other.midOffset ?? 0;
+        const otherSegs = getConnectorSegments(otherLx1, otherLy1, otherLx2, otherLy2, otherType, otherMidOffset);
 
         segments.forEach((seg, si) => {
             otherSegs.forEach(otherSeg => {
@@ -1065,7 +1074,7 @@ function buildPathWithJumps(connectorWidget, lx1, ly1, lx2, ly2, svgOffX, svgOff
         });
     });
 
-    if (!jumpPoints.length) return buildConnectorPath(lx1, ly1, lx2, ly2, lineType, midRatio);
+    if (!jumpPoints.length) return buildConnectorPath(lx1, ly1, lx2, ly2, lineType, midOffset);
 
     let path = '';
     segments.forEach((seg, si) => {
@@ -1092,19 +1101,19 @@ function createConnectorEl(widget) {
     const s = widget.style || {};
     const lineType = s.lineType || 'elbow';
 
-    const midRatio = (typeof widget.midRatio === 'number') ? widget.midRatio : 0.5;
+    const midOffset = widget.midOffset ?? 0;
 
-    // Include the S-shape midpoint so the SVG bounding box is never clipped
+    // Include the elbow midpoint (can be outside start/end bounds) so SVG is never clipped
     const allX = [x1, x2], allY = [y1, y2];
     if (lineType === 'elbow') {
         const dx = x2 - x1, dy = y2 - y1;
-        if (Math.abs(dy) > Math.abs(dx)) {
-            allY.push(y1 + dy * midRatio);
+        if (Math.abs(dy) >= Math.abs(dx)) {
+            allY.push(y1 + dy * 0.5 + midOffset);
         } else {
-            allX.push(x1 + dx * midRatio);
+            allX.push(x1 + dx * 0.5 + midOffset);
         }
     }
-    const PAD = 20;
+    const PAD = 30;
     const minX = Math.min(...allX) - PAD;
     const minY = Math.min(...allY) - PAD;
     const svgW = Math.max(...allX) + PAD - minX;
@@ -1151,7 +1160,7 @@ function createConnectorEl(widget) {
 
     // Segment hit areas — always present so drag works on first click
     if (lineType === 'elbow') {
-        const segs = getElbowSegments(lx1, ly1, lx2, ly2, midRatio);
+        const segs = getElbowSegments(lx1, ly1, lx2, ly2, midOffset);
         const midSeg = segs[1]; // index 1 is always the draggable middle segment
         if (midSeg) {
             const isH = midSeg.dir === 'h';
@@ -1191,17 +1200,14 @@ function createConnectorEl(widget) {
                     selectWidget(widget.id);
                     renderSettingsPanel();
 
-                    const totalDist = isH ? Math.abs(y2 - y1) : Math.abs(x2 - x1);
-                    const origRatio = widget.midRatio ?? 0.5;
+                    const origOffset = widget.midOffset ?? 0;
                     const startCX = e.clientX, startCY = e.clientY;
                     let rafId = null;
                     const onMove = (e) => {
                         if (rafId) cancelAnimationFrame(rafId);
                         rafId = requestAnimationFrame(() => {
                             const delta = isH ? (e.clientY - startCY) : (e.clientX - startCX);
-                            widget.midRatio = Math.max(0.05, Math.min(0.95,
-                                origRatio + delta / (totalDist || 1)
-                            ));
+                            widget.midOffset = origOffset + delta;
                             updateConnectorEl(widget.id);
                         });
                     };
@@ -1276,28 +1282,28 @@ function createConnectorEl(widget) {
         showContextMenu(e.clientX, e.clientY);
     });
 
-    // Midpoint handle — yellow square, drag to adjust midRatio (elbow only, always shown)
+    // Midpoint handle — yellow square, drag to adjust midOffset (elbow only, always shown)
     if (lineType === 'elbow') {
         const dx = lx2 - lx1, dy = ly2 - ly1;
-        const vertDom = Math.abs(dy) > Math.abs(dx);
+        const vertDom = Math.abs(dy) >= Math.abs(dx);
         let handleX, handleY;
         if (vertDom) {
             handleX = (lx1 + lx2) / 2;
-            handleY = ly1 + dy * midRatio;
+            handleY = ly1 + dy * 0.5 + midOffset;
         } else {
-            handleX = lx1 + dx * midRatio;
+            handleX = lx1 + dx * 0.5 + midOffset;
             handleY = (ly1 + ly2) / 2;
         }
 
         const midHandle = document.createElement('div');
         midHandle.style.cssText = `
             position:absolute;
-            left:${handleX - 6}px; top:${handleY - 6}px;
-            width:12px; height:12px;
+            left:${handleX - 7}px; top:${handleY - 7}px;
+            width:14px; height:14px;
             background:#f59e0b; border:2px solid white;
-            border-radius:2px; cursor:${vertDom ? 'ns-resize' : 'ew-resize'};
+            border-radius:3px; cursor:${vertDom ? 'ns-resize' : 'ew-resize'};
             pointer-events:all; z-index:15;
-            box-shadow:0 1px 3px rgba(0,0,0,.3);
+            box-shadow:0 1px 4px rgba(0,0,0,.35);
         `;
 
         midHandle.addEventListener('mousedown', (e) => {
@@ -1305,17 +1311,14 @@ function createConnectorEl(widget) {
             e.stopPropagation();
             selectWidget(widget.id);
             renderSettingsPanel();
-            const totalDist = vertDom ? Math.abs(y2 - y1) : Math.abs(x2 - x1);
-            const origRatio = widget.midRatio ?? 0.5;
+            const origOffset = widget.midOffset ?? 0;
             const startCX = e.clientX, startCY = e.clientY;
             let rafId = null;
             const onMove = (e) => {
                 if (rafId) cancelAnimationFrame(rafId);
                 rafId = requestAnimationFrame(() => {
                     const delta = vertDom ? (e.clientY - startCY) : (e.clientX - startCX);
-                    widget.midRatio = Math.max(0.05, Math.min(0.95,
-                        origRatio + delta / (totalDist || 1)
-                    ));
+                    widget.midOffset = origOffset + delta;
                     updateConnectorEl(widget.id);
                 });
             };
@@ -2420,7 +2423,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     await initEditor(slides[0].html_content || '');
-    widgets = (slides[0].widgets_data || []).map(w => ({ ...w }));
+    widgets = (slides[0].widgets_data || []).map(w => {
+        if (w.type === 'connector' && w.midRatio !== undefined && w.midOffset === undefined) {
+            const adx = Math.abs((w.endX||0) - (w.startX||0));
+            const ady = Math.abs((w.endY||0) - (w.startY||0));
+            const total = ady >= adx ? ady : adx;
+            w.midOffset = ((w.midRatio ?? 0.5) - 0.5) * total;
+            delete w.midRatio;
+        }
+        return { ...w };
+    });
     renderAllWidgets();
     renderSlideList();
 });
