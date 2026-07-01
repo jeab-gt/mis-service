@@ -699,6 +699,7 @@ function insertHR() {
 
 function renderAllWidgets() {
     const overlay = document.getElementById('widget-overlay');
+    document.querySelectorAll('.connector-handle').forEach(h => h.remove());
     overlay.innerHTML = '';
     overlay.style.pointerEvents = 'none';
     widgets.forEach(w => {
@@ -1164,72 +1165,6 @@ function createConnectorEl(widget) {
         </svg>
     `;
 
-    // Segment hit areas — always present so drag works on first click
-    if (lineType === 'elbow') {
-        const segs = getElbowSegments(lx1, ly1, lx2, ly2, midOffset);
-        const midSeg = segs[1]; // index 1 is always the draggable middle segment
-        if (midSeg) {
-            const isH = midSeg.dir === 'h';
-            const segLen = Math.hypot(midSeg.x2 - midSeg.x1, midSeg.y2 - midSeg.y1);
-            if (segLen >= 4) {
-                const HIT = 10;
-                const segEl = document.createElement('div');
-                if (isH) {
-                    segEl.style.cssText = `
-                        position:absolute;
-                        left:${Math.min(midSeg.x1, midSeg.x2)}px;
-                        top:${midSeg.y1 - HIT}px;
-                        width:${Math.abs(midSeg.x2 - midSeg.x1)}px;
-                        height:${HIT * 2}px;
-                        cursor:ns-resize; pointer-events:all;
-                        background:transparent; z-index:8;
-                    `;
-                } else {
-                    segEl.style.cssText = `
-                        position:absolute;
-                        left:${midSeg.x1 - HIT}px;
-                        top:${Math.min(midSeg.y1, midSeg.y2)}px;
-                        width:${HIT * 2}px;
-                        height:${Math.abs(midSeg.y2 - midSeg.y1)}px;
-                        cursor:ew-resize; pointer-events:all;
-                        background:transparent; z-index:8;
-                    `;
-                }
-
-                segEl.addEventListener('mouseenter', () => { segEl.style.background = 'rgba(59,130,246,0.15)'; });
-                segEl.addEventListener('mouseleave', () => { segEl.style.background = 'transparent'; });
-
-                segEl.addEventListener('mousedown', (e) => {
-                    if (e.button === 2) return;
-                    e.preventDefault();
-                    e.stopPropagation();
-                    selectWidget(widget.id);
-                    renderSettingsPanel();
-
-                    const orig = widget.midOffset ?? 0;
-                    const sx = e.clientX, sy = e.clientY;
-                    let raf = null;
-                    const onMove = (e) => {
-                        if (raf) cancelAnimationFrame(raf);
-                        raf = requestAnimationFrame(() => {
-                            widget.midOffset = orig + (isH ? e.clientY-sy : e.clientX-sx);
-                            updateConnectorEl(widget.id);
-                        });
-                    };
-                    const onUp = () => {
-                        if (raf) cancelAnimationFrame(raf);
-                        document.removeEventListener('mousemove', onMove);
-                        document.removeEventListener('mouseup', onUp);
-                    };
-                    document.addEventListener('mousemove', onMove);
-                    document.addEventListener('mouseup', onUp);
-                });
-
-                el.appendChild(segEl);
-            }
-        }
-    }
-
     // SVG hit path — follows the actual line so it never blocks other widgets
     const hitSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     hitSvg.setAttribute('width', svgW);
@@ -1287,162 +1222,239 @@ function createConnectorEl(widget) {
         showContextMenu(e.clientX, e.clientY);
     });
 
-    // Midpoint handle — yellow square, drag to adjust midOffset (elbow only, always shown)
-    if (lineType === 'elbow') {
-        const dy = ly2 - ly1, dx = lx2 - lx1;
-        const vertDom = Math.abs(dy) >= Math.abs(dx);
-        let hx, hy;
-        if (vertDom) {
-            hx = (lx1 + lx2) / 2;
-            hy = (ly1 + ly2) / 2 + midOffset;
-        } else {
-            hx = (lx1 + lx2) / 2 + midOffset;
-            hy = (ly1 + ly2) / 2;
+    // Handles: remove stale, then append fresh directly to overlay (bypasses pointer-events:none on el)
+    document.querySelectorAll(`.connector-handle[data-cid="${widget.id}"]`).forEach(h => h.remove());
+
+    queueMicrotask(() => {
+        const overlay = document.getElementById('widget-overlay');
+        if (!overlay) return;
+
+        document.querySelectorAll(`.connector-handle[data-cid="${widget.id}"]`).forEach(h => h.remove());
+
+        const { sx: cx1, sy: cy1, ex: cx2, ey: cy2 } = resolveConnectorPoints(widget);
+        const cmidOffset = widget.midOffset ?? 0;
+        const cdx = cx2 - cx1, cdy = cy2 - cy1;
+        const cVertDom = Math.abs(cdy) >= Math.abs(cdx);
+        const cLineType = widget.style?.lineType || 'elbow';
+
+        // ── segment hit area ──
+        if (cLineType === 'elbow') {
+            const segs = getElbowSegments(cx1, cy1, cx2, cy2, cmidOffset);
+            const midSeg = segs[1];
+            if (midSeg && Math.hypot(midSeg.x2 - midSeg.x1, midSeg.y2 - midSeg.y1) >= 4) {
+                const isH = midSeg.dir === 'h';
+                const HIT = 10;
+                const segEl = document.createElement('div');
+                segEl.className = 'connector-handle';
+                segEl.dataset.cid = widget.id;
+                if (isH) {
+                    segEl.style.cssText = `
+                        position:absolute;
+                        left:${Math.min(midSeg.x1, midSeg.x2)}px;
+                        top:${midSeg.y1 - HIT}px;
+                        width:${Math.abs(midSeg.x2 - midSeg.x1)}px;
+                        height:${HIT * 2}px;
+                        cursor:ns-resize; pointer-events:all;
+                        background:transparent; z-index:8;
+                    `;
+                } else {
+                    segEl.style.cssText = `
+                        position:absolute;
+                        left:${midSeg.x1 - HIT}px;
+                        top:${Math.min(midSeg.y1, midSeg.y2)}px;
+                        width:${HIT * 2}px;
+                        height:${Math.abs(midSeg.y2 - midSeg.y1)}px;
+                        cursor:ew-resize; pointer-events:all;
+                        background:transparent; z-index:8;
+                    `;
+                }
+                segEl.addEventListener('mouseenter', () => { segEl.style.background = 'rgba(59,130,246,0.15)'; });
+                segEl.addEventListener('mouseleave', () => { segEl.style.background = 'transparent'; });
+                segEl.addEventListener('mousedown', (e) => {
+                    if (e.button === 2) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    selectWidget(widget.id);
+                    renderSettingsPanel();
+                    const orig = widget.midOffset ?? 0;
+                    const sx = e.clientX, sy = e.clientY;
+                    let raf = null;
+                    const onMove = (e) => {
+                        if (raf) cancelAnimationFrame(raf);
+                        raf = requestAnimationFrame(() => {
+                            widget.midOffset = orig + (isH ? e.clientY - sy : e.clientX - sx);
+                            updateConnectorEl(widget.id);
+                        });
+                    };
+                    const onUp = () => {
+                        if (raf) cancelAnimationFrame(raf);
+                        document.removeEventListener('mousemove', onMove);
+                        document.removeEventListener('mouseup', onUp);
+                    };
+                    document.addEventListener('mousemove', onMove);
+                    document.addEventListener('mouseup', onUp);
+                });
+                overlay.appendChild(segEl);
+            }
         }
 
-        const midHandle = document.createElement('div');
-        midHandle.style.cssText = `
-            position:absolute;
-            left:${hx-7}px; top:${hy-7}px;
-            width:14px; height:14px;
-            background:#f59e0b; border:2px solid white;
-            border-radius:3px; cursor:${vertDom ? 'ns-resize' : 'ew-resize'};
-            pointer-events:all; z-index:15;
-            box-shadow:0 1px 4px rgba(0,0,0,.35);
-        `;
-
-        midHandle.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            selectWidget(widget.id);
-            renderSettingsPanel();
-            const orig = widget.midOffset ?? 0;
-            const sx = e.clientX, sy = e.clientY;
-            let raf = null;
-            const onMove = (e) => {
-                if (raf) cancelAnimationFrame(raf);
-                raf = requestAnimationFrame(() => {
-                    widget.midOffset = orig + (vertDom ? e.clientY-sy : e.clientX-sx);
-                    updateConnectorEl(widget.id);
-                });
-            };
-            const onUp = () => {
-                if (raf) cancelAnimationFrame(raf);
-                document.removeEventListener('mousemove', onMove);
-                document.removeEventListener('mouseup', onUp);
-            };
-            document.addEventListener('mousemove', onMove);
-            document.addEventListener('mouseup', onUp);
-        });
-
-        el.appendChild(midHandle);
-    }
-
-    if (isSelected) {
-        // Endpoint handles
-        ['start', 'end'].forEach(point => {
-            const hx = point === 'start' ? lx1 : lx2;
-            const hy = point === 'start' ? ly1 : ly2;
-            const isAnchored = point === 'start' ? !!widget.startAnchor : !!widget.endAnchor;
-            const handle = document.createElement('div');
-            handle.style.cssText = `
+        // ── midpoint handle ──
+        if (cLineType === 'elbow') {
+            let hx, hy;
+            if (cVertDom) {
+                hx = (cx1 + cx2) / 2;
+                hy = (cy1 + cy2) / 2 + cmidOffset;
+            } else {
+                hx = (cx1 + cx2) / 2 + cmidOffset;
+                hy = (cy1 + cy2) / 2;
+            }
+            const midHandle = document.createElement('div');
+            midHandle.className = 'connector-handle';
+            midHandle.dataset.cid = widget.id;
+            midHandle.style.cssText = `
                 position:absolute;
                 left:${hx - 7}px; top:${hy - 7}px;
                 width:14px; height:14px;
-                background:${isAnchored ? '#dc2626' : (point === 'start' ? '#16a34a' : '#f59e0b')};
-                border-radius:50%;
-                border:${isAnchored ? '3px solid white' : '2px solid white'};
-                cursor:crosshair; pointer-events:all;
-                box-shadow:${isAnchored ? '0 0 0 2px #dc2626' : '0 1px 3px rgba(0,0,0,.3)'};
-                z-index:20;
+                background:#f59e0b; border:2px solid white; border-radius:3px;
+                cursor:${cVertDom ? 'ns-resize' : 'ew-resize'};
+                pointer-events:all; z-index:200;
+                box-shadow:0 1px 4px rgba(0,0,0,.4);
             `;
-            if (isAnchored) {
-                const anchor = point === 'start' ? widget.startAnchor : widget.endAnchor;
-                handle.title = `Anchored (${anchor.side})`;
-            }
-            handle.addEventListener('mousedown', (e) => {
+            midHandle.addEventListener('mousedown', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                if (point === 'start') widget.startAnchor = null;
-                else                   widget.endAnchor   = null;
-
-                const overlay = document.getElementById('widget-overlay');
-                const overlayRect = overlay.getBoundingClientRect();
-                showAnchorDots(widget.id);
-                let snapAnchor = null;
-                let rafId = null;
-
+                console.log('[midHandle] clicked! origOffset:', widget.midOffset);
+                selectWidget(widget.id);
+                renderSettingsPanel();
+                const orig = widget.midOffset ?? 0;
+                const sx = e.clientX, sy = e.clientY;
+                let raf = null;
                 const onMove = (e) => {
-                    const nx = e.clientX - overlayRect.left;
-                    const ny = e.clientY - overlayRect.top;
-                    snapAnchor = findNearestAnchor(nx, ny, widget.id);
-                    highlightAnchor(snapAnchor);
-                    const finalX = snapAnchor ? snapAnchor.pt.x : nx;
-                    const finalY = snapAnchor ? snapAnchor.pt.y : ny;
-                    if (rafId) cancelAnimationFrame(rafId);
-                    rafId = requestAnimationFrame(() => {
-                        if (point === 'start') { widget.startX = finalX; widget.startY = finalY; }
-                        else                   { widget.endX   = finalX; widget.endY   = finalY; }
-                        widget.x = Math.min(widget.startX, widget.endX);
-                        widget.y = Math.min(widget.startY, widget.endY);
-                        widget.w = Math.abs(widget.endX - widget.startX);
-                        widget.h = Math.abs(widget.endY - widget.startY);
+                    if (raf) cancelAnimationFrame(raf);
+                    raf = requestAnimationFrame(() => {
+                        widget.midOffset = orig + (cVertDom ? e.clientY - sy : e.clientX - sx);
+                        console.log('[midHandle] new midOffset:', widget.midOffset);
                         updateConnectorEl(widget.id);
                     });
                 };
-
-                const onUp = (e) => {
-                    if (rafId) cancelAnimationFrame(rafId);
-                    hideAnchorDots();
-                    const nx = e.clientX - overlayRect.left;
-                    const ny = e.clientY - overlayRect.top;
-                    const finalSnap = findNearestAnchor(nx, ny, widget.id);
-                    if (point === 'start') {
-                        widget.startAnchor = finalSnap ? { widgetId: finalSnap.widgetId, side: finalSnap.side } : null;
-                        if (finalSnap) { widget.startX = finalSnap.pt.x; widget.startY = finalSnap.pt.y; }
-                    } else {
-                        widget.endAnchor = finalSnap ? { widgetId: finalSnap.widgetId, side: finalSnap.side } : null;
-                        if (finalSnap) { widget.endX = finalSnap.pt.x; widget.endY = finalSnap.pt.y; }
-                    }
-                    updateConnectorEl(widget.id);
+                const onUp = () => {
+                    if (raf) cancelAnimationFrame(raf);
                     document.removeEventListener('mousemove', onMove);
                     document.removeEventListener('mouseup', onUp);
                 };
-
                 document.addEventListener('mousemove', onMove);
                 document.addEventListener('mouseup', onUp);
             });
-            el.appendChild(handle);
-        });
+            overlay.appendChild(midHandle);
+        }
 
-        // Mini toolbar
-        const tb = document.createElement('div');
-        tb.className = 'widget-tb';
-        const tbX = (lx1 + lx2) / 2 - 50;
-        const tbY = Math.min(ly1, ly2) - 38;
-        tb.style.cssText = `
-            position:absolute; left:${tbX}px; top:${tbY}px;
-            background:#1f2937; color:white; border-radius:6px;
-            padding:3px 8px; display:flex; align-items:center; gap:8px;
-            z-index:20; font-size:11px; white-space:nowrap;
-            box-shadow:0 2px 8px rgba(0,0,0,.4); pointer-events:all;
-        `;
-        tb.innerHTML = `
-            <span style="color:#9ca3af;font-size:10px">CONNECTOR</span>
-            <button style="background:#dc2626;border:none;color:white;padding:2px 8px;
-                           border-radius:4px;cursor:pointer;font-size:11px">✕ Delete</button>
-        `;
-        tb.querySelector('button').addEventListener('mousedown', e => {
-            e.preventDefault(); e.stopPropagation();
-            deleteWidget(widget.id);
-        });
-        el.appendChild(tb);
-    }
+        // ── endpoint handles + mini toolbar (selected only) ──
+        if (selectedWidgetId === widget.id) {
+            ['start', 'end'].forEach(point => {
+                const px = point === 'start' ? cx1 : cx2;
+                const py = point === 'start' ? cy1 : cy2;
+                const isAnchored = point === 'start' ? !!widget.startAnchor : !!widget.endAnchor;
+                const epHandle = document.createElement('div');
+                epHandle.className = 'connector-handle';
+                epHandle.dataset.cid = widget.id;
+                epHandle.style.cssText = `
+                    position:absolute;
+                    left:${px - 7}px; top:${py - 7}px;
+                    width:14px; height:14px;
+                    background:${isAnchored ? '#dc2626' : (point === 'start' ? '#16a34a' : '#f59e0b')};
+                    border-radius:50%;
+                    border:${isAnchored ? '3px solid white' : '2px solid white'};
+                    cursor:crosshair; pointer-events:all; z-index:200;
+                    box-shadow:${isAnchored ? '0 0 0 2px #dc2626' : '0 1px 3px rgba(0,0,0,.3)'};
+                `;
+                if (isAnchored) {
+                    const anchor = point === 'start' ? widget.startAnchor : widget.endAnchor;
+                    epHandle.title = `Anchored (${anchor.side})`;
+                }
+                epHandle.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (point === 'start') widget.startAnchor = null;
+                    else                   widget.endAnchor   = null;
+
+                    const overlayRect = overlay.getBoundingClientRect();
+                    showAnchorDots(widget.id);
+                    let snapAnchor = null, rafId = null;
+
+                    const onMove = (e) => {
+                        const nx = e.clientX - overlayRect.left;
+                        const ny = e.clientY - overlayRect.top;
+                        snapAnchor = findNearestAnchor(nx, ny, widget.id);
+                        highlightAnchor(snapAnchor);
+                        const finalX = snapAnchor ? snapAnchor.pt.x : nx;
+                        const finalY = snapAnchor ? snapAnchor.pt.y : ny;
+                        if (rafId) cancelAnimationFrame(rafId);
+                        rafId = requestAnimationFrame(() => {
+                            if (point === 'start') { widget.startX = finalX; widget.startY = finalY; }
+                            else                   { widget.endX   = finalX; widget.endY   = finalY; }
+                            widget.x = Math.min(widget.startX, widget.endX);
+                            widget.y = Math.min(widget.startY, widget.endY);
+                            widget.w = Math.abs(widget.endX - widget.startX);
+                            widget.h = Math.abs(widget.endY - widget.startY);
+                            updateConnectorEl(widget.id);
+                        });
+                    };
+
+                    const onUp = (e) => {
+                        if (rafId) cancelAnimationFrame(rafId);
+                        hideAnchorDots();
+                        const nx = e.clientX - overlayRect.left;
+                        const ny = e.clientY - overlayRect.top;
+                        const finalSnap = findNearestAnchor(nx, ny, widget.id);
+                        if (point === 'start') {
+                            widget.startAnchor = finalSnap ? { widgetId: finalSnap.widgetId, side: finalSnap.side } : null;
+                            if (finalSnap) { widget.startX = finalSnap.pt.x; widget.startY = finalSnap.pt.y; }
+                        } else {
+                            widget.endAnchor = finalSnap ? { widgetId: finalSnap.widgetId, side: finalSnap.side } : null;
+                            if (finalSnap) { widget.endX = finalSnap.pt.x; widget.endY = finalSnap.pt.y; }
+                        }
+                        updateConnectorEl(widget.id);
+                        document.removeEventListener('mousemove', onMove);
+                        document.removeEventListener('mouseup', onUp);
+                    };
+
+                    document.addEventListener('mousemove', onMove);
+                    document.addEventListener('mouseup', onUp);
+                });
+                overlay.appendChild(epHandle);
+            });
+
+            // Mini toolbar
+            const tb = document.createElement('div');
+            tb.className = 'connector-handle widget-tb';
+            tb.dataset.cid = widget.id;
+            const tbX = (cx1 + cx2) / 2 - 50;
+            const tbY = Math.min(cy1, cy2) - 38;
+            tb.style.cssText = `
+                position:absolute; left:${tbX}px; top:${tbY}px;
+                background:#1f2937; color:white; border-radius:6px;
+                padding:3px 8px; display:flex; align-items:center; gap:8px;
+                z-index:200; font-size:11px; white-space:nowrap;
+                box-shadow:0 2px 8px rgba(0,0,0,.4); pointer-events:all;
+            `;
+            tb.innerHTML = `
+                <span style="color:#9ca3af;font-size:10px">CONNECTOR</span>
+                <button style="background:#dc2626;border:none;color:white;padding:2px 8px;
+                               border-radius:4px;cursor:pointer;font-size:11px">✕ Delete</button>
+            `;
+            tb.querySelector('button').addEventListener('mousedown', e => {
+                e.preventDefault(); e.stopPropagation();
+                deleteWidget(widget.id);
+            });
+            overlay.appendChild(tb);
+        }
+    });
 
     return el;
 }
 
 function updateConnectorEl(id) {
+    document.querySelectorAll(`.connector-handle[data-cid="${id}"]`).forEach(h => h.remove());
     const widget = widgets.find(w => w.id === id);
     if (!widget) return;
     const old = document.getElementById('widget-' + id);
@@ -1451,6 +1463,7 @@ function updateConnectorEl(id) {
     // Re-render other connectors that have lineJump and may intersect this one
     widgets.forEach(w => {
         if (w.id === id || w.type !== 'connector' || !w.style?.lineJump) return;
+        document.querySelectorAll(`.connector-handle[data-cid="${w.id}"]`).forEach(h => h.remove());
         const el = document.getElementById('widget-' + w.id);
         if (el) el.parentNode.replaceChild(createConnectorEl(w), el);
     });
