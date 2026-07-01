@@ -614,15 +614,13 @@ function renderWidgetContent(widget) {
                 const rdx = lx2 - lx1, rdy = ly2 - ly1;
                 const offX = widget.x || 0, offY = widget.y || 0;
                 const cex = widget.elbowX ?? null, cey = widget.elbowY ?? null;
-                let ex, ey;
                 if (Math.abs(rdy) >= Math.abs(rdx)) {
-                    ex = cex !== null ? cex - offX : lx1;
-                    ey = cey !== null ? cey - offY : ly2;
+                    const midY = cey !== null ? cey - offY : (ly1 + ly2) / 2;
+                    pathD = `M ${lx1} ${ly1} L ${lx1} ${midY} L ${lx2} ${midY} L ${lx2} ${ly2}`;
                 } else {
-                    ex = cex !== null ? cex - offX : lx2;
-                    ey = cey !== null ? cey - offY : ly1;
+                    const midX = cex !== null ? cex - offX : (lx1 + lx2) / 2;
+                    pathD = `M ${lx1} ${ly1} L ${midX} ${ly1} L ${midX} ${ly2} L ${lx2} ${ly2}`;
                 }
-                pathD = `M ${lx1} ${ly1} L ${ex} ${ey} L ${lx2} ${ly2}`;
             }
             const color = s.color || '#374151';
             const strokeW = s.strokeWidth || 2;
