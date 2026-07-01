@@ -395,12 +395,11 @@ async function switchSlide(index) {
     const slide = slides[index];
     await editor.setData(slide.html_content || '');
     widgets = (slide.widgets_data || []).map(w => {
-        if (w.type === 'connector' && w.midRatio !== undefined && w.midOffset === undefined) {
-            const adx = Math.abs((w.endX||0) - (w.startX||0));
-            const ady = Math.abs((w.endY||0) - (w.startY||0));
-            const total = ady >= adx ? ady : adx;
-            w.midOffset = ((w.midRatio ?? 0.5) - 0.5) * total;
+        if (w.type === 'connector') {
             delete w.midRatio;
+            delete w.midOffset;
+            if (w.elbowX === undefined) w.elbowX = null;
+            if (w.elbowY === undefined) w.elbowY = null;
         }
         return { ...w };
     });
@@ -536,7 +535,8 @@ function insertConnector() {
         endX:   300, endY:   240,
         startAnchor: null,
         endAnchor:   null,
-        midOffset: 0,
+        elbowX: null,
+        elbowY: null,
         x: 80, y: 120, w: 220, h: 120,
         rotation: 0,
         style: {
@@ -975,7 +975,7 @@ function updateConnectedConnectors(movedWidgetId) {
     });
 }
 
-function buildConnectorPath(lx1, ly1, lx2, ly2, lineType, midOffset) {
+function buildConnectorPath(lx1, ly1, lx2, ly2, lineType, elbowX, elbowY) {
     if (lineType === 'straight') {
         return `M ${lx1} ${ly1} L ${lx2} ${ly2}`;
     }
@@ -989,45 +989,41 @@ function buildConnectorPath(lx1, ly1, lx2, ly2, lineType, midOffset) {
             return `M ${lx1} ${ly1} C ${lx1} ${ly1+off}, ${lx2} ${ly2-off}, ${lx2} ${ly2}`;
         }
     }
-    // elbow — S/U-shape 3 segments
-    const offset = typeof midOffset === 'number' ? midOffset : 0;
+    // elbow — L-shape 2 segments
     const dx = lx2 - lx1, dy = ly2 - ly1;
+    let ex, ey;
     if (Math.abs(dy) >= Math.abs(dx)) {
-        const midY = (ly1 + ly2) / 2 + offset;
-        console.log('[path] vertDom midY:', midY, 'offset:', offset, 'ly1:', ly1, 'ly2:', ly2);
-        return `M ${lx1} ${ly1} L ${lx1} ${midY} L ${lx2} ${midY} L ${lx2} ${ly2}`;
+        ex = typeof elbowX === 'number' ? elbowX : lx1;
+        ey = typeof elbowY === 'number' ? elbowY : ly2;
     } else {
-        const midX = (lx1 + lx2) / 2 + offset;
-        console.log('[path] horizDom midX:', midX, 'offset:', offset, 'lx1:', lx1, 'lx2:', lx2);
-        return `M ${lx1} ${ly1} L ${midX} ${ly1} L ${midX} ${ly2} L ${lx2} ${ly2}`;
+        ex = typeof elbowX === 'number' ? elbowX : lx2;
+        ey = typeof elbowY === 'number' ? elbowY : ly1;
     }
+    return `M ${lx1} ${ly1} L ${ex} ${ey} L ${lx2} ${ly2}`;
 }
 
-function getElbowSegments(lx1, ly1, lx2, ly2, midOffset) {
-    const offset = typeof midOffset === 'number' ? midOffset : 0;
+function getElbowSegments(lx1, ly1, lx2, ly2, elbowX, elbowY) {
     const dx = lx2 - lx1, dy = ly2 - ly1;
+    let ex, ey;
     if (Math.abs(dy) >= Math.abs(dx)) {
-        const midY = (ly1 + ly2) / 2 + offset;
-        return [
-            { x1:lx1, y1:ly1,  x2:lx1, y2:midY, dir:'v' },
-            { x1:lx1, y1:midY, x2:lx2, y2:midY, dir:'h' },
-            { x1:lx2, y1:midY, x2:lx2, y2:ly2,  dir:'v' },
-        ].filter(s => Math.hypot(s.x2-s.x1, s.y2-s.y1) > 2);
+        ex = typeof elbowX === 'number' ? elbowX : lx1;
+        ey = typeof elbowY === 'number' ? elbowY : ly2;
     } else {
-        const midX = (lx1 + lx2) / 2 + offset;
-        return [
-            { x1:lx1,  y1:ly1, x2:midX, y2:ly1, dir:'h' },
-            { x1:midX, y1:ly1, x2:midX, y2:ly2, dir:'v' },
-            { x1:midX, y1:ly2, x2:lx2,  y2:ly2, dir:'h' },
-        ].filter(s => Math.hypot(s.x2-s.x1, s.y2-s.y1) > 2);
+        ex = typeof elbowX === 'number' ? elbowX : lx2;
+        ey = typeof elbowY === 'number' ? elbowY : ly1;
     }
+    const seg1dir = Math.abs(dy) >= Math.abs(dx) ? 'v' : 'h';
+    return [
+        { x1:lx1, y1:ly1, x2:ex,  y2:ey,  dir:seg1dir },
+        { x1:ex,  y1:ey,  x2:lx2, y2:ly2, dir:seg1dir === 'v' ? 'h' : 'v' },
+    ].filter(s => Math.hypot(s.x2-s.x1, s.y2-s.y1) > 2);
 }
 
-function getConnectorSegments(lx1, ly1, lx2, ly2, lineType, midOffset) {
+function getConnectorSegments(lx1, ly1, lx2, ly2, lineType, elbowX, elbowY) {
     if (lineType === 'straight') {
         return [{ x1: lx1, y1: ly1, x2: lx2, y2: ly2 }];
     }
-    return getElbowSegments(lx1, ly1, lx2, ly2, midOffset);
+    return getElbowSegments(lx1, ly1, lx2, ly2, elbowX, elbowY);
 }
 
 function segmentIntersection(s1, s2) {
@@ -1047,14 +1043,16 @@ function buildPathWithJumps(connectorWidget, lx1, ly1, lx2, ly2, svgOffX, svgOff
     const s = connectorWidget.style || {};
     const lineType = s.lineType || 'elbow';
     const lineJump = s.lineJump || false;
-    const midOffset = connectorWidget.midOffset ?? 0;
+    const wx = connectorWidget.elbowX, wy = connectorWidget.elbowY;
+    const lelbowX = wx !== null && wx !== undefined ? wx - svgOffX : null;
+    const lelbowY = wy !== null && wy !== undefined ? wy - svgOffY : null;
 
     if (!lineJump || lineType === 'curved') {
-        return buildConnectorPath(lx1, ly1, lx2, ly2, lineType, midOffset);
+        return buildConnectorPath(lx1, ly1, lx2, ly2, lineType, lelbowX, lelbowY);
     }
 
     const JUMP_R = 8;
-    const segments = getConnectorSegments(lx1, ly1, lx2, ly2, lineType, midOffset);
+    const segments = getConnectorSegments(lx1, ly1, lx2, ly2, lineType, lelbowX, lelbowY);
     const jumpPoints = [];
 
     widgets.forEach(other => {
@@ -1063,8 +1061,10 @@ function buildPathWithJumps(connectorWidget, lx1, ly1, lx2, ly2, svgOffX, svgOff
         const otherLx1 = ox1 - svgOffX, otherLy1 = oy1 - svgOffY;
         const otherLx2 = ox2 - svgOffX, otherLy2 = oy2 - svgOffY;
         const otherType = other.style?.lineType || 'elbow';
-        const otherMidOffset = other.midOffset ?? 0;
-        const otherSegs = getConnectorSegments(otherLx1, otherLy1, otherLx2, otherLy2, otherType, otherMidOffset);
+        const oex = other.elbowX, oey = other.elbowY;
+        const otherLelbowX = oex !== null && oex !== undefined ? oex - svgOffX : null;
+        const otherLelbowY = oey !== null && oey !== undefined ? oey - svgOffY : null;
+        const otherSegs = getConnectorSegments(otherLx1, otherLy1, otherLx2, otherLy2, otherType, otherLelbowX, otherLelbowY);
 
         segments.forEach((seg, si) => {
             otherSegs.forEach(otherSeg => {
@@ -1074,7 +1074,7 @@ function buildPathWithJumps(connectorWidget, lx1, ly1, lx2, ly2, svgOffX, svgOff
         });
     });
 
-    if (!jumpPoints.length) return buildConnectorPath(lx1, ly1, lx2, ly2, lineType, midOffset);
+    if (!jumpPoints.length) return buildConnectorPath(lx1, ly1, lx2, ly2, lineType, lelbowX, lelbowY);
 
     let path = '';
     segments.forEach((seg, si) => {
@@ -1101,17 +1101,18 @@ function createConnectorEl(widget) {
     const s = widget.style || {};
     const lineType = s.lineType || 'elbow';
 
-    const midOffset = typeof widget.midOffset === 'number' ? widget.midOffset : 0;
+    const elbowX = widget.elbowX ?? null;
+    const elbowY = widget.elbowY ?? null;
 
     // Include every point the line actually passes through so SVG bbox never clips
     const allX = [x1, x2], allY = [y1, y2];
     if (lineType === 'elbow') {
         const dx = x2 - x1, dy = y2 - y1;
-        if (Math.abs(dy) >= Math.abs(dx)) {
-            allY.push((y1 + y2) / 2 + midOffset);
-        } else {
-            allX.push((x1 + x2) / 2 + midOffset);
-        }
+        const vertDom = Math.abs(dy) >= Math.abs(dx);
+        const ex = elbowX !== null ? elbowX : (vertDom ? x1 : x2);
+        const ey = elbowY !== null ? elbowY : (vertDom ? y2 : y1);
+        allX.push(ex);
+        allY.push(ey);
     } else if (lineType === 'curved') {
         const absDx = Math.abs(x2-x1), absDy = Math.abs(y2-y1);
         const ext = Math.max(absDx, absDy) * 0.5;
@@ -1151,8 +1152,10 @@ function createConnectorEl(widget) {
     const ep2Anchored = !!widget.endAnchor;
 
     // Segment hit lines (elbow only) — thick transparent SVG lines with drag cursors
+    const lelbowX = elbowX !== null ? elbowX - minX : null;
+    const lelbowY = elbowY !== null ? elbowY - minY : null;
     const segs = lineType === 'elbow'
-        ? getElbowSegments(lx1, ly1, lx2, ly2, midOffset)
+        ? getElbowSegments(lx1, ly1, lx2, ly2, lelbowX, lelbowY)
         : [];
     const segHitPaths = segs.map((seg, i) =>
         `<line x1="${seg.x1}" y1="${seg.y1}" x2="${seg.x2}" y2="${seg.y2}"
@@ -1202,7 +1205,7 @@ function createConnectorEl(widget) {
         </svg>
     `;
 
-    // ── Segment drag: each thick transparent line adjusts midOffset ──
+    // ── Segment drag: each thick transparent line adjusts elbowX or elbowY ──
     segs.forEach((seg, i) => {
         const segEl = el.querySelector(`.c-seg-${i}`);
         if (!segEl) return;
@@ -1211,13 +1214,25 @@ function createConnectorEl(widget) {
             if (e.button === 2) return;
             e.preventDefault(); e.stopPropagation();
             selectWidget(widget.id); renderSettingsPanel();
-            const orig = widget.midOffset ?? 0;
-            const startC = isH ? e.clientY : e.clientX;
+            const { sx: cx1, sy: cy1, ex: cx2, ey: cy2 } = resolveConnectorPoints(widget);
+            const dx = cx2 - cx1, dy = cy2 - cy1;
+            const vDom = Math.abs(dy) >= Math.abs(dx);
+            const defEX = vDom ? cx1 : cx2;
+            const defEY = vDom ? cy2 : cy1;
+            const origEX = widget.elbowX ?? defEX;
+            const origEY = widget.elbowY ?? defEY;
+            const startCX = e.clientX, startCY = e.clientY;
             let raf = null;
             const onMove = (e) => {
                 if (raf) cancelAnimationFrame(raf);
                 raf = requestAnimationFrame(() => {
-                    widget.midOffset = orig + (isH ? e.clientY : e.clientX) - startC;
+                    if (isH) {
+                        widget.elbowY = origEY + (e.clientY - startCY);
+                        widget.elbowX = origEX;
+                    } else {
+                        widget.elbowX = origEX + (e.clientX - startCX);
+                        widget.elbowY = origEY;
+                    }
                     updateConnectorEl(widget.id);
                 });
             };
@@ -2330,12 +2345,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await initEditor(slides[0].html_content || '');
     widgets = (slides[0].widgets_data || []).map(w => {
-        if (w.type === 'connector' && w.midRatio !== undefined && w.midOffset === undefined) {
-            const adx = Math.abs((w.endX||0) - (w.startX||0));
-            const ady = Math.abs((w.endY||0) - (w.startY||0));
-            const total = ady >= adx ? ady : adx;
-            w.midOffset = ((w.midRatio ?? 0.5) - 0.5) * total;
+        if (w.type === 'connector') {
             delete w.midRatio;
+            delete w.midOffset;
+            if (w.elbowX === undefined) w.elbowX = null;
+            if (w.elbowY === undefined) w.elbowY = null;
         }
         return { ...w };
     });

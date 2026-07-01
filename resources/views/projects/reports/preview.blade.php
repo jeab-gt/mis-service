@@ -612,14 +612,17 @@ function renderWidgetContent(widget) {
                 }
             } else {
                 const rdx = lx2 - lx1, rdy = ly2 - ly1;
-                const mOff = widget.midOffset ?? 0;
+                const offX = widget.x || 0, offY = widget.y || 0;
+                const cex = widget.elbowX ?? null, cey = widget.elbowY ?? null;
+                let ex, ey;
                 if (Math.abs(rdy) >= Math.abs(rdx)) {
-                    const midY = ly1 + rdy * 0.5 + mOff;
-                    pathD = `M ${lx1} ${ly1} L ${lx1} ${midY} L ${lx2} ${midY} L ${lx2} ${ly2}`;
+                    ex = cex !== null ? cex - offX : lx1;
+                    ey = cey !== null ? cey - offY : ly2;
                 } else {
-                    const midX = lx1 + rdx * 0.5 + mOff;
-                    pathD = `M ${lx1} ${ly1} L ${midX} ${ly1} L ${midX} ${ly2} L ${lx2} ${ly2}`;
+                    ex = cex !== null ? cex - offX : lx2;
+                    ey = cey !== null ? cey - offY : ly1;
                 }
+                pathD = `M ${lx1} ${ly1} L ${ex} ${ey} L ${lx2} ${ly2}`;
             }
             const color = s.color || '#374151';
             const strokeW = s.strokeWidth || 2;
