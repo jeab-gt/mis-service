@@ -1147,8 +1147,22 @@ function createConnectorEl(widget) {
         z-index:${isSelected ? 10 : 1};
     `;
 
+    // Compute midpoint handle position in local SVG coords
+    const vertDom = Math.abs(ly2 - ly1) >= Math.abs(lx2 - lx1);
+    let mhx, mhy;
+    if (vertDom) {
+        mhx = (lx1 + lx2) / 2;
+        mhy = (ly1 + ly2) / 2 + midOffset;
+    } else {
+        mhx = (lx1 + lx2) / 2 + midOffset;
+        mhy = (ly1 + ly2) / 2;
+    }
+    const ep1Anchored = !!widget.startAnchor;
+    const ep2Anchored = !!widget.endAnchor;
+
     el.innerHTML = `
-        <svg width="${svgW}" height="${svgH}" style="overflow:visible;position:absolute;top:0;left:0">
+        <svg width="${svgW}" height="${svgH}"
+             style="overflow:visible;position:absolute;top:0;left:0;pointer-events:none">
             <defs>
                 <marker id="${markerId}" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
                     <polygon points="0,0 0,6 8,3" fill="${color}"/>
@@ -1157,279 +1171,155 @@ function createConnectorEl(widget) {
                     <polygon points="0,0 0,6 8,3" fill="${color}"/>
                 </marker>
             </defs>
+
             <path d="${pathD}" fill="none"
                   stroke="${color}" stroke-width="${strokeW}"
                   stroke-linejoin="round" stroke-linecap="round" ${dashArr}
                   ${markerStart} ${markerEnd}
                   style="${s.shadow ? 'filter:drop-shadow(0 2px 4px rgba(0,0,0,.3))' : ''}"/>
+
+            <path d="${pathD}" fill="none"
+                  stroke="transparent" stroke-width="16"
+                  stroke-linecap="round" stroke-linejoin="round"
+                  style="cursor:move;pointer-events:stroke"
+                  class="c-hit"/>
+
+            ${lineType === 'elbow' ? `
+            <rect x="${mhx - 6}" y="${mhy - 6}" width="12" height="12" rx="2"
+                  fill="#f59e0b" stroke="white" stroke-width="2"
+                  style="cursor:${vertDom ? 'ns-resize' : 'ew-resize'};pointer-events:all"
+                  class="c-mid"/>
+            ` : ''}
+
+            ${isSelected ? `
+            <circle cx="${lx1}" cy="${ly1}" r="7"
+                    fill="${ep1Anchored ? '#dc2626' : '#16a34a'}"
+                    stroke="white" stroke-width="${ep1Anchored ? 3 : 2}"
+                    style="cursor:crosshair;pointer-events:all"
+                    class="c-ep-start"/>
+            <circle cx="${lx2}" cy="${ly2}" r="7"
+                    fill="${ep2Anchored ? '#dc2626' : '#ef4444'}"
+                    stroke="white" stroke-width="${ep2Anchored ? 3 : 2}"
+                    style="cursor:crosshair;pointer-events:all"
+                    class="c-ep-end"/>
+            ` : ''}
         </svg>
     `;
 
-    // SVG hit path — follows the actual line so it never blocks other widgets
-    const hitSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    hitSvg.setAttribute('width', svgW);
-    hitSvg.setAttribute('height', svgH);
-    hitSvg.style.cssText = `position:absolute;top:0;left:0;overflow:visible;pointer-events:none;z-index:6;`;
+    // ── Hit path: select + drag whole connector ──
+    const hitPathEl = el.querySelector('.c-hit');
+    if (hitPathEl) {
+        hitPathEl.addEventListener('mousedown', (e) => {
+            if (e.button === 2) return;
+            e.preventDefault(); e.stopPropagation();
+            selectWidget(widget.id); renderSettingsPanel();
+            const sx = e.clientX, sy = e.clientY;
+            const osx = widget.startX, osy = widget.startY;
+            const oex = widget.endX,   oey = widget.endY;
+            let raf = null;
+            const onMove = (e) => {
+                if (raf) cancelAnimationFrame(raf);
+                raf = requestAnimationFrame(() => {
+                    const dx = e.clientX - sx, dy = e.clientY - sy;
+                    if (!widget.startAnchor) { widget.startX = osx + dx; widget.startY = osy + dy; }
+                    if (!widget.endAnchor)   { widget.endX   = oex + dx; widget.endY   = oey + dy; }
+                    widget.x = Math.min(widget.startX, widget.endX);
+                    widget.y = Math.min(widget.startY, widget.endY);
+                    updateConnectorEl(widget.id);
+                });
+            };
+            const onUp = () => { if (raf) cancelAnimationFrame(raf); document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        });
+        hitPathEl.addEventListener('contextmenu', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            selectWidget(widget.id); renderSettingsPanel();
+            showContextMenu(e.clientX, e.clientY);
+        });
+    }
 
-    const hitPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    hitPath.setAttribute('d', pathD);
-    hitPath.setAttribute('fill', 'none');
-    hitPath.setAttribute('stroke', 'transparent');
-    hitPath.setAttribute('stroke-width', '16');
-    hitPath.setAttribute('stroke-linecap', 'round');
-    hitPath.setAttribute('stroke-linejoin', 'round');
-    hitPath.style.cssText = 'cursor:move; pointer-events:stroke;';
+    // ── Mid handle: drag midOffset ──
+    const midEl = el.querySelector('.c-mid');
+    if (midEl) {
+        midEl.addEventListener('mousedown', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            selectWidget(widget.id); renderSettingsPanel();
+            const orig = widget.midOffset ?? 0;
+            const sx = e.clientX, sy = e.clientY;
+            let raf = null;
+            const onMove = (e) => {
+                if (raf) cancelAnimationFrame(raf);
+                raf = requestAnimationFrame(() => {
+                    widget.midOffset = orig + (vertDom ? e.clientY - sy : e.clientX - sx);
+                    updateConnectorEl(widget.id);
+                });
+            };
+            const onUp = () => { if (raf) cancelAnimationFrame(raf); document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        });
+    }
 
-    hitSvg.appendChild(hitPath);
-    el.appendChild(hitSvg);
-
-    hitPath.addEventListener('mousedown', (e) => {
-        if (e.button === 2) return;
-        e.preventDefault();
-        e.stopPropagation();
-        selectWidget(widget.id);
-        renderSettingsPanel();
-
-        const startClientX = e.clientX, startClientY = e.clientY;
-        const origStartX = widget.startX, origStartY = widget.startY;
-        const origEndX   = widget.endX,   origEndY   = widget.endY;
-        let rafId = null;
-        const onMove = (e) => {
-            const ddx = e.clientX - startClientX, ddy = e.clientY - startClientY;
-            if (rafId) cancelAnimationFrame(rafId);
-            rafId = requestAnimationFrame(() => {
-                if (!widget.startAnchor) { widget.startX = origStartX + ddx; widget.startY = origStartY + ddy; }
-                if (!widget.endAnchor)   { widget.endX   = origEndX   + ddx; widget.endY   = origEndY   + ddy; }
-                widget.x = Math.min(widget.startX, widget.endX);
-                widget.y = Math.min(widget.startY, widget.endY);
-                updateConnectorEl(widget.id);
-            });
-        };
-        const onUp = () => {
-            if (rafId) cancelAnimationFrame(rafId);
-            document.removeEventListener('mousemove', onMove);
-            document.removeEventListener('mouseup', onUp);
-        };
-        document.addEventListener('mousemove', onMove);
-        document.addEventListener('mouseup', onUp);
-    });
-
-    hitPath.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        selectWidget(widget.id);
-        renderSettingsPanel();
-        showContextMenu(e.clientX, e.clientY);
-    });
-
-    // Handles: remove stale, then append fresh directly to overlay (bypasses pointer-events:none on el)
-    document.querySelectorAll(`.connector-handle[data-cid="${widget.id}"]`).forEach(h => h.remove());
-
-    queueMicrotask(() => {
-        const overlay = document.getElementById('widget-overlay');
-        if (!overlay) return;
-
-        document.querySelectorAll(`.connector-handle[data-cid="${widget.id}"]`).forEach(h => h.remove());
-
-        const { sx: cx1, sy: cy1, ex: cx2, ey: cy2 } = resolveConnectorPoints(widget);
-        const cmidOffset = widget.midOffset ?? 0;
-        const cdx = cx2 - cx1, cdy = cy2 - cy1;
-        const cVertDom = Math.abs(cdy) >= Math.abs(cdx);
-        const cLineType = widget.style?.lineType || 'elbow';
-
-        // ── segment hit area ──
-        if (cLineType === 'elbow') {
-            const segs = getElbowSegments(cx1, cy1, cx2, cy2, cmidOffset);
-            const midSeg = segs[1];
-            if (midSeg && Math.hypot(midSeg.x2 - midSeg.x1, midSeg.y2 - midSeg.y1) >= 4) {
-                const isH = midSeg.dir === 'h';
-                const HIT = 10;
-                const segEl = document.createElement('div');
-                segEl.className = 'connector-handle';
-                segEl.dataset.cid = widget.id;
-                if (isH) {
-                    segEl.style.cssText = `
-                        position:absolute;
-                        left:${Math.min(midSeg.x1, midSeg.x2)}px;
-                        top:${midSeg.y1 - HIT}px;
-                        width:${Math.abs(midSeg.x2 - midSeg.x1)}px;
-                        height:${HIT * 2}px;
-                        cursor:ns-resize; pointer-events:all;
-                        background:transparent; z-index:8;
-                    `;
+    // ── Endpoint handles: drag to reposition / re-anchor ──
+    [['c-ep-start', 'start'], ['c-ep-end', 'end']].forEach(([cls, point]) => {
+        const hEl = el.querySelector('.' + cls);
+        if (!hEl) return;
+        hEl.addEventListener('mousedown', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            if (point === 'start') widget.startAnchor = null;
+            else                   widget.endAnchor   = null;
+            const overlay = document.getElementById('widget-overlay');
+            const rect = overlay.getBoundingClientRect();
+            showAnchorDots(widget.id);
+            let snap = null, raf = null;
+            const onMove = (e) => {
+                const nx = e.clientX - rect.left, ny = e.clientY - rect.top;
+                snap = findNearestAnchor(nx, ny, widget.id);
+                highlightAnchor(snap);
+                const fx = snap ? snap.pt.x : nx, fy = snap ? snap.pt.y : ny;
+                if (raf) cancelAnimationFrame(raf);
+                raf = requestAnimationFrame(() => {
+                    if (point === 'start') { widget.startX = fx; widget.startY = fy; }
+                    else                   { widget.endX   = fx; widget.endY   = fy; }
+                    widget.x = Math.min(widget.startX, widget.endX);
+                    widget.y = Math.min(widget.startY, widget.endY);
+                    widget.w = Math.abs(widget.endX - widget.startX);
+                    widget.h = Math.abs(widget.endY - widget.startY);
+                    updateConnectorEl(widget.id);
+                });
+            };
+            const onUp = (e) => {
+                if (raf) cancelAnimationFrame(raf);
+                hideAnchorDots();
+                const nx = e.clientX - rect.left, ny = e.clientY - rect.top;
+                snap = findNearestAnchor(nx, ny, widget.id);
+                if (point === 'start') {
+                    widget.startAnchor = snap ? { widgetId: snap.widgetId, side: snap.side } : null;
+                    if (snap) { widget.startX = snap.pt.x; widget.startY = snap.pt.y; }
                 } else {
-                    segEl.style.cssText = `
-                        position:absolute;
-                        left:${midSeg.x1 - HIT}px;
-                        top:${Math.min(midSeg.y1, midSeg.y2)}px;
-                        width:${HIT * 2}px;
-                        height:${Math.abs(midSeg.y2 - midSeg.y1)}px;
-                        cursor:ew-resize; pointer-events:all;
-                        background:transparent; z-index:8;
-                    `;
+                    widget.endAnchor = snap ? { widgetId: snap.widgetId, side: snap.side } : null;
+                    if (snap) { widget.endX = snap.pt.x; widget.endY = snap.pt.y; }
                 }
-                segEl.addEventListener('mouseenter', () => { segEl.style.background = 'rgba(59,130,246,0.15)'; });
-                segEl.addEventListener('mouseleave', () => { segEl.style.background = 'transparent'; });
-                segEl.addEventListener('mousedown', (e) => {
-                    if (e.button === 2) return;
-                    e.preventDefault();
-                    e.stopPropagation();
-                    selectWidget(widget.id);
-                    renderSettingsPanel();
-                    const orig = widget.midOffset ?? 0;
-                    const sx = e.clientX, sy = e.clientY;
-                    let raf = null;
-                    const onMove = (e) => {
-                        if (raf) cancelAnimationFrame(raf);
-                        raf = requestAnimationFrame(() => {
-                            widget.midOffset = orig + (isH ? e.clientY - sy : e.clientX - sx);
-                            updateConnectorEl(widget.id);
-                        });
-                    };
-                    const onUp = () => {
-                        if (raf) cancelAnimationFrame(raf);
-                        document.removeEventListener('mousemove', onMove);
-                        document.removeEventListener('mouseup', onUp);
-                    };
-                    document.addEventListener('mousemove', onMove);
-                    document.addEventListener('mouseup', onUp);
-                });
-                overlay.appendChild(segEl);
-            }
-        }
+                updateConnectorEl(widget.id);
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+            };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        });
+    });
 
-        // ── midpoint handle ──
-        if (cLineType === 'elbow') {
-            let hx, hy;
-            if (cVertDom) {
-                hx = (cx1 + cx2) / 2;
-                hy = (cy1 + cy2) / 2 + cmidOffset;
-            } else {
-                hx = (cx1 + cx2) / 2 + cmidOffset;
-                hy = (cy1 + cy2) / 2;
-            }
-            const midHandle = document.createElement('div');
-            midHandle.className = 'connector-handle';
-            midHandle.dataset.cid = widget.id;
-            midHandle.style.cssText = `
-                position:absolute;
-                left:${hx - 7}px; top:${hy - 7}px;
-                width:14px; height:14px;
-                background:#f59e0b; border:2px solid white; border-radius:3px;
-                cursor:${cVertDom ? 'ns-resize' : 'ew-resize'};
-                pointer-events:all; z-index:200;
-                box-shadow:0 1px 4px rgba(0,0,0,.4);
-            `;
-            midHandle.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('[midHandle] clicked! origOffset:', widget.midOffset);
-                selectWidget(widget.id);
-                renderSettingsPanel();
-                const orig = widget.midOffset ?? 0;
-                const sx = e.clientX, sy = e.clientY;
-                let raf = null;
-                const onMove = (e) => {
-                    if (raf) cancelAnimationFrame(raf);
-                    raf = requestAnimationFrame(() => {
-                        widget.midOffset = orig + (cVertDom ? e.clientY - sy : e.clientX - sx);
-                        console.log('[midHandle] new midOffset:', widget.midOffset);
-                        updateConnectorEl(widget.id);
-                    });
-                };
-                const onUp = () => {
-                    if (raf) cancelAnimationFrame(raf);
-                    document.removeEventListener('mousemove', onMove);
-                    document.removeEventListener('mouseup', onUp);
-                };
-                document.addEventListener('mousemove', onMove);
-                document.addEventListener('mouseup', onUp);
-            });
-            overlay.appendChild(midHandle);
-        }
-
-        // ── endpoint handles + mini toolbar (selected only) ──
-        if (selectedWidgetId === widget.id) {
-            ['start', 'end'].forEach(point => {
-                const px = point === 'start' ? cx1 : cx2;
-                const py = point === 'start' ? cy1 : cy2;
-                const isAnchored = point === 'start' ? !!widget.startAnchor : !!widget.endAnchor;
-                const epHandle = document.createElement('div');
-                epHandle.className = 'connector-handle';
-                epHandle.dataset.cid = widget.id;
-                epHandle.style.cssText = `
-                    position:absolute;
-                    left:${px - 7}px; top:${py - 7}px;
-                    width:14px; height:14px;
-                    background:${isAnchored ? '#dc2626' : (point === 'start' ? '#16a34a' : '#f59e0b')};
-                    border-radius:50%;
-                    border:${isAnchored ? '3px solid white' : '2px solid white'};
-                    cursor:crosshair; pointer-events:all; z-index:200;
-                    box-shadow:${isAnchored ? '0 0 0 2px #dc2626' : '0 1px 3px rgba(0,0,0,.3)'};
-                `;
-                if (isAnchored) {
-                    const anchor = point === 'start' ? widget.startAnchor : widget.endAnchor;
-                    epHandle.title = `Anchored (${anchor.side})`;
-                }
-                epHandle.addEventListener('mousedown', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (point === 'start') widget.startAnchor = null;
-                    else                   widget.endAnchor   = null;
-
-                    const overlayRect = overlay.getBoundingClientRect();
-                    showAnchorDots(widget.id);
-                    let snapAnchor = null, rafId = null;
-
-                    const onMove = (e) => {
-                        const nx = e.clientX - overlayRect.left;
-                        const ny = e.clientY - overlayRect.top;
-                        snapAnchor = findNearestAnchor(nx, ny, widget.id);
-                        highlightAnchor(snapAnchor);
-                        const finalX = snapAnchor ? snapAnchor.pt.x : nx;
-                        const finalY = snapAnchor ? snapAnchor.pt.y : ny;
-                        if (rafId) cancelAnimationFrame(rafId);
-                        rafId = requestAnimationFrame(() => {
-                            if (point === 'start') { widget.startX = finalX; widget.startY = finalY; }
-                            else                   { widget.endX   = finalX; widget.endY   = finalY; }
-                            widget.x = Math.min(widget.startX, widget.endX);
-                            widget.y = Math.min(widget.startY, widget.endY);
-                            widget.w = Math.abs(widget.endX - widget.startX);
-                            widget.h = Math.abs(widget.endY - widget.startY);
-                            updateConnectorEl(widget.id);
-                        });
-                    };
-
-                    const onUp = (e) => {
-                        if (rafId) cancelAnimationFrame(rafId);
-                        hideAnchorDots();
-                        const nx = e.clientX - overlayRect.left;
-                        const ny = e.clientY - overlayRect.top;
-                        const finalSnap = findNearestAnchor(nx, ny, widget.id);
-                        if (point === 'start') {
-                            widget.startAnchor = finalSnap ? { widgetId: finalSnap.widgetId, side: finalSnap.side } : null;
-                            if (finalSnap) { widget.startX = finalSnap.pt.x; widget.startY = finalSnap.pt.y; }
-                        } else {
-                            widget.endAnchor = finalSnap ? { widgetId: finalSnap.widgetId, side: finalSnap.side } : null;
-                            if (finalSnap) { widget.endX = finalSnap.pt.x; widget.endY = finalSnap.pt.y; }
-                        }
-                        updateConnectorEl(widget.id);
-                        document.removeEventListener('mousemove', onMove);
-                        document.removeEventListener('mouseup', onUp);
-                    };
-
-                    document.addEventListener('mousemove', onMove);
-                    document.addEventListener('mouseup', onUp);
-                });
-                overlay.appendChild(epHandle);
-            });
-
-            // Mini toolbar
+    // ── Mini toolbar (selected only) — appended to overlay directly so button is always clickable ──
+    if (isSelected) {
+        document.querySelectorAll(`.connector-handle[data-cid="${widget.id}"]`).forEach(h => h.remove());
+        const overlay = document.getElementById('widget-overlay');
+        if (overlay) {
             const tb = document.createElement('div');
             tb.className = 'connector-handle widget-tb';
             tb.dataset.cid = widget.id;
-            const tbX = (cx1 + cx2) / 2 - 50;
-            const tbY = Math.min(cy1, cy2) - 38;
+            const tbX = (x1 + x2) / 2 - 50;
+            const tbY = Math.min(y1, y2) - 38;
             tb.style.cssText = `
                 position:absolute; left:${tbX}px; top:${tbY}px;
                 background:#1f2937; color:white; border-radius:6px;
@@ -1448,7 +1338,7 @@ function createConnectorEl(widget) {
             });
             overlay.appendChild(tb);
         }
-    });
+    }
 
     return el;
 }
