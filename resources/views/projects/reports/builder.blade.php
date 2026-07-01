@@ -523,10 +523,11 @@ function insertConnector() {
     const widget = {
         id: 'w_' + Date.now(),
         type: 'connector',
-        startX: 80,  startY: 100,
+        startX: 80,  startY: 120,
         endX:   300, endY:   240,
-        x: 80, y: 100,
-        w: 220, h: 140,
+        startAnchor: null,
+        endAnchor:   null,
+        x: 80, y: 120, w: 220, h: 120,
         rotation: 0,
         style: {
             color: '#374151',
@@ -780,6 +781,7 @@ function buildWidgetEl(widget) {
             rafId = requestAnimationFrame(() => {
                 widget.x = nx; widget.y = ny;
                 el.style.left = nx + 'px'; el.style.top = ny + 'px';
+                updateConnectedConnectors(widget.id);
             });
         };
         const onUp = () => {
@@ -811,6 +813,7 @@ function buildWidgetEl(widget) {
             document.removeEventListener('mousemove', onMove);
             document.removeEventListener('mouseup', onUp);
             content.innerHTML = renderWidgetContent(widget);
+            updateConnectedConnectors(widget.id);
         };
         document.addEventListener('mousemove', onMove);
         document.addEventListener('mouseup', onUp);
@@ -858,9 +861,109 @@ function buildWidgetEl(widget) {
     return el;
 }
 
+function getAnchorPoint(widgetId, side) {
+    const w = widgets.find(x => x.id === widgetId);
+    if (!w || w.type === 'connector') return null;
+    switch (side) {
+        case 'top':    return { x: w.x + w.w/2, y: w.y };
+        case 'bottom': return { x: w.x + w.w/2, y: w.y + w.h };
+        case 'left':   return { x: w.x,          y: w.y + w.h/2 };
+        case 'right':  return { x: w.x + w.w,    y: w.y + w.h/2 };
+    }
+    return null;
+}
+
+function resolveConnectorPoints(connector) {
+    let sx = connector.startX, sy = connector.startY;
+    let ex = connector.endX,   ey = connector.endY;
+    if (connector.startAnchor) {
+        const pt = getAnchorPoint(connector.startAnchor.widgetId, connector.startAnchor.side);
+        if (pt) { sx = pt.x; sy = pt.y; }
+    }
+    if (connector.endAnchor) {
+        const pt = getAnchorPoint(connector.endAnchor.widgetId, connector.endAnchor.side);
+        if (pt) { ex = pt.x; ey = pt.y; }
+    }
+    return { sx, sy, ex, ey };
+}
+
+function showAnchorDots(excludeConnectorId) {
+    hideAnchorDots();
+    widgets.forEach(w => {
+        if (w.type === 'connector') return;
+        ['top','bottom','left','right'].forEach(side => {
+            const pt = getAnchorPoint(w.id, side);
+            if (!pt) return;
+            const dot = document.createElement('div');
+            dot.className = 'anchor-dot';
+            dot.dataset.widgetId = w.id;
+            dot.dataset.side = side;
+            dot.style.cssText = `
+                position:absolute;
+                left:${pt.x - 7}px; top:${pt.y - 7}px;
+                width:14px; height:14px;
+                background:#2563eb; border:2px solid white;
+                border-radius:50%; pointer-events:none;
+                z-index:50; opacity:0.7;
+                transition:transform .1s, opacity .1s, background .1s;
+                box-shadow:0 0 0 3px rgba(37,99,235,.3);
+            `;
+            document.getElementById('widget-overlay').appendChild(dot);
+        });
+    });
+}
+
+function hideAnchorDots() {
+    document.querySelectorAll('.anchor-dot').forEach(d => d.remove());
+}
+
+function findNearestAnchor(x, y, excludeConnectorId, snapDist = 18) {
+    let best = null, bestDist = snapDist;
+    widgets.forEach(w => {
+        if (w.type === 'connector') return;
+        ['top','bottom','left','right'].forEach(side => {
+            const pt = getAnchorPoint(w.id, side);
+            if (!pt) return;
+            const dist = Math.hypot(x - pt.x, y - pt.y);
+            if (dist < bestDist) { bestDist = dist; best = { widgetId: w.id, side, pt }; }
+        });
+    });
+    return best;
+}
+
+function highlightAnchor(anchor) {
+    document.querySelectorAll('.anchor-dot').forEach(d => {
+        const match = anchor && d.dataset.widgetId === anchor.widgetId && d.dataset.side === anchor.side;
+        d.style.background = match ? '#dc2626' : '#2563eb';
+        d.style.opacity    = match ? '1' : '0.7';
+        d.style.transform  = match ? 'scale(1.4)' : 'scale(1)';
+    });
+}
+
+function updateConnectedConnectors(movedWidgetId) {
+    widgets.forEach(w => {
+        if (w.type !== 'connector') return;
+        const startLinked = w.startAnchor?.widgetId === movedWidgetId;
+        const endLinked   = w.endAnchor?.widgetId   === movedWidgetId;
+        if (!startLinked && !endLinked) return;
+        if (startLinked) {
+            const pt = getAnchorPoint(w.startAnchor.widgetId, w.startAnchor.side);
+            if (pt) { w.startX = pt.x; w.startY = pt.y; }
+        }
+        if (endLinked) {
+            const pt = getAnchorPoint(w.endAnchor.widgetId, w.endAnchor.side);
+            if (pt) { w.endX = pt.x; w.endY = pt.y; }
+        }
+        w.x = Math.min(w.startX, w.endX);
+        w.y = Math.min(w.startY, w.endY);
+        w.w = Math.abs(w.endX - w.startX);
+        w.h = Math.abs(w.endY - w.startY);
+        updateConnectorEl(w.id);
+    });
+}
+
 function createConnectorEl(widget) {
-    const x1 = widget.startX, y1 = widget.startY;
-    const x2 = widget.endX,   y2 = widget.endY;
+    const { sx: x1, sy: y1, ex: x2, ey: y2 } = resolveConnectorPoints(widget);
     const minX = Math.min(x1, x2) - 10;
     const minY = Math.min(y1, y2) - 10;
     const maxX = Math.max(x1, x2) + 10;
@@ -966,29 +1069,46 @@ function createConnectorEl(widget) {
         ['start', 'end'].forEach(point => {
             const hx = point === 'start' ? lx1 : lx2;
             const hy = point === 'start' ? ly1 : ly2;
+            const isAnchored = point === 'start' ? !!widget.startAnchor : !!widget.endAnchor;
             const handle = document.createElement('div');
             handle.style.cssText = `
                 position:absolute;
                 left:${hx - 7}px; top:${hy - 7}px;
                 width:14px; height:14px;
-                background:${point === 'start' ? '#16a34a' : '#dc2626'};
-                border-radius:50%; border:2px solid white;
+                background:${isAnchored ? '#dc2626' : (point === 'start' ? '#16a34a' : '#f59e0b')};
+                border-radius:50%;
+                border:${isAnchored ? '3px solid white' : '2px solid white'};
                 cursor:crosshair; pointer-events:all;
-                box-shadow:0 1px 3px rgba(0,0,0,.3); z-index:20;
+                box-shadow:${isAnchored ? '0 0 0 2px #dc2626' : '0 1px 3px rgba(0,0,0,.3)'};
+                z-index:20;
             `;
+            if (isAnchored) {
+                const anchor = point === 'start' ? widget.startAnchor : widget.endAnchor;
+                handle.title = `Anchored (${anchor.side})`;
+            }
             handle.addEventListener('mousedown', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                if (point === 'start') widget.startAnchor = null;
+                else                   widget.endAnchor   = null;
+
                 const overlay = document.getElementById('widget-overlay');
                 const overlayRect = overlay.getBoundingClientRect();
+                showAnchorDots(widget.id);
+                let snapAnchor = null;
                 let rafId = null;
+
                 const onMove = (e) => {
                     const nx = e.clientX - overlayRect.left;
                     const ny = e.clientY - overlayRect.top;
+                    snapAnchor = findNearestAnchor(nx, ny, widget.id);
+                    highlightAnchor(snapAnchor);
+                    const finalX = snapAnchor ? snapAnchor.pt.x : nx;
+                    const finalY = snapAnchor ? snapAnchor.pt.y : ny;
                     if (rafId) cancelAnimationFrame(rafId);
                     rafId = requestAnimationFrame(() => {
-                        if (point === 'start') { widget.startX = nx; widget.startY = ny; }
-                        else                   { widget.endX = nx;   widget.endY = ny; }
+                        if (point === 'start') { widget.startX = finalX; widget.startY = finalY; }
+                        else                   { widget.endX   = finalX; widget.endY   = finalY; }
                         widget.x = Math.min(widget.startX, widget.endX);
                         widget.y = Math.min(widget.startY, widget.endY);
                         widget.w = Math.abs(widget.endX - widget.startX);
@@ -996,11 +1116,25 @@ function createConnectorEl(widget) {
                         updateConnectorEl(widget.id);
                     });
                 };
-                const onUp = () => {
+
+                const onUp = (e) => {
                     if (rafId) cancelAnimationFrame(rafId);
+                    hideAnchorDots();
+                    const nx = e.clientX - overlayRect.left;
+                    const ny = e.clientY - overlayRect.top;
+                    const finalSnap = findNearestAnchor(nx, ny, widget.id);
+                    if (point === 'start') {
+                        widget.startAnchor = finalSnap ? { widgetId: finalSnap.widgetId, side: finalSnap.side } : null;
+                        if (finalSnap) { widget.startX = finalSnap.pt.x; widget.startY = finalSnap.pt.y; }
+                    } else {
+                        widget.endAnchor = finalSnap ? { widgetId: finalSnap.widgetId, side: finalSnap.side } : null;
+                        if (finalSnap) { widget.endX = finalSnap.pt.x; widget.endY = finalSnap.pt.y; }
+                    }
+                    updateConnectorEl(widget.id);
                     document.removeEventListener('mousemove', onMove);
                     document.removeEventListener('mouseup', onUp);
                 };
+
                 document.addEventListener('mousemove', onMove);
                 document.addEventListener('mouseup', onUp);
             });
@@ -1126,11 +1260,16 @@ function selectWidget(id) {
 }
 
 function deleteWidget(id) {
+    widgets.forEach(w => {
+        if (w.type !== 'connector') return;
+        if (w.startAnchor?.widgetId === id) w.startAnchor = null;
+        if (w.endAnchor?.widgetId   === id) w.endAnchor   = null;
+    });
     widgets = widgets.filter(w => w.id !== id);
     selectedWidgetId = null;
-    const el = document.getElementById('widget-' + id);
-    if (el) el.remove();
+    renderAllWidgets();
     document.getElementById('settings-panel').style.display = 'none';
+    document.getElementById('context-menu').style.display = 'none';
 }
 
 function showContextMenu(x, y) {

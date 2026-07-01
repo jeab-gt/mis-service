@@ -135,7 +135,36 @@ function loadSlide() {
         'hexagon','star','arrow-right','arrow-left',
         'arrow-up','arrow-down','double-arrow','textbox','connector',
     ];
-    (slide.widgets_data || []).forEach(w => {
+    // Resolve connector anchor positions before rendering
+    const allWidgets = (slide.widgets_data || []);
+    function getPreviewAnchor(wid, side) {
+        const wa = allWidgets.find(x => x.id === wid);
+        if (!wa || wa.type === 'connector') return null;
+        switch (side) {
+            case 'top':    return { x: wa.x + wa.w/2, y: wa.y };
+            case 'bottom': return { x: wa.x + wa.w/2, y: wa.y + wa.h };
+            case 'left':   return { x: wa.x,           y: wa.y + wa.h/2 };
+            case 'right':  return { x: wa.x + wa.w,    y: wa.y + wa.h/2 };
+        }
+        return null;
+    }
+    allWidgets.forEach(w => {
+        if (w.type !== 'connector') return;
+        if (w.startAnchor) {
+            const pt = getPreviewAnchor(w.startAnchor.widgetId, w.startAnchor.side);
+            if (pt) { w.startX = pt.x; w.startY = pt.y; }
+        }
+        if (w.endAnchor) {
+            const pt = getPreviewAnchor(w.endAnchor.widgetId, w.endAnchor.side);
+            if (pt) { w.endX = pt.x; w.endY = pt.y; }
+        }
+        w.x = Math.min(w.startX, w.endX);
+        w.y = Math.min(w.startY, w.endY);
+        w.w = Math.abs(w.endX - w.startX);
+        w.h = Math.abs(w.endY - w.startY);
+    });
+
+    allWidgets.forEach(w => {
         const isShape   = SHAPE_TYPES.includes(w.type);
         const DATA_WIDGET_TYPES = ['kpi','chart','gantt','milestone','team','blocker'];
         const isDataWidget = DATA_WIDGET_TYPES.includes(w.type);
