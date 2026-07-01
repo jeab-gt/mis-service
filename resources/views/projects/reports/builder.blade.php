@@ -1092,13 +1092,25 @@ function createConnectorEl(widget) {
     const s = widget.style || {};
     const lineType = s.lineType || 'elbow';
 
-    const minX = Math.min(x1, x2) - 10;
-    const minY = Math.min(y1, y2) - 10;
-    const svgW = Math.max(x1, x2) - minX + 10;
-    const svgH = Math.max(y1, y2) - minY + 10;
+    const midRatio = (typeof widget.midRatio === 'number') ? widget.midRatio : 0.5;
+
+    // Include the S-shape midpoint so the SVG bounding box is never clipped
+    const allX = [x1, x2], allY = [y1, y2];
+    if (lineType === 'elbow') {
+        const dx = x2 - x1, dy = y2 - y1;
+        if (Math.abs(dy) > Math.abs(dx)) {
+            allY.push(y1 + dy * midRatio);
+        } else {
+            allX.push(x1 + dx * midRatio);
+        }
+    }
+    const PAD = 20;
+    const minX = Math.min(...allX) - PAD;
+    const minY = Math.min(...allY) - PAD;
+    const svgW = Math.max(...allX) + PAD - minX;
+    const svgH = Math.max(...allY) + PAD - minY;
     const lx1 = x1 - minX, ly1 = y1 - minY;
     const lx2 = x2 - minX, ly2 = y2 - minY;
-    const midRatio = (typeof widget.midRatio === 'number') ? widget.midRatio : 0.5;
 
     const color = s.color || '#374151';
     const strokeW = s.strokeWidth || 2;
@@ -1139,13 +1151,8 @@ function createConnectorEl(widget) {
 
     // Segment hit areas — always present so drag works on first click
     if (lineType === 'elbow') {
-        const { sx: csx, sy: csy, ex: cex, ey: cey } = resolveConnectorPoints(widget);
-        const canvasSegs = getElbowSegments(
-            csx - minX, csy - minY,
-            cex - minX, cey - minY,
-            midRatio
-        );
-        const midSeg = canvasSegs[1]; // index 1 is always the draggable middle segment
+        const segs = getElbowSegments(lx1, ly1, lx2, ly2, midRatio);
+        const midSeg = segs[1]; // index 1 is always the draggable middle segment
         if (midSeg) {
             const isH = midSeg.dir === 'h';
             const segLen = Math.hypot(midSeg.x2 - midSeg.x1, midSeg.y2 - midSeg.y1);
@@ -1184,8 +1191,7 @@ function createConnectorEl(widget) {
                     selectWidget(widget.id);
                     renderSettingsPanel();
 
-                    const { sx: p1x, sy: p1y, ex: p2x, ey: p2y } = resolveConnectorPoints(widget);
-                    const totalDist = isH ? Math.abs(p2y - p1y) : Math.abs(p2x - p1x);
+                    const totalDist = isH ? Math.abs(y2 - y1) : Math.abs(x2 - x1);
                     const origRatio = widget.midRatio ?? 0.5;
                     const startCX = e.clientX, startCY = e.clientY;
                     let rafId = null;
@@ -1272,26 +1278,21 @@ function createConnectorEl(widget) {
 
     // Midpoint handle — yellow square, drag to adjust midRatio (elbow only, always shown)
     if (lineType === 'elbow') {
-        const { sx: rx1, sy: ry1, ex: rx2, ey: ry2 } = resolveConnectorPoints(widget);
-        const rdx = rx2 - rx1, rdy = ry2 - ry1;
-        const vertDom = Math.abs(rdy) > Math.abs(rdx);
-        let handleCanvasX, handleCanvasY;
+        const dx = lx2 - lx1, dy = ly2 - ly1;
+        const vertDom = Math.abs(dy) > Math.abs(dx);
+        let handleX, handleY;
         if (vertDom) {
-            const midY = ry1 + rdy * midRatio;
-            handleCanvasX = (rx1 + rx2) / 2;
-            handleCanvasY = midY;
+            handleX = (lx1 + lx2) / 2;
+            handleY = ly1 + dy * midRatio;
         } else {
-            const midX = rx1 + rdx * midRatio;
-            handleCanvasX = midX;
-            handleCanvasY = (ry1 + ry2) / 2;
+            handleX = lx1 + dx * midRatio;
+            handleY = (ly1 + ly2) / 2;
         }
-        const handleLocalX = handleCanvasX - minX;
-        const handleLocalY = handleCanvasY - minY;
 
         const midHandle = document.createElement('div');
         midHandle.style.cssText = `
             position:absolute;
-            left:${handleLocalX - 6}px; top:${handleLocalY - 6}px;
+            left:${handleX - 6}px; top:${handleY - 6}px;
             width:12px; height:12px;
             background:#f59e0b; border:2px solid white;
             border-radius:2px; cursor:${vertDom ? 'ns-resize' : 'ew-resize'};
@@ -1304,8 +1305,7 @@ function createConnectorEl(widget) {
             e.stopPropagation();
             selectWidget(widget.id);
             renderSettingsPanel();
-            const { sx: p1x, sy: p1y, ex: p2x, ey: p2y } = resolveConnectorPoints(widget);
-            const totalDist = vertDom ? Math.abs(p2y - p1y) : Math.abs(p2x - p1x);
+            const totalDist = vertDom ? Math.abs(y2 - y1) : Math.abs(x2 - x1);
             const origRatio = widget.midRatio ?? 0.5;
             const startCX = e.clientX, startCY = e.clientY;
             let rafId = null;
