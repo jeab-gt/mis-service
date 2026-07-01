@@ -1155,54 +1155,46 @@ function createConnectorEl(widget) {
         </svg>
     `;
 
-    // Segment hit areas for elbow connectors (z-index:6, above clickOverlay:4)
-    if (lineType === 'elbow') {
+    // Segment hit areas — only visible/active when this connector is selected
+    if (lineType === 'elbow' && isSelected) {
         const segs = getElbowSegments(lx1, ly1, lx2, ly2, localMid);
         segs.forEach(seg => {
             const isH = seg.dir === 'h';
             const segLen = Math.hypot(seg.x2 - seg.x1, seg.y2 - seg.y1);
             if (segLen < 4) return;
 
-            const HIT = 10; // half-thickness of hit zone
-            const hitDiv = document.createElement('div');
+            const HIT = 10;
+            const segEl = document.createElement('div');
             if (isH) {
-                hitDiv.style.cssText = `
+                segEl.style.cssText = `
                     position:absolute;
                     left:${Math.min(seg.x1, seg.x2)}px;
                     top:${seg.y1 - HIT}px;
                     width:${Math.abs(seg.x2 - seg.x1)}px;
                     height:${HIT * 2}px;
                     cursor:ns-resize; pointer-events:all;
-                    background:transparent; z-index:6;
+                    background:transparent; z-index:8;
                 `;
             } else {
-                hitDiv.style.cssText = `
+                segEl.style.cssText = `
                     position:absolute;
                     left:${seg.x1 - HIT}px;
                     top:${Math.min(seg.y1, seg.y2)}px;
                     width:${HIT * 2}px;
                     height:${Math.abs(seg.y2 - seg.y1)}px;
                     cursor:ew-resize; pointer-events:all;
-                    background:transparent; z-index:6;
+                    background:transparent; z-index:8;
                 `;
             }
 
-            // Hover highlight
-            hitDiv.addEventListener('mouseenter', () => {
-                hitDiv.style.background = 'rgba(59,130,246,0.15)';
-            });
-            hitDiv.addEventListener('mouseleave', () => {
-                hitDiv.style.background = 'transparent';
-            });
+            segEl.addEventListener('mouseenter', () => { segEl.style.background = 'rgba(59,130,246,0.15)'; });
+            segEl.addEventListener('mouseleave', () => { segEl.style.background = 'transparent'; });
 
-            hitDiv.addEventListener('mousedown', (e) => {
+            segEl.addEventListener('mousedown', (e) => {
                 if (e.button === 2) return;
                 e.preventDefault();
                 e.stopPropagation();
-                selectWidget(widget.id);
-                renderSettingsPanel();
 
-                // Compute midOverride start in canvas coords
                 let origMidX, origMidY;
                 if (widget.midOverride) {
                     origMidX = widget.midOverride.x;
@@ -1216,15 +1208,12 @@ function createConnectorEl(widget) {
                 const startCX = e.clientX, startCY = e.clientY;
                 let rafId = null;
                 const onMove = (e) => {
-                    const dx = e.clientX - startCX;
-                    const dy = e.clientY - startCY;
+                    const dx = e.clientX - startCX, dy = e.clientY - startCY;
                     if (rafId) cancelAnimationFrame(rafId);
                     rafId = requestAnimationFrame(() => {
-                        if (isH) {
-                            widget.midOverride = { x: origMidX, y: origMidY + dy };
-                        } else {
-                            widget.midOverride = { x: origMidX + dx, y: origMidY };
-                        }
+                        widget.midOverride = isH
+                            ? { x: origMidX, y: origMidY + dy }
+                            : { x: origMidX + dx, y: origMidY };
                         updateConnectorEl(widget.id);
                     });
                 };
@@ -1237,18 +1226,29 @@ function createConnectorEl(widget) {
                 document.addEventListener('mouseup', onUp);
             });
 
-            el.appendChild(hitDiv);
+            el.appendChild(segEl);
         });
     }
 
-    // Transparent click overlay — reliable across all lineTypes (z-index:4, below segment hit areas)
-    const clickOverlay = document.createElement('div');
-    clickOverlay.style.cssText = `
-        position:absolute; inset:-8px;
-        cursor:pointer; pointer-events:all;
-        background:transparent; z-index:4;
-    `;
-    clickOverlay.addEventListener('mousedown', (e) => {
+    // SVG hit path — follows the actual line so it never blocks other widgets
+    const hitSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    hitSvg.setAttribute('width', svgW);
+    hitSvg.setAttribute('height', svgH);
+    hitSvg.style.cssText = `position:absolute;top:0;left:0;overflow:visible;pointer-events:none;z-index:6;`;
+
+    const hitPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    hitPath.setAttribute('d', pathD);
+    hitPath.setAttribute('fill', 'none');
+    hitPath.setAttribute('stroke', 'transparent');
+    hitPath.setAttribute('stroke-width', '16');
+    hitPath.setAttribute('stroke-linecap', 'round');
+    hitPath.setAttribute('stroke-linejoin', 'round');
+    hitPath.style.cssText = 'cursor:move; pointer-events:stroke;';
+
+    hitSvg.appendChild(hitPath);
+    el.appendChild(hitSvg);
+
+    hitPath.addEventListener('mousedown', (e) => {
         if (e.button === 2) return;
         e.preventDefault();
         e.stopPropagation();
@@ -1257,12 +1257,11 @@ function createConnectorEl(widget) {
 
         const startClientX = e.clientX, startClientY = e.clientY;
         const origStartX = widget.startX, origStartY = widget.startY;
-        const origEndX = widget.endX, origEndY = widget.endY;
-        const origMid = widget.midOverride ? { ...widget.midOverride } : null;
+        const origEndX   = widget.endX,   origEndY   = widget.endY;
+        const origMid    = widget.midOverride ? { ...widget.midOverride } : null;
         let rafId = null;
         const onMove = (e) => {
-            const ddx = e.clientX - startClientX;
-            const ddy = e.clientY - startClientY;
+            const ddx = e.clientX - startClientX, ddy = e.clientY - startClientY;
             if (rafId) cancelAnimationFrame(rafId);
             rafId = requestAnimationFrame(() => {
                 if (!widget.startAnchor) { widget.startX = origStartX + ddx; widget.startY = origStartY + ddy; }
@@ -1281,14 +1280,14 @@ function createConnectorEl(widget) {
         document.addEventListener('mousemove', onMove);
         document.addEventListener('mouseup', onUp);
     });
-    clickOverlay.addEventListener('contextmenu', (e) => {
+
+    hitPath.addEventListener('contextmenu', (e) => {
         e.preventDefault();
         e.stopPropagation();
         selectWidget(widget.id);
         renderSettingsPanel();
         showContextMenu(e.clientX, e.clientY);
     });
-    el.appendChild(clickOverlay);
 
     if (isSelected) {
         // Endpoint handles
