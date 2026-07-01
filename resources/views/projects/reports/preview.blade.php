@@ -611,10 +611,15 @@ function renderWidgetContent(widget) {
                     pathD = `M ${lx1} ${ly1} C ${lx1} ${ly1+off}, ${lx2} ${ly2-off}, ${lx2} ${ly2}`;
                 }
             } else {
-                const dx = Math.abs(lx2-lx1), dy = Math.abs(ly2-ly1);
-                pathD = dy >= dx
-                    ? `M ${lx1} ${ly1} L ${lx1} ${ly2} L ${lx2} ${ly2}`
-                    : `M ${lx1} ${ly1} L ${lx2} ${ly1} L ${lx2} ${ly2}`;
+                const rdx = lx2 - lx1, rdy = ly2 - ly1;
+                const ratio = (typeof widget.midRatio === 'number') ? widget.midRatio : 0.5;
+                if (Math.abs(rdy) > Math.abs(rdx)) {
+                    const midY = ly1 + rdy * ratio;
+                    pathD = `M ${lx1} ${ly1} L ${lx1} ${midY} L ${lx2} ${midY} L ${lx2} ${ly2}`;
+                } else {
+                    const midX = lx1 + rdx * ratio;
+                    pathD = `M ${lx1} ${ly1} L ${midX} ${ly1} L ${midX} ${ly2} L ${lx2} ${ly2}`;
+                }
             }
             const color = s.color || '#374151';
             const strokeW = s.strokeWidth || 2;
