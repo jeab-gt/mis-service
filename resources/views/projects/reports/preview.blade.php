@@ -133,7 +133,7 @@ function loadSlide() {
         'image','rectangle','circle','line','arrow',
         'rounded-rectangle','triangle','diamond','pentagon',
         'hexagon','star','arrow-right','arrow-left',
-        'arrow-up','arrow-down','double-arrow','textbox',
+        'arrow-up','arrow-down','double-arrow','textbox','connector',
     ];
     (slide.widgets_data || []).forEach(w => {
         const isShape   = SHAPE_TYPES.includes(w.type);
@@ -556,6 +556,43 @@ function renderWidgetContent(widget) {
                         <div style="font-size:9px;color:#9ca3af;margin-top:2px">by ${b.reporter}</div>
                     </div>`).join('')}
             </div>`;
+        }
+
+        case 'connector': {
+            const cx1 = widget.startX, cy1 = widget.startY;
+            const cx2 = widget.endX,   cy2 = widget.endY;
+            const svgW = widget.w || Math.abs(cx2-cx1)+20;
+            const svgH = widget.h || Math.abs(cy2-cy1)+20;
+            const lx1 = cx1 - (widget.x || 0);
+            const ly1 = cy1 - (widget.y || 0);
+            const lx2 = cx2 - (widget.x || 0);
+            const ly2 = cy2 - (widget.y || 0);
+            const dx = Math.abs(lx2-lx1), dy = Math.abs(ly2-ly1);
+            const midPath = dy >= dx
+                ? `L ${lx1} ${ly2} L ${lx2} ${ly2}`
+                : `L ${lx2} ${ly1} L ${lx2} ${ly2}`;
+            const s = widget.style || {};
+            const color = s.color || '#374151';
+            const strokeW = s.strokeWidth || 2;
+            const dashArr = s.lineStyle === 'dashed' ? 'stroke-dasharray="6,3"' : '';
+            const markerId = `pa${widget.id}`;
+            const markerEnd   = (s.arrowHead || 'end') !== 'none' ? `marker-end="url(#${markerId})"` : '';
+            const markerStart = s.arrowHead === 'both' ? `marker-start="url(#${markerId}-s)"` : '';
+            return `<svg width="${svgW}" height="${svgH}" style="overflow:visible;display:block">
+                <defs>
+                    <marker id="${markerId}" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                        <polygon points="0,0 0,6 8,3" fill="${color}"/>
+                    </marker>
+                    <marker id="${markerId}-s" markerWidth="8" markerHeight="8" refX="2" refY="3" orient="auto-start-reverse">
+                        <polygon points="0,0 0,6 8,3" fill="${color}"/>
+                    </marker>
+                </defs>
+                <path d="M ${lx1} ${ly1} ${midPath}" fill="none"
+                      stroke="${color}" stroke-width="${strokeW}"
+                      stroke-linejoin="round" ${dashArr}
+                      ${markerEnd} ${markerStart}
+                      style="${s.shadow ? 'filter:drop-shadow(0 2px 4px rgba(0,0,0,.3))' : ''}"/>
+            </svg>`;
         }
 
         default:

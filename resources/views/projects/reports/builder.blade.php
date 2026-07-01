@@ -244,6 +244,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
             <button class="shape-icon-btn" title="Double Arrow" onclick="insertShape('double-arrow')">
                 <svg width="18" height="14" viewBox="0 0 18 14"><polygon points="1,7 5,3 5,5.5 13,5.5 13,3 17,7 13,11 13,8.5 5,8.5 5,11" fill="currentColor"/></svg>
             </button>
+            <button class="shape-icon-btn" onclick="insertConnector()" title="Connector">
+                <svg viewBox="0 0 24 24" width="18" height="18">
+                    <polyline points="4,8 4,18 20,18" fill="none" stroke="currentColor" stroke-width="2"/>
+                    <polygon points="17,14 22,18 17,22" fill="currentColor"/>
+                </svg>
+            </button>
         </div>
 
         <p class="panel-label">Project Data</p>
@@ -513,6 +519,28 @@ function insertShape(type) {
     selectWidget(widget.id);
 }
 
+function insertConnector() {
+    const widget = {
+        id: 'w_' + Date.now(),
+        type: 'connector',
+        startX: 80,  startY: 100,
+        endX:   300, endY:   240,
+        x: 80, y: 100,
+        w: 220, h: 140,
+        rotation: 0,
+        style: {
+            color: '#374151',
+            strokeWidth: 2,
+            arrowHead: 'end',
+            lineStyle: 'solid',
+            shadow: false,
+        },
+    };
+    widgets.push(widget);
+    renderAllWidgets();
+    selectWidget(widget.id);
+}
+
 function insertImage() {
     const input = document.createElement('input');
     input.type = 'file';
@@ -660,7 +688,10 @@ function renderAllWidgets() {
     const overlay = document.getElementById('widget-overlay');
     overlay.innerHTML = '';
     overlay.style.pointerEvents = 'none';
-    widgets.forEach(w => overlay.appendChild(buildWidgetEl(w)));
+    widgets.forEach(w => {
+        const el = w.type === 'connector' ? createConnectorEl(w) : buildWidgetEl(w);
+        overlay.appendChild(el);
+    });
 }
 
 function buildWidgetEl(widget) {
@@ -827,11 +858,200 @@ function buildWidgetEl(widget) {
     return el;
 }
 
+function createConnectorEl(widget) {
+    const x1 = widget.startX, y1 = widget.startY;
+    const x2 = widget.endX,   y2 = widget.endY;
+    const minX = Math.min(x1, x2) - 10;
+    const minY = Math.min(y1, y2) - 10;
+    const maxX = Math.max(x1, x2) + 10;
+    const maxY = Math.max(y1, y2) + 10;
+    const svgW = maxX - minX;
+    const svgH = maxY - minY;
+    const lx1 = x1 - minX, ly1 = y1 - minY;
+    const lx2 = x2 - minX, ly2 = y2 - minY;
+
+    const dx = Math.abs(lx2 - lx1), dy = Math.abs(ly2 - ly1);
+    const midPath = dy >= dx
+        ? `L ${lx1} ${ly2} L ${lx2} ${ly2}`
+        : `L ${lx2} ${ly1} L ${lx2} ${ly2}`;
+
+    const s = widget.style || {};
+    const color = s.color || '#374151';
+    const strokeW = s.strokeWidth || 2;
+    const dashArr = s.lineStyle === 'dashed' ? 'stroke-dasharray="6,3"' : '';
+    const markerId = `arrow-${widget.id}`;
+    const markerStart = s.arrowHead === 'both' ? `marker-start="url(#${markerId}-s)"` : '';
+    const markerEnd   = s.arrowHead !== 'none' ? `marker-end="url(#${markerId})"` : '';
+    const isSelected  = selectedWidgetId === widget.id;
+
+    const el = document.createElement('div');
+    el.id = 'widget-' + widget.id;
+    el.style.cssText = `
+        position:absolute;
+        left:${minX}px; top:${minY}px;
+        width:${svgW}px; height:${svgH}px;
+        pointer-events:none;
+        z-index:${isSelected ? 10 : 1};
+    `;
+
+    el.innerHTML = `
+        <svg width="${svgW}" height="${svgH}" style="overflow:visible;position:absolute;top:0;left:0">
+            <defs>
+                <marker id="${markerId}" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                    <polygon points="0,0 0,6 8,3" fill="${color}"/>
+                </marker>
+                <marker id="${markerId}-s" markerWidth="8" markerHeight="8" refX="2" refY="3" orient="auto-start-reverse">
+                    <polygon points="0,0 0,6 8,3" fill="${color}"/>
+                </marker>
+            </defs>
+            <path d="M ${lx1} ${ly1} ${midPath}" fill="none"
+                  stroke="${color}" stroke-width="${strokeW}"
+                  stroke-linejoin="round" ${dashArr}
+                  ${markerStart} ${markerEnd}
+                  style="${s.shadow ? 'filter:drop-shadow(0 2px 4px rgba(0,0,0,.3))' : ''}"/>
+        </svg>
+    `;
+
+    // Wide transparent hit area for clicking/dragging the line
+    const hitArea = document.createElement('div');
+    hitArea.style.cssText = 'position:absolute;inset:0;pointer-events:none;';
+    hitArea.innerHTML = `
+        <svg width="${svgW}" height="${svgH}" style="overflow:visible;position:absolute;top:0;left:0">
+            <path d="M ${lx1} ${ly1} ${midPath}" fill="none"
+                  stroke="transparent" stroke-width="${Math.max(12, strokeW + 10)}"
+                  style="cursor:pointer;pointer-events:stroke"/>
+        </svg>
+    `;
+    hitArea.style.pointerEvents = 'all';
+    hitArea.querySelector('path').addEventListener('mousedown', (e) => {
+        if (e.button === 2) return;
+        e.preventDefault();
+        selectWidget(widget.id);
+
+        const startClientX = e.clientX, startClientY = e.clientY;
+        const origStartX = widget.startX, origStartY = widget.startY;
+        const origEndX = widget.endX, origEndY = widget.endY;
+        let rafId = null;
+        const onMove = (e) => {
+            const ddx = e.clientX - startClientX;
+            const ddy = e.clientY - startClientY;
+            if (rafId) cancelAnimationFrame(rafId);
+            rafId = requestAnimationFrame(() => {
+                widget.startX = origStartX + ddx; widget.startY = origStartY + ddy;
+                widget.endX   = origEndX   + ddx; widget.endY   = origEndY   + ddy;
+                widget.x = Math.min(widget.startX, widget.endX);
+                widget.y = Math.min(widget.startY, widget.endY);
+                updateConnectorEl(widget.id);
+            });
+        };
+        const onUp = () => {
+            if (rafId) cancelAnimationFrame(rafId);
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+        };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+    });
+    hitArea.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        selectWidget(widget.id);
+        renderSettingsPanel();
+        showContextMenu(e.clientX, e.clientY);
+    });
+    el.appendChild(hitArea);
+
+    if (isSelected) {
+        // Endpoint handles
+        ['start', 'end'].forEach(point => {
+            const hx = point === 'start' ? lx1 : lx2;
+            const hy = point === 'start' ? ly1 : ly2;
+            const handle = document.createElement('div');
+            handle.style.cssText = `
+                position:absolute;
+                left:${hx - 7}px; top:${hy - 7}px;
+                width:14px; height:14px;
+                background:${point === 'start' ? '#16a34a' : '#dc2626'};
+                border-radius:50%; border:2px solid white;
+                cursor:crosshair; pointer-events:all;
+                box-shadow:0 1px 3px rgba(0,0,0,.3); z-index:20;
+            `;
+            handle.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const overlay = document.getElementById('widget-overlay');
+                const overlayRect = overlay.getBoundingClientRect();
+                let rafId = null;
+                const onMove = (e) => {
+                    const nx = e.clientX - overlayRect.left;
+                    const ny = e.clientY - overlayRect.top;
+                    if (rafId) cancelAnimationFrame(rafId);
+                    rafId = requestAnimationFrame(() => {
+                        if (point === 'start') { widget.startX = nx; widget.startY = ny; }
+                        else                   { widget.endX = nx;   widget.endY = ny; }
+                        widget.x = Math.min(widget.startX, widget.endX);
+                        widget.y = Math.min(widget.startY, widget.endY);
+                        widget.w = Math.abs(widget.endX - widget.startX);
+                        widget.h = Math.abs(widget.endY - widget.startY);
+                        updateConnectorEl(widget.id);
+                    });
+                };
+                const onUp = () => {
+                    if (rafId) cancelAnimationFrame(rafId);
+                    document.removeEventListener('mousemove', onMove);
+                    document.removeEventListener('mouseup', onUp);
+                };
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onUp);
+            });
+            el.appendChild(handle);
+        });
+
+        // Mini toolbar
+        const tb = document.createElement('div');
+        tb.className = 'widget-tb';
+        const tbX = (lx1 + lx2) / 2 - 50;
+        const tbY = Math.min(ly1, ly2) - 38;
+        tb.style.cssText = `
+            position:absolute; left:${tbX}px; top:${tbY}px;
+            background:#1f2937; color:white; border-radius:6px;
+            padding:3px 8px; display:flex; align-items:center; gap:8px;
+            z-index:20; font-size:11px; white-space:nowrap;
+            box-shadow:0 2px 8px rgba(0,0,0,.4); pointer-events:all;
+        `;
+        tb.innerHTML = `
+            <span style="color:#9ca3af;font-size:10px">CONNECTOR</span>
+            <button style="background:#dc2626;border:none;color:white;padding:2px 8px;
+                           border-radius:4px;cursor:pointer;font-size:11px">✕ Delete</button>
+        `;
+        tb.querySelector('button').addEventListener('mousedown', e => {
+            e.preventDefault(); e.stopPropagation();
+            deleteWidget(widget.id);
+        });
+        el.appendChild(tb);
+    }
+
+    return el;
+}
+
+function updateConnectorEl(id) {
+    const widget = widgets.find(w => w.id === id);
+    if (!widget) return;
+    const old = document.getElementById('widget-' + id);
+    if (!old) return;
+    old.parentNode.replaceChild(createConnectorEl(widget), old);
+}
+
 function deselectCurrent() {
     if (!selectedWidgetId) return;
+    const prevW = widgets.find(w => w.id === selectedWidgetId);
+    if (prevW && prevW.type === 'connector') {
+        selectedWidgetId = null;
+        updateConnectorEl(prevW.id);
+        return;
+    }
     const prev = document.getElementById('widget-' + selectedWidgetId);
     if (prev) {
-        const prevW = widgets.find(w => w.id === selectedWidgetId);
         const ALL_OVERLAY_TYPES = [
             'image','rectangle','circle','line','arrow',
             'rounded-rectangle','triangle','diamond','pentagon',
@@ -864,15 +1084,20 @@ function selectWidget(id) {
     deselectCurrent();
     selectedWidgetId = id;
 
+    const widget = widgets.find(w => w.id === id);
+    if (!widget) return;
+
+    if (widget.type === 'connector') {
+        updateConnectorEl(id);
+        renderSettingsPanel();
+        return;
+    }
+
     const el = document.getElementById('widget-' + id);
     if (!el) return;
     el.style.border = '2px solid #2563eb';
     el.style.zIndex = '10';
-
-    const widget = widgets.find(w => w.id === id);
     el.style.boxShadow = '0 0 0 3px rgba(37,99,235,.15)';
-
-    if (!widget) return;
 
     const rh = el.querySelector('.rotate-handle');
     const rl = el.querySelector('.rotate-line');
@@ -1423,10 +1648,61 @@ function renderSettingsPanel() {
     const widget = widgets.find(w => w.id === selectedWidgetId);
 
     const DATA_WIDGET_TYPES = ['kpi','chart','gantt','milestone','team','blocker'];
-    const isDataWidget = !!(widget && DATA_WIDGET_TYPES.includes(widget.type));
+    const isDataWidget  = !!(widget && DATA_WIDGET_TYPES.includes(widget.type));
+    const isConnector   = !!(widget && widget.type === 'connector');
 
-    if (!widget || (!SHAPE_STYLE_TYPES.includes(widget.type) && !isDataWidget)) {
+    if (!widget || (!SHAPE_STYLE_TYPES.includes(widget.type) && !isDataWidget && !isConnector)) {
         panel.style.display = 'none';
+        return;
+    }
+
+    if (isConnector) {
+        const s = widget.style || {};
+        panel.style.display = 'block';
+        panel.innerHTML = `
+            <p style="color:#9ca3af;font-size:10px;font-weight:600;letter-spacing:.5px;margin:0 0 10px">SETTINGS</p>
+            <label style="display:block;color:#d1d5db;font-size:11px;margin-bottom:4px">Line Color</label>
+            <input type="color" value="${s.color || '#374151'}"
+                   oninput="updateWidgetStyle('color', this.value)"
+                   style="width:100%;height:28px;border:none;border-radius:4px;margin-bottom:10px;cursor:pointer">
+
+            <label style="display:block;color:#d1d5db;font-size:11px;margin-bottom:4px">
+                Stroke Width: <span id="sw-val">${s.strokeWidth || 2}</span>px
+            </label>
+            <input type="range" min="1" max="8" value="${s.strokeWidth || 2}"
+                   oninput="document.getElementById('sw-val').textContent=this.value; updateWidgetStyle('strokeWidth', parseInt(this.value))"
+                   style="width:100%;margin-bottom:10px">
+
+            <label style="display:block;color:#d1d5db;font-size:11px;margin-bottom:4px">Arrow Head</label>
+            <div style="display:flex;gap:4px;margin-bottom:10px">
+                <button onclick="updateWidgetStyle('arrowHead','end'); renderSettingsPanel()"
+                    style="flex:1;background:${(s.arrowHead||'end')==='end'?'#4f46e5':'#374151'};
+                           color:white;border:none;padding:5px;border-radius:4px;cursor:pointer;font-size:13px">→</button>
+                <button onclick="updateWidgetStyle('arrowHead','both'); renderSettingsPanel()"
+                    style="flex:1;background:${s.arrowHead==='both'?'#4f46e5':'#374151'};
+                           color:white;border:none;padding:5px;border-radius:4px;cursor:pointer;font-size:13px">↔</button>
+                <button onclick="updateWidgetStyle('arrowHead','none'); renderSettingsPanel()"
+                    style="flex:1;background:${s.arrowHead==='none'?'#4f46e5':'#374151'};
+                           color:white;border:none;padding:5px;border-radius:4px;cursor:pointer;font-size:13px">—</button>
+            </div>
+
+            <label style="display:block;color:#d1d5db;font-size:11px;margin-bottom:4px">Line Style</label>
+            <div style="display:flex;gap:4px;margin-bottom:10px">
+                <button onclick="updateWidgetStyle('lineStyle','solid'); renderSettingsPanel()"
+                    style="flex:1;background:${(s.lineStyle||'solid')==='solid'?'#4f46e5':'#374151'};
+                           color:white;border:none;padding:5px;border-radius:4px;cursor:pointer;font-size:11px">Solid</button>
+                <button onclick="updateWidgetStyle('lineStyle','dashed'); renderSettingsPanel()"
+                    style="flex:1;background:${s.lineStyle==='dashed'?'#4f46e5':'#374151'};
+                           color:white;border:none;padding:5px;border-radius:4px;cursor:pointer;font-size:11px">Dashed</button>
+            </div>
+
+            <label style="display:flex;align-items:center;gap:8px;color:#d1d5db;font-size:11px;cursor:pointer">
+                <input type="checkbox" ${s.shadow ? 'checked' : ''}
+                       onchange="updateWidgetStyle('shadow', this.checked)"
+                       style="cursor:pointer;width:13px;height:13px">
+                Drop Shadow
+            </label>
+        `;
         return;
     }
 
@@ -1603,6 +1879,11 @@ function updateWidgetStyle(key, value) {
     if (!widget) return;
     if (!widget.style) widget.style = {};
     widget.style[key] = value;
+
+    if (widget.type === 'connector') {
+        updateConnectorEl(widget.id);
+        return;
+    }
 
     const el = document.getElementById('widget-' + widget.id);
     if (!el) return;
