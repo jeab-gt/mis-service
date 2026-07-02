@@ -989,13 +989,15 @@ function buildConnectorPath(lx1, ly1, lx2, ly2, lineType, elbowX, elbowY) {
             return `M ${lx1} ${ly1} C ${lx1} ${ly1+off}, ${lx2} ${ly2-off}, ${lx2} ${ly2}`;
         }
     }
-    // elbow — Z-shape 3 segments
+    // elbow — L-shape by default, drag middle segment to make it Z-shape
     const dx = lx2 - lx1, dy = ly2 - ly1;
     if (Math.abs(dy) >= Math.abs(dx)) {
-        const midY = typeof elbowY === 'number' ? elbowY : (ly1 + ly2) / 2;
+        // vertical dominant — default: ลงตรง แล้วหักขวา (L-shape) = midY อยู่ที่ ly2
+        const midY = typeof elbowY === 'number' ? elbowY : ly2;
         return `M ${lx1} ${ly1} L ${lx1} ${midY} L ${lx2} ${midY} L ${lx2} ${ly2}`;
     } else {
-        const midX = typeof elbowX === 'number' ? elbowX : (lx1 + lx2) / 2;
+        // horizontal dominant — default: ไปตรง แล้วหักลง (L-shape) = midX อยู่ที่ lx2
+        const midX = typeof elbowX === 'number' ? elbowX : lx2;
         return `M ${lx1} ${ly1} L ${midX} ${ly1} L ${midX} ${ly2} L ${lx2} ${ly2}`;
     }
 }
@@ -1003,14 +1005,14 @@ function buildConnectorPath(lx1, ly1, lx2, ly2, lineType, elbowX, elbowY) {
 function getElbowSegments(lx1, ly1, lx2, ly2, elbowX, elbowY) {
     const dx = lx2 - lx1, dy = ly2 - ly1;
     if (Math.abs(dy) >= Math.abs(dx)) {
-        const midY = typeof elbowY === 'number' ? elbowY : (ly1 + ly2) / 2;
+        const midY = typeof elbowY === 'number' ? elbowY : ly2;
         return [
             { x1:lx1, y1:ly1,  x2:lx1, y2:midY, dir:'v' },
             { x1:lx1, y1:midY, x2:lx2, y2:midY, dir:'h' },
             { x1:lx2, y1:midY, x2:lx2, y2:ly2,  dir:'v' },
         ].filter(s => Math.hypot(s.x2-s.x1, s.y2-s.y1) > 2);
     } else {
-        const midX = typeof elbowX === 'number' ? elbowX : (lx1 + lx2) / 2;
+        const midX = typeof elbowX === 'number' ? elbowX : lx2;
         return [
             { x1:lx1,  y1:ly1, x2:midX, y2:ly1, dir:'h' },
             { x1:midX, y1:ly1, x2:midX, y2:ly2, dir:'v' },
@@ -1109,9 +1111,9 @@ function createConnectorEl(widget) {
     if (lineType === 'elbow') {
         const dx = x2 - x1, dy = y2 - y1;
         if (Math.abs(dy) >= Math.abs(dx)) {
-            allY.push(elbowY !== null ? elbowY : (y1 + y2) / 2);
+            allY.push(elbowY !== null ? elbowY : y2);
         } else {
-            allX.push(elbowX !== null ? elbowX : (x1 + x2) / 2);
+            allX.push(elbowX !== null ? elbowX : x2);
         }
     } else if (lineType === 'curved') {
         const absDx = Math.abs(x2-x1), absDy = Math.abs(y2-y1);
@@ -1217,8 +1219,8 @@ function createConnectorEl(widget) {
             const { sx: cx1, sy: cy1, ex: cx2, ey: cy2 } = resolveConnectorPoints(widget);
             const dx = cx2 - cx1, dy = cy2 - cy1;
             const vDom = Math.abs(dy) >= Math.abs(dx);
-            const origEY = widget.elbowY ?? (cy1 + cy2) / 2;
-            const origEX = widget.elbowX ?? (cx1 + cx2) / 2;
+            const origEY = widget.elbowY ?? cy2;
+            const origEX = widget.elbowX ?? cx2;
             const startCY = e.clientY, startCX = e.clientX;
             let raf = null;
             const onMove = (e) => {
