@@ -1041,13 +1041,10 @@ function segmentIntersection(s1, s2) {
     return null;
 }
 
-function buildPathWithJumps(connectorWidget, lx1, ly1, lx2, ly2, svgOffX, svgOffY) {
+function buildPathWithJumps(connectorWidget, lx1, ly1, lx2, ly2, svgOffX, svgOffY, lelbowX, lelbowY) {
     const s = connectorWidget.style || {};
     const lineType = s.lineType || 'elbow';
     const lineJump = s.lineJump || false;
-    const wx = connectorWidget.elbowX, wy = connectorWidget.elbowY;
-    const lelbowX = wx !== null && wx !== undefined ? wx - svgOffX : null;
-    const lelbowY = wy !== null && wy !== undefined ? wy - svgOffY : null;
 
     if (!lineJump || lineType === 'curved') {
         return buildConnectorPath(lx1, ly1, lx2, ly2, lineType, lelbowX, lelbowY);
@@ -1106,15 +1103,20 @@ function createConnectorEl(widget) {
     const elbowX = widget.elbowX ?? null;
     const elbowY = widget.elbowY ?? null;
 
+    // Resolved elbow bend point in canvas coords — single source of truth for
+    // both the bounding box and the local path/segment coords below.
+    const dx = x2 - x1, dy = y2 - y1;
+    const vertDom = Math.abs(dy) >= Math.abs(dx);
+    const defaultEX = vertDom ? x1 : x2;
+    const defaultEY = vertDom ? y2 : y1;
+    const resolvedEX = elbowX !== null && elbowX !== undefined ? elbowX : defaultEX;
+    const resolvedEY = elbowY !== null && elbowY !== undefined ? elbowY : defaultEY;
+
     // Include every point the line actually passes through so SVG bbox never clips
     const allX = [x1, x2], allY = [y1, y2];
     if (lineType === 'elbow') {
-        const dx = x2 - x1, dy = y2 - y1;
-        if (Math.abs(dy) >= Math.abs(dx)) {
-            allY.push(elbowY !== null ? elbowY : y2);
-        } else {
-            allX.push(elbowX !== null ? elbowX : x2);
-        }
+        allX.push(resolvedEX);
+        allY.push(resolvedEY);
     } else if (lineType === 'curved') {
         const absDx = Math.abs(x2-x1), absDy = Math.abs(y2-y1);
         const ext = Math.max(absDx, absDy) * 0.5;
@@ -1130,6 +1132,8 @@ function createConnectorEl(widget) {
     const svgH = maxY - minY;
     const lx1 = x1 - minX, ly1 = y1 - minY;
     const lx2 = x2 - minX, ly2 = y2 - minY;
+    const lelbowX = resolvedEX - minX;
+    const lelbowY = resolvedEY - minY;
 
     const color = s.color || '#374151';
     const strokeW = s.strokeWidth || 2;
@@ -1138,7 +1142,7 @@ function createConnectorEl(widget) {
     const markerStart = s.arrowHead === 'both' ? `marker-start="url(#${markerId}-s)"` : '';
     const markerEnd   = s.arrowHead !== 'none' ? `marker-end="url(#${markerId})"` : '';
     const isSelected  = selectedWidgetId === widget.id;
-    const pathD = buildPathWithJumps(widget, lx1, ly1, lx2, ly2, minX, minY);
+    const pathD = buildPathWithJumps(widget, lx1, ly1, lx2, ly2, minX, minY, lelbowX, lelbowY);
 
     const el = document.createElement('div');
     el.id = 'widget-' + widget.id;
@@ -1154,8 +1158,6 @@ function createConnectorEl(widget) {
     const ep2Anchored = !!widget.endAnchor;
 
     // Segment hit lines (elbow only) — thick transparent SVG lines with drag cursors
-    const lelbowX = elbowX !== null ? elbowX - minX : null;
-    const lelbowY = elbowY !== null ? elbowY - minY : null;
     const segs = lineType === 'elbow'
         ? getElbowSegments(lx1, ly1, lx2, ly2, lelbowX, lelbowY)
         : [];
